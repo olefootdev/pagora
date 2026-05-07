@@ -60,10 +60,16 @@ const Landing = ({ go }) => (
     <StatusBar dark />
     <div className="pg-topbar is-dark is-transparent" style={{ borderBottom: "none" }}>
       <Logo dark />
-      <button className="pg-btn pg-btn--sm" style={{ background: "transparent", color: "#fff", borderColor: "rgba(255,255,255,0.16)", height: 36 }}
-        onClick={() => go("provider-landing")}>
-        Sou prestador
-      </button>
+      <div style={{ display: "flex", gap: 8 }}>
+        <button className="pg-btn pg-btn--sm" style={{ background: "var(--green-500)", color: "var(--night-900)", border: "none", height: 36, fontWeight: 700 }}
+          onClick={() => go("home")}>
+          Entrar
+        </button>
+        <button className="pg-btn pg-btn--sm" style={{ background: "transparent", color: "#fff", borderColor: "rgba(255,255,255,0.16)", height: 36 }}
+          onClick={() => go("provider-landing")}>
+          Sou prestador
+        </button>
+      </div>
     </div>
 
     <div className="pg-viewport" style={{ background: "var(--night-900)", color: "#fff" }}>
