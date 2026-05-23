@@ -82,7 +82,7 @@ const ProvSignup = ({ go }) => {
                 <input className="pg-input" type="email" placeholder="seu@email.com" value={data.email} onChange={(e) => update("email", e.target.value)} />
               </div>
               <div className="pg-card pg-card--soft" style={{ padding: 14, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.5 }}>
-                🔒 Seus dados são criptografados. A PAGORA nunca compartilha CPF ou contato com terceiros.
+                <Icon name="lock" size={14} color="currentColor" /> Seus dados são criptografados. A PAGORA nunca compartilha CPF ou contato com terceiros.
               </div>
             </div>
           )}
@@ -120,7 +120,7 @@ const ProvSignup = ({ go }) => {
                       border: "1.5px dashed var(--border-strong)", background: "var(--bg-soft)",
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 6,
                     }}>
-                      <div style={{ fontSize: 28 }}>📷</div>
+                      <Icon name="camera" size={28} color="currentColor" />
                       <div style={{ fontSize: 12, fontWeight: 600 }}>{s}</div>
                       <div className="pg-mono" style={{ fontSize: 9, color: "var(--text-mute)" }}>TOQUE PARA CAPTURAR</div>
                     </button>
@@ -129,7 +129,7 @@ const ProvSignup = ({ go }) => {
               </div>
 
               <div className="pg-card pg-card--soft" style={{ padding: 14, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.5 }}>
-                ⚠️ A CNH precisa estar válida. Verificamos no Detran em até 24h.
+                <Icon name="alert" size={14} color="var(--orange-600)" /> A CNH precisa estar válida. Verificamos no Detran em até 24h.
               </div>
             </div>
           )}
@@ -185,7 +185,7 @@ const ProvSignup = ({ go }) => {
                       border: "1.5px dashed var(--border-strong)", background: "var(--bg-soft)",
                       display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 4,
                     }}>
-                      <div style={{ fontSize: 24 }}>📸</div>
+                      <Icon name="camera" size={24} color="currentColor" />
                       <div style={{ fontSize: 11, fontWeight: 600 }}>{s}</div>
                     </button>
                   ))}
@@ -217,10 +217,10 @@ const ProvSignup = ({ go }) => {
               <div className="pg-field">
                 <label className="pg-label">Ou use uma chave Pix (recomendado)</label>
                 <input className="pg-input" placeholder="CPF, telefone, email ou aleatória" value={data.pixKey} onChange={(e) => update("pixKey", e.target.value)} />
-                <div className="pg-helper">⚡ Saques via Pix são instantâneos, sem taxa</div>
+                <div className="pg-helper"><Icon name="bolt" size={12} color="currentColor" /> Saques via Pix são instantâneos, sem taxa</div>
               </div>
               <div className="pg-card pg-card--soft" style={{ padding: 14, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.5 }}>
-                💳 A conta precisa estar no seu nome (CPF cadastrado). Caso contrário, a transferência será recusada.
+                <Icon name="credit-card" size={14} color="currentColor" /> A conta precisa estar no seu nome (CPF cadastrado). Caso contrário, a transferência será recusada.
               </div>
             </div>
           )}
@@ -234,8 +234,8 @@ const ProvSignup = ({ go }) => {
                 background: data.selfie ? "var(--green-50)" : "var(--paper)",
               }}>
                 <div className="pg-row" style={{ gap: 14 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 28, background: data.selfie ? "var(--green-500)" : "var(--ink-100)", display: "grid", placeItems: "center", fontSize: 24 }}>
-                    {data.selfie ? "✓" : "🤳"}
+                  <div style={{ width: 56, height: 56, borderRadius: 28, background: data.selfie ? "var(--green-500)" : "var(--ink-100)", display: "grid", placeItems: "center" }}>
+                    {data.selfie ? <Icon name="check" size={24} strokeWidth={2.5} color="var(--green-700)" /> : <Icon name="camera" size={24} color="currentColor" />}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>Selfie de verificação</div>
@@ -253,8 +253,8 @@ const ProvSignup = ({ go }) => {
                 background: data.doc ? "var(--green-50)" : "var(--paper)",
               }}>
                 <div className="pg-row" style={{ gap: 14 }}>
-                  <div style={{ width: 56, height: 56, borderRadius: 28, background: data.doc ? "var(--green-500)" : "var(--ink-100)", display: "grid", placeItems: "center", fontSize: 24 }}>
-                    {data.doc ? "✓" : "📄"}
+                  <div style={{ width: 56, height: 56, borderRadius: 28, background: data.doc ? "var(--green-500)" : "var(--ink-100)", display: "grid", placeItems: "center" }}>
+                    {data.doc ? <Icon name="check" size={24} strokeWidth={2.5} color="var(--green-700)" /> : <Icon name="doc" size={24} color="currentColor" />}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>Comprovante de residência</div>
@@ -310,8 +310,8 @@ const ProvPending = ({ go }) => {
           <div className="pg-anim-in" style={{ position: "relative", width: 120, height: 120, margin: "20px auto 24px" }}>
             <div style={{
               position: "absolute", inset: 0, borderRadius: "50%",
-              background: "var(--green-50)", display: "grid", placeItems: "center", fontSize: 50,
-            }}>⏳</div>
+              background: "var(--green-50)", display: "grid", placeItems: "center",
+            }}><Icon name="clock" size={48} color="var(--green-700)" /></div>
             <svg width="120" height="120" style={{ position: "absolute", inset: 0 }} viewBox="0 0 120 120">
               <circle cx="60" cy="60" r="56" fill="none" stroke="var(--green-500)" strokeWidth="2" strokeDasharray="80 250">
                 <animateTransform attributeName="transform" type="rotate" from="0 60 60" to="360 60 60" dur="3s" repeatCount="indefinite"/>
@@ -332,7 +332,7 @@ const ProvPending = ({ go }) => {
                 <div className="pg-h-eyebrow" style={{ margin: 0, color: "rgba(255,255,255,0.5)", fontSize: 9 }}>TEMPO RESTANTE ESTIMADO</div>
                 <div className="pg-mono" style={{ fontSize: 30, fontWeight: 700, color: "var(--green-500)", marginTop: 4 }}>17h 42min</div>
               </div>
-              <div className="pg-mono" style={{ fontSize: 30 }}>⚡</div>
+              <Icon name="bolt" size={30} color="currentColor" />
             </div>
           </div>
 
@@ -350,7 +350,7 @@ const ProvPending = ({ go }) => {
                     display: "grid", placeItems: "center", fontSize: 14, fontWeight: 700, flexShrink: 0,
                     position: "relative",
                   }}>
-                    {it.done ? "✓" : it.current ? <span className="pg-anim-in" style={{ width: 10, height: 10, borderRadius: 5, background: "var(--green-500)" }}/> : i + 1}
+                    {it.done ? <Icon name="check" size={14} strokeWidth={2.5} color="var(--green-700)" /> : it.current ? <span className="pg-anim-in" style={{ width: 10, height: 10, borderRadius: 5, background: "var(--green-500)" }}/> : i + 1}
                   </div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 600 }}>{it.t}</div>
@@ -363,7 +363,7 @@ const ProvPending = ({ go }) => {
           </div>
 
           <div style={{ marginTop: 24, padding: 16, background: "var(--bg-soft)", borderRadius: 12, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.5, textAlign: "left" }}>
-            💡 Enquanto isso, <button onClick={() => go("prov-public")} style={{ color: "var(--green-700)", fontWeight: 700, background: "none", border: "none", padding: 0, cursor: "pointer" }}>complete seu perfil público</button> para receber pedidos mais rápido depois.
+            <Icon name="lightbulb" size={14} color="var(--green-700)" /> Enquanto isso, <button onClick={() => go("prov-public")} style={{ color: "var(--green-700)", fontWeight: 700, background: "none", border: "none", padding: 0, cursor: "pointer" }}>complete seu perfil público</button> para receber pedidos mais rápido depois.
           </div>
         </div>
       </div>
@@ -403,12 +403,12 @@ const ProvRejected = ({ go }) => {
                 <div className="pg-row" style={{ gap: 12, alignItems: "flex-start" }}>
                   <div style={{
                     width: 30, height: 30, borderRadius: 15, background: "var(--orange-500)",
-                    color: "#fff", display: "grid", placeItems: "center", fontSize: 13, fontWeight: 700, flexShrink: 0,
-                  }}>✕</div>
+                    color: "#fff", display: "grid", placeItems: "center", flexShrink: 0,
+                  }}><Icon name="close" size={14} color="currentColor" /></div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{iss.t}</div>
                     <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 4, lineHeight: 1.5 }}>{iss.s}</div>
-                    <button className="pg-btn pg-btn--primary pg-btn--sm" style={{ marginTop: 12 }}>📷 {iss.action}</button>
+                    <button className="pg-btn pg-btn--primary pg-btn--sm" style={{ marginTop: 12, display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="camera" size={14} color="currentColor" /> {iss.action}</button>
                   </div>
                 </div>
               </div>
@@ -416,7 +416,7 @@ const ProvRejected = ({ go }) => {
           </div>
 
           <div className="pg-card pg-card--soft" style={{ padding: 14, marginTop: 20, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6 }}>
-            💬 Precisa de ajuda? Fale com o time de onboarding pelo WhatsApp <strong>(11) 9 4002-8922</strong>.
+            <Icon name="message" size={14} color="currentColor" /> Precisa de ajuda? Fale com o time de onboarding pelo WhatsApp <strong>(11) 9 4002-8922</strong>.
           </div>
         </div>
       </div>
@@ -481,7 +481,7 @@ const ProvOrderDetail = ({ go }) => {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 14, fontWeight: 700 }}>Joana S.</div>
                 <div className="pg-row" style={{ gap: 8, fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>
-                  <span>★ 4,9</span><span>·</span><span>14 pedidos</span><span>·</span><span>responde rápido</span>
+                  <span style={{display:"flex",alignItems:"center",gap:3}}><Icon name="star-fill" size={11} color="var(--amber-400)" /> 4,9</span><span>·</span><span>14 pedidos</span><span>·</span><span>responde rápido</span>
                 </div>
               </div>
             </div>
@@ -529,7 +529,7 @@ const ProvOrderDetail = ({ go }) => {
           {/* schedule */}
           <div className="pg-card pg-card--soft" style={{ padding: 14, fontSize: 13, marginBottom: 16 }}>
             <div className="pg-row pg-row--between">
-              <span style={{ color: "var(--text-soft)" }}>📅 Agendado para</span>
+              <span style={{ color: "var(--text-soft)", display: "flex", alignItems: "center", gap: 6 }}><Icon name="calendar" size={14} color="currentColor" /> Agendado para</span>
               <span style={{ fontWeight: 700 }}>Hoje · 14:00</span>
             </div>
           </div>
@@ -584,7 +584,7 @@ const ProvQuote = ({ go }) => {
             <div className="pg-row pg-row--between" style={{ marginTop: 16, fontSize: 11, color: "rgba(255,255,255,0.6)", fontFamily: "var(--font-mono)" }}>
               <span>CLIENTE SUGERIU R$ 220–280</span>
               <span style={{ color: price > 280 ? "var(--orange-500)" : price < 220 ? "var(--green-500)" : "rgba(255,255,255,0.6)" }}>
-                {price > 280 ? "ACIMA DO RANGE" : price < 220 ? "ABAIXO" : "DENTRO DO RANGE ✓"}
+                {price > 280 ? "ACIMA DO RANGE" : price < 220 ? "ABAIXO" : <span style={{display:"flex",alignItems:"center",gap:4}}>DENTRO DO RANGE <Icon name="check" size={12} strokeWidth={2.5} color="currentColor" /></span>}
               </span>
             </div>
           </div>
@@ -706,7 +706,7 @@ const ProvNav = ({ go }) => {
               <animate attributeName="r" from="26" to="46" dur="1.6s" repeatCount="indefinite"/>
               <animate attributeName="opacity" from="0.5" to="0" dur="1.6s" repeatCount="indefinite"/>
             </circle>
-            <text textAnchor="middle" y="6" fontSize="22" fill="#070E1A">🚚</text>
+            <path d="M-11,-6 L4,-6 L4,8 L-11,8 Z M4,-4 L10,-4 L13,0 L13,8 L4,8 Z M-8,8 A3,3 0 1,0 -2,8 M7,8 A3,3 0 1,0 13,8" stroke="#070E1A" strokeWidth="1.5" fill="none" strokeLinecap="round" strokeLinejoin="round" transform="translate(0 -1)"/>
             <animateMotion dur="20s" repeatCount="indefinite">
               <mpath xlinkHref="#pg-nav-path"/>
             </animateMotion>
@@ -716,10 +716,10 @@ const ProvNav = ({ go }) => {
         {/* top bar floating */}
         <div style={{ position: "absolute", top: 12, left: 16, right: 16, display: "flex", justifyContent: "space-between", gap: 8 }}>
           <button onClick={() => go("provider-dash")} className="pg-iconbtn" style={{ background: "rgba(255,255,255,0.95)", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>←</button>
-          <div style={{ background: "rgba(0,0,0,0.85)", color: "#fff", padding: "10px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600, fontFamily: "var(--font-mono)" }}>
-            ⚡ {stage < 1 ? "12 MIN" : stage === 3 ? "23 MIN" : "NO LOCAL"}
+          <div style={{ background: "rgba(0,0,0,0.85)", color: "#fff", padding: "10px 16px", borderRadius: 100, fontSize: 13, fontWeight: 600, fontFamily: "var(--font-mono)", display: "flex", alignItems: "center", gap: 6 }}>
+            <Icon name="bolt" size={13} color="currentColor" /> {stage < 1 ? "12 MIN" : stage === 3 ? "23 MIN" : "NO LOCAL"}
           </div>
-          <button className="pg-iconbtn" style={{ background: "rgba(255,255,255,0.95)", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}>📞</button>
+          <button className="pg-iconbtn" style={{ background: "rgba(255,255,255,0.95)", boxShadow: "0 4px 12px rgba(0,0,0,0.4)" }}><Icon name="phone" size={18} color="currentColor" /></button>
         </div>
 
         {/* turn instruction (when traveling) */}
@@ -753,13 +753,13 @@ const ProvNav = ({ go }) => {
               <div style={{ fontSize: 13, fontWeight: 700 }}>Joana Silva</div>
               <div style={{ fontSize: 11, color: "var(--text-mute)" }}>Rua das Flores, 234, Apto 502</div>
             </div>
-            <button className="pg-iconbtn" style={{ background: "var(--green-500)", color: "var(--night-900)" }}>💬</button>
-            <button className="pg-iconbtn" style={{ background: "var(--green-500)", color: "var(--night-900)" }}>📞</button>
+            <button className="pg-iconbtn" style={{ background: "var(--green-500)", color: "var(--night-900)" }}><Icon name="message" size={18} color="currentColor" /></button>
+            <button className="pg-iconbtn" style={{ background: "var(--green-500)", color: "var(--night-900)" }}><Icon name="phone" size={18} color="currentColor" /></button>
           </div>
 
           <div className="pg-row" style={{ gap: 8, marginTop: 14 }}>
             <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ flex: 1 }} onClick={() => go("prov-extras")}>+ Cobrar extra</button>
-            <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ flex: 1 }} onClick={() => go("prov-checklist")}>📋 Checklist</button>
+            <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ flex: 1, display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => go("prov-checklist")}><Icon name="clipboard" size={14} color="currentColor" /> Checklist</button>
           </div>
 
           <button className="pg-btn pg-btn--accent pg-btn--lg pg-btn--block" style={{ marginTop: 12 }}
@@ -821,13 +821,11 @@ const ProvChecklist = ({ go }) => {
                     width: 60, height: 60, borderRadius: 10,
                     background: done[it.id] ? "var(--green-500)" : "var(--bg-soft)",
                     display: "grid", placeItems: "center", flexShrink: 0,
-                    color: done[it.id] ? "var(--night-900)" : "var(--text-mute)",
-                    fontSize: 24,
-                  }}>{done[it.id] ? "✓" : "📷"}</div>
+                  }}>{done[it.id] ? <Icon name="check" size={24} strokeWidth={2.5} color="var(--green-700)" /> : <Icon name="camera" size={24} color="var(--text-mute)" />}</div>
                   <div style={{ flex: 1 }}>
                     <div style={{ fontSize: 14, fontWeight: 700 }}>{it.t}</div>
                     <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>{it.s}</div>
-                    {done[it.id] && <div style={{ fontSize: 11, color: "var(--green-700)", fontFamily: "var(--font-mono)", marginTop: 4, fontWeight: 700 }}>✓ FOTO ENVIADA</div>}
+                    {done[it.id] && <div style={{ fontSize: 11, color: "var(--green-700)", fontFamily: "var(--font-mono)", marginTop: 4, fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}><Icon name="check" size={10} strokeWidth={2.5} color="var(--green-700)" /> FOTO ENVIADA</div>}
                   </div>
                 </div>
               </button>
@@ -835,7 +833,7 @@ const ProvChecklist = ({ go }) => {
           </div>
 
           <div className="pg-card pg-card--soft" style={{ padding: 14, marginTop: 20, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6 }}>
-            🔒 As fotos protegem você em caso de disputa. São compartilhadas apenas com a cliente e suporte.
+            <Icon name="lock" size={14} color="currentColor" /> As fotos protegem você em caso de disputa. São compartilhadas apenas com a cliente e suporte.
           </div>
         </div>
       </div>
@@ -874,7 +872,7 @@ const ProvExtras = ({ go }) => {
         <div style={{ padding: 20 }}>
           {/* warning */}
           <div className="pg-card pg-card--padded" style={{ background: "var(--orange-50)", borderColor: "var(--orange-500)", marginBottom: 20 }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--orange-600)" }}>⚠️ Cliente precisa aprovar</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--orange-600)", display: "flex", alignItems: "center", gap: 6 }}><Icon name="alert" size={14} color="var(--orange-600)" /> Cliente precisa aprovar</div>
             <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 4, lineHeight: 1.5 }}>
               Cobranças não combinadas previamente <strong>precisam de aprovação no app</strong> antes de serem cobradas. Caso contrário, abre disputa.
             </div>
@@ -979,7 +977,7 @@ const ProvComplete = ({ go }) => {
               <div className="pg-row pg-row--between" style={{ marginBottom: 4 }}><span>Comissão (15%)</span><span className="pg-mono" style={{ color: "var(--orange-500)" }}>− R$ 45</span></div>
               <div className="pg-row pg-row--between"><span>Taxa fixa</span><span className="pg-mono" style={{ color: "var(--orange-500)" }}>− R$ 2</span></div>
             </div>
-            <div style={{ fontSize: 11, color: "var(--green-500)", marginTop: 12, fontFamily: "var(--font-mono)" }}>⚡ DEPÓSITO EM ATÉ 30 MIN VIA PIX</div>
+            <div style={{ fontSize: 11, color: "var(--green-500)", marginTop: 12, fontFamily: "var(--font-mono)", display: "flex", alignItems: "center", gap: 6 }}><Icon name="bolt" size={11} color="currentColor" /> DEPÓSITO EM ATÉ 30 MIN VIA PIX</div>
           </div>
 
           {/* required steps */}
@@ -992,8 +990,8 @@ const ProvComplete = ({ go }) => {
               background: photo ? "var(--green-50)" : "var(--paper)",
             }}>
               <div className="pg-row" style={{ gap: 12 }}>
-                <div style={{ width: 44, height: 44, borderRadius: 22, background: photo ? "var(--green-500)" : "var(--ink-100)", color: photo ? "var(--night-900)" : "var(--text-mute)", display: "grid", placeItems: "center", fontSize: 18 }}>
-                  {photo ? "✓" : "📷"}
+                <div style={{ width: 44, height: 44, borderRadius: 22, background: photo ? "var(--green-500)" : "var(--ink-100)", display: "grid", placeItems: "center" }}>
+                  {photo ? <Icon name="check" size={18} strokeWidth={2.5} color="var(--green-700)" /> : <Icon name="camera" size={18} color="var(--text-mute)" />}
                 </div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700 }}>Foto final dos itens entregues</div>
@@ -1009,7 +1007,7 @@ const ProvComplete = ({ go }) => {
             }}>
               <div className="pg-row pg-row--between" style={{ marginBottom: 10 }}>
                 <span style={{ fontSize: 14, fontWeight: 700 }}>Assinatura da cliente</span>
-                {signed && <span className="pg-tag pg-tag--green" style={{ fontSize: 9 }}>✓ ASSINADO</span>}
+                {signed && <span className="pg-tag pg-tag--green" style={{ fontSize: 9, display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="check" size={9} strokeWidth={2.5} color="currentColor" /> ASSINADO</span>}
               </div>
               <div onClick={() => setSigned(true)} style={{
                 height: 110, background: "var(--paper)", border: "1px dashed var(--border)", borderRadius: 8,
@@ -1022,7 +1020,7 @@ const ProvComplete = ({ go }) => {
                   </svg>
                 ) : (
                   <div style={{ textAlign: "center", color: "var(--text-mute)" }}>
-                    <div style={{ fontSize: 24 }}>✍️</div>
+                    <Icon name="pen" size={24} color="currentColor" />
                     <div style={{ fontSize: 11, marginTop: 4, fontFamily: "var(--font-mono)" }}>TOQUE PARA SIMULAR</div>
                   </div>
                 )}

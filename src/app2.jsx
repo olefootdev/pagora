@@ -299,7 +299,6 @@ const ProvidersMap = ({ go }) => {
         </div>
       </div>
 
-      <BottomNav active="map" go={go} />
     </div>
   );
 };
@@ -380,7 +379,6 @@ const Notifications = ({ go }) => {
           </div>
         </div>
       </div>
-      <BottomNav active="notifications" go={go} />
     </div>
   );
 };
@@ -647,21 +645,59 @@ const Profile = ({ go, fontScale, setFontScale }) => {
           <div style={{ fontSize: 18, fontWeight: 700, marginTop: 12 }}>Marina Silva</div>
           <div style={{ fontSize: 13, color: "var(--text-soft)", marginTop: 2, fontFamily: "var(--font-mono)" }}>(11) 98765-4321</div>
           <div className="pg-row" style={{ justifyContent: "center", gap: 18, marginTop: 14, paddingTop: 14, borderTop: "1px dashed var(--border)" }}>
-            <div style={{ textAlign: "center" }}>
+            <button onClick={() => go("history-list")} style={{ textAlign: "center", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
               <div className="pg-mono" style={{ fontSize: 18, fontWeight: 700 }}>12</div>
               <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9 }}>PEDIDOS</div>
-            </div>
+            </button>
             <div style={{ width: 1, background: "var(--border)" }} />
             <div style={{ textAlign: "center" }}>
               <div className="pg-mono" style={{ fontSize: 18, fontWeight: 700 }}>4,8</div>
               <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9 }}>SUA NOTA</div>
             </div>
             <div style={{ width: 1, background: "var(--border)" }} />
-            <div style={{ textAlign: "center" }}>
+            <button onClick={() => go("wallet")} style={{ textAlign: "center", background: "none", border: "none", padding: 0, cursor: "pointer" }}>
               <div className="pg-mono" style={{ fontSize: 18, fontWeight: 700, color: "var(--green-700)" }}>R$ 47</div>
               <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9 }}>SALDO</div>
-            </div>
+            </button>
           </div>
+        </div>
+
+        {/* Atalhos prominentes */}
+        <div style={{ padding: "16px 20px 0", display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10 }}>
+          <button onClick={() => go("history-list")} style={{
+            background: "linear-gradient(135deg, #EFF6FF, #DBEAFE)",
+            border: "1px solid #BFDBFE", borderRadius: 14,
+            padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            cursor: "pointer", boxShadow: "0 2px 8px rgba(37,99,235,0.08)",
+          }}>
+            <div style={{ width: 38, height: 38, borderRadius: 12, background: "linear-gradient(135deg, #3B82F6, #1D4ED8)", display: "grid", placeItems: "center" }}>
+              <Icon name="package" size={18} color="#fff" />
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#0F172A" }}>Pedidos</span>
+            <span style={{ fontSize: 10, color: "#475569", marginTop: -2 }}>12 no total</span>
+          </button>
+          <button onClick={() => go("wallet")} style={{
+            background: "#fff", border: "1px solid #E2E8F0", borderRadius: 14,
+            padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            cursor: "pointer", boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+          }}>
+            <div style={{ width: 38, height: 38, borderRadius: 12, background: "#EFF6FF", display: "grid", placeItems: "center" }}>
+              <Icon name="spark" size={18} color="#2563EB" />
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#0F172A" }}>Carteira</span>
+            <span style={{ fontSize: 10, color: "#475569", marginTop: -2 }}>R$ 47,80</span>
+          </button>
+          <button onClick={() => go("favorites")} style={{
+            background: "#fff", border: "1px solid #E2E8F0", borderRadius: 14,
+            padding: "14px 8px", display: "flex", flexDirection: "column", alignItems: "center", gap: 6,
+            cursor: "pointer", boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+          }}>
+            <div style={{ width: 38, height: 38, borderRadius: 12, background: "#EFF6FF", display: "grid", placeItems: "center" }}>
+              <Icon name="heart" size={18} color="#2563EB" />
+            </div>
+            <span style={{ fontSize: 12, fontWeight: 800, color: "#0F172A" }}>Favoritos</span>
+            <span style={{ fontSize: 10, color: "#475569", marginTop: -2 }}>12 salvos</span>
+          </button>
         </div>
 
         <div style={{ padding: "16px 20px 30px" }}>
@@ -688,7 +724,6 @@ const Profile = ({ go, fontScale, setFontScale }) => {
           ))}
         </div>
       </div>
-      <BottomNav active="profile" go={go} />
     </div>
   );
 };
@@ -848,7 +883,6 @@ const HistoryList = ({ go }) => {
           )}
         </div>
       </div>
-      <BottomNav active="history-list" go={go} />
     </div>
   );
 };

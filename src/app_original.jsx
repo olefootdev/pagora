@@ -8,20 +8,38 @@ const { useState: useStateA, useMemo: useMemoA, useEffect: useEffectA } = React;
 const BottomNav = ({ active, go }) => {
   const tabs = [
     { id: "home", t: "Início", icon: "home" },
-    { id: "map", t: "Prestadores", icon: "pin" },
     { id: "history-list", t: "Pedidos", icon: "package" },
+    { id: "map", t: "Mapa", icon: "pin", center: true },
     { id: "notifications", t: "Avisos", icon: "bell" },
     { id: "profile", t: "Perfil", icon: "user" },
   ];
   return (
     <nav className="pg-bnav">
-      {tabs.map(t => (
-        <button key={t.id} className={`pg-bnav-item${active === t.id ? " is-active" : ""}`} onClick={() => go(t.id)}>
-          <Icon name={t.icon} size={20} />
-          <span>{t.t}</span>
-          <span className="pg-bnav-dot" />
-        </button>
-      ))}
+      {tabs.map(t => {
+        const isActive = active === t.id;
+        if (t.center) {
+          return (
+            <button key={t.id} className={`pg-bnav-item pg-bnav-center${isActive ? " is-active" : ""}`} onClick={() => go(t.id)}>
+              <span className="pg-bnav-center-icon" style={{
+                background: isActive
+                  ? "linear-gradient(135deg, #22E3A3, #0FA77A)"
+                  : "rgba(34,227,163,0.14)",
+              }}>
+                <Icon name={t.icon} size={24} color={isActive ? "#070E1A" : "#22E3A3"} strokeWidth={2.2} />
+              </span>
+              <span>{t.t}</span>
+              <span className="pg-bnav-dot" />
+            </button>
+          );
+        }
+        return (
+          <button key={t.id} className={`pg-bnav-item${isActive ? " is-active" : ""}`} onClick={() => go(t.id)}>
+            <Icon name={t.icon} size={26} />
+            <span>{t.t}</span>
+            <span className="pg-bnav-dot" />
+          </button>
+        );
+      })}
     </nav>
   );
 };
@@ -206,177 +224,360 @@ const Onboarding = ({ go }) => {
 // HOME (autenticada)
 // =====================================================================
 const HomeAuth = ({ go }) => {
-  const activeOrder = {
-    id: "PG-1247", service: "Frete", status: "A caminho",
-    provider: "Carlos Mudanças", eta: "12 min", value: 210,
+  const [mapExpanded, setMapExpanded] = useStateA(false);
+
+  const C = {
+    land: "#F5F1E8", landAlt: "#EFEAD8", park: "#C8E6C9",
+    water: "#A8D5F0", road: "#FFFFFF", roadStroke: "#E0DCD0",
+    arterial: "#FFE082", arterialStroke: "#E5C66B",
+    highway: "#FFB74D", highwayStroke: "#D89940",
+    label: "#5C5040", labelLight: "#8B7E6C",
   };
+
+  const pins = [
+    { id: "p1", initials: "CM", x: 62,  y: 150, color: "#0FA77A" },
+    { id: "p2", initials: "JM", x: 285, y: 78,  color: "#0FA77A" },
+    { id: "p3", initials: "RF", x: 336, y: 155, color: "#E5640A" },
+    { id: "p4", initials: "FJ", x: 48,  y: 88,  color: "#E5640A" },
+    { id: "p5", initials: "LC", x: 164, y: 180, color: "#9C27B0" },
+    { id: "p6", initials: "AS", x: 290, y: 170, color: "#B8930F" },
+  ];
+
+  const actions = [
+    { id: "frete",   icon: "truck",    label: "Frete",   route: "frete-1"      },
+    { id: "guincho", icon: "tow",      label: "Guincho", route: "guincho-1"    },
+    { id: "map",     icon: "pin",      label: "Mapa",    route: "map",         isCenter: true },
+    { id: "cacamba", icon: "dumpster", label: "Caçamba", route: "cacamba-1"    },
+    { id: "pedidos", icon: "package",  label: "Pedidos", route: "history-list" },
+  ];
+
+  const nearby = [
+    { id: "p1", initials: "CM", name: "Carlos Mudanças", svc: "Frete",   rating: "4.7", dist: "0.8 km", eta: "8 min",  price: "R$ 210" },
+    { id: "p6", initials: "AS", name: "Auto Socorro 24h",svc: "Guincho", rating: "4.8", dist: "1.2 km", eta: "11 min", price: "R$ 285" },
+    { id: "p2", initials: "JM", name: "JM Transportes",  svc: "Frete",   rating: "4.9", dist: "1.4 km", eta: "14 min", price: "R$ 240" },
+    { id: "p4", initials: "RF", name: "Roberto Frota",   svc: "Guincho", rating: "4.5", dist: "2.8 km", eta: "22 min", price: "R$ 260" },
+  ];
+
   return (
-    <div className="pg-screen" data-screen-label="A3 Home autenticada">
+    <div className="pg-screen" data-screen-label="A3 Home autenticada"
+      style={{ background: "#FFFFFF", display: "flex", flexDirection: "column" }}>
       <StatusBar />
-      {/* Custom header */}
-      <div style={{ padding: "14px 20px 16px", display: "flex", justifyContent: "space-between", alignItems: "center", background: "var(--paper)" }}>
+
+      {/* ── HEADER ─────────────────────────────────────────── */}
+      <div style={{
+        padding: "12px 20px 14px", flexShrink: 0,
+        background: "#FFFFFF",
+        display: "flex", justifyContent: "space-between", alignItems: "center",
+      }}>
         <div>
-          <div style={{ fontSize: 13, color: "var(--text-mute)" }}>Olá,</div>
-          <div style={{ fontSize: 18, fontWeight: 700, marginTop: 2 }}>Marina Silva 👋</div>
+          <div style={{ fontSize: 12, color: "#64748B", fontWeight: 500 }}>Boa tarde,</div>
+          <div style={{ fontSize: 22, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.02em", marginTop: 2, lineHeight: 1 }}>Marina</div>
         </div>
-        <div className="pg-row" style={{ gap: 8 }}>
-          <button className="pg-iconbtn" onClick={() => go("notifications")} aria-label="Avisos" style={{ position: "relative" }}>
-            <Icon name="bell" />
-            <span style={{ position: "absolute", top: 8, right: 8, width: 8, height: 8, borderRadius: "50%", background: "var(--orange-500)", border: "2px solid #fff" }} />
+        <div style={{ display: "flex", gap: 6, alignItems: "center", flexShrink: 0 }}>
+          <button onClick={() => go("wallet")} aria-label="Carteira"
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "7px 10px",
+              background: "#070E1A",
+              border: "1px solid rgba(34,227,163,0.25)", borderRadius: 100,
+              cursor: "pointer", color: "var(--green-500)",
+              whiteSpace: "nowrap", flexShrink: 0,
+            }}>
+            <Icon name="spark" size={12} color="#22E3A3" />
+            <span style={{ fontSize: 11.5, fontWeight: 800, fontFamily: "var(--font-mono)", letterSpacing: "-0.01em", color: "#fff" }}>R$ 47,<span style={{ color: "rgba(255,255,255,0.5)" }}>80</span></span>
           </button>
-          <button className="pg-iconbtn" onClick={() => go("profile")} aria-label="Perfil"
-            style={{ background: "var(--night-900)", color: "var(--green-500)", fontWeight: 700, fontSize: 13, fontFamily: "var(--font-mono)" }}>
-            MS
+          <button onClick={() => go("notifications")} aria-label="Avisos"
+            style={{
+              position: "relative", width: 36, height: 36,
+              background: "#F8FAFC", border: "1px solid #E2E8F0", borderRadius: 11,
+              display: "grid", placeItems: "center", cursor: "pointer", flexShrink: 0,
+            }}>
+            <Icon name="bell" size={17} color="#0F172A" />
+            <span style={{ position: "absolute", top: 6, right: 6, width: 7, height: 7, borderRadius: "50%", background: "#22E3A3", border: "2px solid #fff" }} />
           </button>
+          <button onClick={() => go("profile")} aria-label="Perfil"
+            style={{
+              width: 36, height: 36, borderRadius: "50%",
+              background: "#070E1A", color: "#22E3A3",
+              fontWeight: 800, fontSize: 12, fontFamily: "var(--font-mono)",
+              border: "none", cursor: "pointer", display: "grid", placeItems: "center",
+              boxShadow: "0 4px 12px rgba(7,14,26,0.32)", flexShrink: 0,
+            }}>MS</button>
         </div>
       </div>
 
-      <div className="pg-viewport" style={{ paddingBottom: 80 }}>
-        <div style={{ padding: "0 20px 20px", display: "flex", flexDirection: "column", gap: 18 }}>
+      {/* ── MAPA ───────────────────────────────────────────── */}
+      <div style={{
+        position: "relative",
+        height: mapExpanded ? undefined : 220,
+        flex: mapExpanded ? 1 : undefined,
+        background: C.land, flexShrink: 0,
+        margin: mapExpanded ? 0 : "0 16px",
+        borderRadius: mapExpanded ? 0 : 18,
+        overflow: "hidden",
+        boxShadow: mapExpanded ? "none" : "0 6px 20px rgba(15,23,42,0.08)",
+        border: mapExpanded ? "none" : "1px solid #E2E8F0",
+        transition: "flex 0.3s ease",
+      }}>
+        <svg width="100%" height="100%" viewBox="0 0 390 240" preserveAspectRatio="xMidYMid slice" style={{ display: "block", position: "absolute", inset: 0 }}>
+          <defs>
+            <filter id="ps2" x="-60%" y="-60%" width="220%" height="220%">
+              <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodOpacity="0.3"/>
+            </filter>
+          </defs>
+          <rect width="390" height="240" fill={C.land}/>
+          <rect x="0" y="0" width="195" height="110" fill={C.landAlt} opacity="0.5"/>
+          <path d="M -10 30 Q 80 14, 160 46 T 320 52 L 410 50 L 410 68 Q 330 72, 240 54 T 80 54 L -10 60 Z" fill={C.water}/>
+          <ellipse cx="290" cy="168" rx="52" ry="38" fill={C.park}/>
+          <ellipse cx="52" cy="182" rx="32" ry="22" fill={C.park}/>
+          <path d="M -10 118 L 410 118" stroke={C.highwayStroke} strokeWidth="14"/>
+          <path d="M 195 -10 L 195 230" stroke={C.highwayStroke} strokeWidth="14"/>
+          <path d="M -10 168 L 410 168" stroke={C.arterialStroke} strokeWidth="11"/>
+          <path d="M 80 -10 L 80 230" stroke={C.arterialStroke} strokeWidth="10"/>
+          <path d="M 310 -10 L 310 230" stroke={C.arterialStroke} strokeWidth="10"/>
+          <path d="M -10 88 L 410 88" stroke={C.roadStroke} strokeWidth="7"/>
+          <path d="M 130 -10 L 130 230" stroke={C.roadStroke} strokeWidth="6"/>
+          <path d="M 250 -10 L 250 230" stroke={C.roadStroke} strokeWidth="6"/>
+          <path d="M -10 118 L 410 118" stroke={C.highway} strokeWidth="11"/>
+          <path d="M 195 -10 L 195 230" stroke={C.highway} strokeWidth="11"/>
+          <path d="M -10 168 L 410 168" stroke={C.arterial} strokeWidth="8.5"/>
+          <path d="M 80 -10 L 80 230" stroke={C.arterial} strokeWidth="7.5"/>
+          <path d="M 310 -10 L 310 230" stroke={C.arterial} strokeWidth="7.5"/>
+          <path d="M -10 88 L 410 88" stroke={C.road} strokeWidth="5"/>
+          <path d="M 130 -10 L 130 230" stroke={C.road} strokeWidth="5"/>
+          <path d="M 250 -10 L 250 230" stroke={C.road} strokeWidth="5"/>
+          <text x="42" y="20" fontFamily="Inter,sans-serif" fontSize="9" fontWeight="600" fill={C.label} letterSpacing="0.5">PINHEIROS</text>
+          <text x="268" y="20" fontFamily="Inter,sans-serif" fontSize="9" fontWeight="600" fill={C.label} letterSpacing="0.5">VILA MADALENA</text>
+          <text x="34" y="112" fontFamily="Inter,sans-serif" fontSize="8" fontWeight="500" fill={C.labelLight}>Itaim Bibi</text>
+          <text x="148" y="44" fontFamily="Inter,sans-serif" fontSize="7" fontStyle="italic" fill="#3A6B9C" textAnchor="middle">Rio Pinheiros</text>
+          <g transform="translate(195 118)">
+            <circle r="26" fill="#2563EB" opacity="0.14">
+              <animate attributeName="r" from="12" to="30" dur="2.4s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" from="0.3" to="0" dur="2.4s" repeatCount="indefinite"/>
+            </circle>
+            <circle r="9" fill="#2563EB" stroke="#fff" strokeWidth="2.5"/>
+          </g>
+          {pins.map(p => (
+            <g key={p.id} transform={`translate(${p.x} ${p.y})`} filter="url(#ps2)">
+              <circle r="13" fill={p.color} stroke="#fff" strokeWidth="2.5"/>
+              <text textAnchor="middle" y="4" fontFamily="JetBrains Mono,monospace" fontSize="8" fontWeight="700" fill="#fff">{p.initials}</text>
+            </g>
+          ))}
+        </svg>
 
-          {/* Active order card */}
-          {activeOrder && (
-            <button className="pg-card pg-card--dark" onClick={() => go("tracking")}
-              style={{
+        {/* chip topo */}
+        <div style={{
+          position: "absolute", top: 10, left: "50%", transform: "translateX(-50%)",
+          background: "#fff", boxShadow: "0 4px 14px rgba(15,23,42,0.14)",
+          color: "#0F172A", borderRadius: 100, padding: "6px 13px",
+          fontSize: 12, fontWeight: 600, display: "flex", alignItems: "center", gap: 7,
+          whiteSpace: "nowrap", zIndex: 3,
+        }}>
+          <span style={{ width: 7, height: 7, borderRadius: "50%", background: "#10B981", flexShrink: 0, animation: "pg-pulse 1.4s ease-in-out infinite" }} />
+          6 prestadores online
+        </div>
+
+        {/* Ver todos */}
+        <button onClick={() => go("map")} style={{
+          position: "absolute", bottom: 10, left: 10, zIndex: 3,
+          background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10,
+          padding: "6px 11px", fontSize: 11, fontWeight: 700, cursor: "pointer",
+          display: "flex", alignItems: "center", gap: 5, color: "#0F172A",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.1)",
+        }}>
+          <Icon name="pin" size={12} color="#2563EB" /> Ver todos
+        </button>
+
+        {/* expandir */}
+        <button onClick={() => setMapExpanded(e => !e)} style={{
+          position: "absolute", bottom: 10, right: 10, zIndex: 3,
+          width: 34, height: 34,
+          background: "#fff", border: "1px solid #E2E8F0", borderRadius: 10,
+          cursor: "pointer", display: "grid", placeItems: "center",
+          boxShadow: "0 2px 8px rgba(15,23,42,0.1)",
+        }} aria-label={mapExpanded ? "Recolher mapa" : "Expandir mapa"}>
+          <Icon name={mapExpanded ? "minimize" : "maximize"} size={16} color="#0F172A" />
+        </button>
+      </div>
+
+      {/* ── SCROLL AREA ────────────────────────────────────── */}
+      {!mapExpanded && <div className="pg-viewport" style={{ flex: 1, background: "#FFFFFF" }}>
+
+        {/* ── HERO PEDIDO ATIVO (identidade Carteira) ────────── */}
+        <div style={{ padding: "16px 16px 0" }}>
+          <button onClick={() => go("tracking")} style={{
+            width: "100%", display: "block", border: "none", cursor: "pointer", textAlign: "left",
+            background: "#070E1A",
+            borderRadius: 20, padding: 22,
+            boxShadow: "0 14px 32px rgba(7,14,26,0.18)",
+            position: "relative", overflow: "hidden",
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -40, width: 200, height: 200, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,227,163,0.22), transparent 60%)", pointerEvents: "none" }} />
+
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 14, position: "relative" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                <span style={{ width: 6, height: 6, borderRadius: "50%", background: "#22E3A3", display: "inline-block", animation: "pg-pulse 1.4s ease-in-out infinite", boxShadow: "0 0 8px #22E3A3" }} />
+                <span className="pg-h-eyebrow" style={{ color: "var(--green-500)", margin: 0 }}>EM ANDAMENTO · #PG-1247</span>
+              </div>
+              <span style={{ fontSize: 10, color: "rgba(255,255,255,0.65)", fontFamily: "var(--font-mono)", fontWeight: 700, display: "flex", alignItems: "center", gap: 4 }}>Acompanhar <Icon name="arrow-right" size={10} color="rgba(255,255,255,0.65)" /></span>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 16, position: "relative" }}>
+              <div style={{ width: 48, height: 48, borderRadius: 14, background: "linear-gradient(135deg, #22E3A3, #0FA77A)", color: "#070E1A", display: "grid", placeItems: "center", fontWeight: 800, fontFamily: "var(--font-mono)", fontSize: 14, flexShrink: 0, boxShadow: "0 0 18px rgba(34,227,163,0.35)" }}>CM</div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div style={{ fontSize: 17, fontWeight: 700, color: "#fff", lineHeight: 1.15, letterSpacing: "-0.01em" }}>Carlos Mudanças</div>
+                <div style={{ fontSize: 11, color: "rgba(255,255,255,0.55)", marginTop: 4, display: "flex", alignItems: "center", gap: 6 }}>
+                  <span style={{ background: "rgba(34,227,163,0.18)", color: "var(--green-500)", padding: "2px 8px", borderRadius: 100, fontSize: 9, fontWeight: 700, fontFamily: "var(--font-mono)" }}>FRETE</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Icon name="star-fill" size={10} color="#FBBF24" /> 4.7</span>
+                </div>
+              </div>
+              <div style={{ textAlign: "right", flexShrink: 0 }}>
+                <div className="pg-mono" style={{ fontSize: 40, fontWeight: 700, letterSpacing: "-0.02em", lineHeight: 1, color: "#fff" }}>
+                  12<span style={{ color: "rgba(255,255,255,0.4)" }}>min</span>
+                </div>
+                <div className="pg-h-eyebrow" style={{ color: "var(--green-500)", margin: 0, marginTop: 4 }}>CHEGADA</div>
+              </div>
+            </div>
+
+            <div style={{ background: "rgba(255,255,255,0.08)", borderRadius: 6, height: 6, marginBottom: 8, overflow: "hidden", position: "relative" }}>
+              <div style={{ width: "65%", height: "100%", borderRadius: 6, background: "linear-gradient(90deg, #22E3A3, #0FA77A)", position: "relative" }}>
+                <div style={{ position: "absolute", right: -1, top: "50%", transform: "translateY(-50%)", width: 12, height: 12, borderRadius: "50%", background: "#22E3A3", border: "2px solid #070E1A", boxShadow: "0 0 10px rgba(34,227,163,0.8)" }} />
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", fontSize: 9, color: "rgba(255,255,255,0.4)", fontFamily: "var(--font-mono)" }}>
+              <span>ORIGEM</span>
+              <span style={{ color: "rgba(255,255,255,0.85)", fontWeight: 700 }}>65% concluído</span>
+              <span>DESTINO</span>
+            </div>
+          </button>
+        </div>
+
+        {/* ── 5 BOTÕES PRINCIPAIS ────────────────────────────── */}
+        <div style={{ padding: "18px 16px 0" }}>
+          <div style={{
+            background: "#fff", borderRadius: 20, border: "1px solid #E2E8F0",
+            padding: "16px 0 18px", boxShadow: "0 4px 14px rgba(15,23,42,0.05)",
+          }}>
+            <div style={{ fontSize: 10, fontWeight: 700, color: "#94A3B8", letterSpacing: "0.12em", textTransform: "uppercase", marginBottom: 14, paddingLeft: 18, fontFamily: "var(--font-mono)" }}>O que você precisa?</div>
+            <div style={{ display: "flex", justifyContent: "space-evenly", alignItems: "flex-end" }}>
+              {actions.map(a => {
+                const isCenter = a.isCenter;
+                return (
+                  <button key={a.id} onClick={() => go(a.route)} style={{
+                    display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
+                    background: "none", border: "none", cursor: "pointer", padding: "0 4px",
+                    transform: isCenter ? "translateY(-12px)" : "none",
+                    minWidth: 0, flexShrink: 0,
+                  }}>
+                    <div style={{
+                      width: isCenter ? 62 : 50, height: isCenter ? 62 : 50,
+                      borderRadius: isCenter ? 20 : 14,
+                      background: isCenter ? "linear-gradient(135deg, #22E3A3, #0FA77A)" : "rgba(34,227,163,0.14)",
+                      display: "grid", placeItems: "center",
+                      boxShadow: isCenter ? "0 10px 24px rgba(34,227,163,0.45)" : "none",
+                      border: isCenter ? "none" : "1px solid rgba(34,227,163,0.28)",
+                      flexShrink: 0,
+                    }}>
+                      <Icon name={a.icon} size={isCenter ? 26 : 20} color="#070E1A" strokeWidth={2} />
+                    </div>
+                    <span style={{ fontSize: isCenter ? 12 : 11, fontWeight: isCenter ? 800 : 600, color: isCenter ? "#0F172A" : "#475569", whiteSpace: "nowrap" }}>{a.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        {/* ── PRESTADORES PRÓXIMOS (faixa branca, cards pretos) ── */}
+        <div style={{ padding: "20px 0 0" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "0 16px", marginBottom: 12 }}>
+            <span style={{ fontSize: 15, fontWeight: 800, color: "#0F172A", letterSpacing: "-0.01em" }}>Próximos a você</span>
+            <button onClick={() => go("map")} style={{ background: "none", border: "none", fontSize: 12, color: "var(--green-700)", fontWeight: 700, cursor: "pointer", padding: 0 }}>Ver todos →</button>
+          </div>
+          <div style={{ display: "flex", gap: 10, overflowX: "auto", padding: "2px 16px 14px", scrollbarWidth: "none" }}>
+            {nearby.map(p => (
+              <button key={p.id} onClick={() => go("map")} style={{
+                flexShrink: 0, width: 168, background: "#070E1A",
+                border: "1px solid rgba(34,227,163,0.12)", borderRadius: 16,
+                padding: "14px", textAlign: "left", cursor: "pointer",
+                display: "flex", flexDirection: "column",
+                boxShadow: "0 6px 18px rgba(7,14,26,0.14)",
                 position: "relative", overflow: "hidden",
-                padding: 20, textAlign: "left", cursor: "pointer", border: "none",
-                color: "#fff", display: "flex", flexDirection: "column", gap: 14,
               }}>
-              <div style={{
-                position: "absolute", top: -40, right: -40, width: 180, height: 180,
-                background: "radial-gradient(circle, rgba(34,227,163,0.18), transparent 60%)",
-              }} />
-              <div className="pg-row pg-row--between">
-                <span className="pg-tag pg-tag--green" style={{ background: "rgba(34,227,163,0.16)", color: "var(--green-500)" }}>
-                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: "var(--green-500)", animation: "pg-pulse 1.4s ease-in-out infinite" }} />
-                  EM ANDAMENTO
-                </span>
-                <span className="pg-mono" style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", letterSpacing: "0.1em" }}>
-                  #{activeOrder.id}
-                </span>
-              </div>
-              <div>
-                <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: "-0.01em" }}>
-                  {activeOrder.service} · {activeOrder.provider}
+                <div style={{ position: "absolute", top: -30, right: -30, width: 120, height: 120, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,227,163,0.18), transparent 60%)", pointerEvents: "none" }} />
+                <div style={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between", position: "relative" }}>
+                  <div style={{ width: 40, height: 40, borderRadius: 12, background: "linear-gradient(135deg, #22E3A3, #0FA77A)", color: "#070E1A", display: "grid", placeItems: "center", fontWeight: 800, fontFamily: "var(--font-mono)", fontSize: 12, flexShrink: 0 }}>{p.initials}</div>
+                  <div style={{ background: "rgba(34,227,163,0.14)", border: "1px solid rgba(34,227,163,0.28)", borderRadius: 10, padding: "5px 10px", textAlign: "center" }}>
+                    <div style={{ fontSize: 18, fontWeight: 800, color: "var(--green-500)", fontFamily: "var(--font-mono)", lineHeight: 1 }}>{p.eta.split(" ")[0]}</div>
+                    <div style={{ fontSize: 8, color: "rgba(255,255,255,0.5)", fontFamily: "var(--font-mono)", marginTop: 1 }}>min</div>
+                  </div>
                 </div>
-                <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 14, marginTop: 4 }}>
-                  Prestador a caminho · chegada em <strong style={{ color: "var(--green-500)", fontFamily: "var(--font-mono)" }}>{activeOrder.eta}</strong>
+                <div style={{ fontSize: 13, fontWeight: 700, color: "#fff", marginTop: 10, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", position: "relative" }}>{p.name}</div>
+                <div style={{ fontSize: 10, color: "rgba(255,255,255,0.5)", marginTop: 4, display: "flex", alignItems: "center", gap: 5, position: "relative" }}>
+                  <span style={{ background: "rgba(34,227,163,0.18)", color: "var(--green-500)", padding: "2px 8px", borderRadius: 100, fontSize: 9, fontWeight: 700, fontFamily: "var(--font-mono)" }}>{p.svc.toUpperCase()}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 3, color: "rgba(255,255,255,0.7)" }}><Icon name="star-fill" size={10} color="#FBBF24" /> {p.rating}</span>
                 </div>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, position: "relative" }}>
+                  <div style={{ fontSize: 16, fontWeight: 800, color: "#fff", fontFamily: "var(--font-mono)" }}>{p.price}</div>
+                  <button style={{ background: "linear-gradient(135deg, #22E3A3, #0FA77A)", color: "#070E1A", borderRadius: 9, padding: "7px 13px", fontSize: 10, fontWeight: 800, border: "none", cursor: "pointer", boxShadow: "0 4px 12px rgba(34,227,163,0.35)" }}>Solicitar</button>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* ── GRID DE ATALHOS (cards brancos, accent verde) ───── */}
+        <div style={{ padding: "4px 16px 16px", display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr", gap: 8 }}>
+          {[
+            { icon: "spark",    label: "Carteira",  sub: "R$ 47,80",    route: "wallet"     },
+            { icon: "calendar", label: "Recorr.",   sub: "3 agendados", route: "recurring"  },
+            { icon: "heart",    label: "Favoritos", sub: "12 salvos",   route: "favorites"  },
+            { icon: "users",    label: "Dividir",   sub: "Frete",       route: "joint"      },
+          ].map(s => (
+            <button key={s.route} onClick={() => go(s.route)} style={{
+              display: "flex", flexDirection: "column", alignItems: "center", gap: 7,
+              padding: "14px 8px", background: "#fff",
+              borderRadius: 14, border: "1px solid #E2E8F0",
+              cursor: "pointer", textAlign: "center",
+              boxShadow: "0 2px 8px rgba(15,23,42,0.04)",
+            }}>
+              <div style={{ width: 38, height: 38, borderRadius: 11, background: "rgba(34,227,163,0.14)", border: "1px solid rgba(34,227,163,0.22)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+                <Icon name={s.icon} size={16} color="#070E1A" />
               </div>
-              <div className="pg-row pg-row--between" style={{ paddingTop: 8, borderTop: "1px dashed rgba(255,255,255,0.16)" }}>
-                <span style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>Acompanhar no mapa</span>
-                <Icon name="arrow-right" size={18} />
+              <div style={{ lineHeight: 1.15 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 700, color: "#0F172A" }}>{s.label}</div>
+                <div style={{ fontSize: 9, color: "#64748B", marginTop: 2 }}>{s.sub}</div>
               </div>
             </button>
-          )}
-
-          {/* Hero CTA */}
-          <button onClick={() => go("services")}
-            style={{
-              border: "none", cursor: "pointer", textAlign: "left",
-              background: "var(--green-500)", color: "var(--night-900)",
-              borderRadius: "var(--r-xl)", padding: "22px 24px",
-              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 16,
-              boxShadow: "0 14px 28px -14px rgba(34,227,163,0.55)",
-            }}>
-            <div>
-              <div style={{ fontSize: 22, fontWeight: 700, lineHeight: 1.15, letterSpacing: "-0.015em" }}>
-                Novo pedido
-              </div>
-              <div style={{ fontSize: 14, marginTop: 4, opacity: 0.75 }}>
-                Receba propostas em até 2h
-              </div>
-            </div>
-            <span style={{
-              width: 56, height: 56, borderRadius: 16,
-              background: "var(--night-900)", color: "var(--green-500)",
-              display: "grid", placeItems: "center",
-            }}>
-              <Icon name="plus" size={28} strokeWidth={3} />
-            </span>
-          </button>
-
-          {/* Quick services */}
-          <div>
-            <div className="pg-h-eyebrow" style={{ marginBottom: 10 }}>SERVIÇOS RÁPIDOS</div>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 8 }}>
-              {[
-                { id: "frete", t: "Frete", icon: "truck", c: "var(--green-50)", ic: "var(--green-700)", route: "frete-1" },
-                { id: "guincho", t: "Guincho", icon: "tow", c: "var(--orange-50)", ic: "var(--orange-600)", route: "guincho-1" },
-                { id: "cacamba", t: "Caçamba", icon: "dumpster", c: "rgba(245,197,24,0.12)", ic: "#B8930F", route: "cacamba-1" },
-              ].map(s => (
-                <button key={s.id} onClick={() => go(s.route)} className="pg-card"
-                  style={{ padding: 14, display: "flex", flexDirection: "column", alignItems: "flex-start", gap: 10, cursor: "pointer", textAlign: "left", border: "1px solid var(--border)" }}>
-                  <span style={{ width: 36, height: 36, borderRadius: 10, background: s.c, color: s.ic, display: "grid", placeItems: "center" }}>
-                    <Icon name={s.icon} size={18} />
-                  </span>
-                  <span style={{ fontSize: 14, fontWeight: 600 }}>{s.t}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Recurring + Joint */}
-          <div className="pg-card pg-card--padded" style={{ background: "var(--ink-50)", border: "1px dashed var(--ink-300)" }}>
-            <div className="pg-row" style={{ gap: 12 }}>
-              <span style={{ width: 40, height: 40, borderRadius: 10, background: "var(--paper)", color: "var(--text)", display: "grid", placeItems: "center", border: "1px solid var(--border)" }}>
-                <Icon name="calendar" size={18} />
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>Pedido recorrente</div>
-                <div style={{ fontSize: 13, color: "var(--text-soft)", marginTop: 2 }}>Caçamba toda semana? Mudança mensal? Programe e ganhe desconto.</div>
-              </div>
-              <button className="pg-btn pg-btn--ghost pg-btn--sm" onClick={() => go("recurring")}>Configurar</button>
-            </div>
-            <hr className="pg-divider--dashed" style={{ margin: "14px 0" }} />
-            <div className="pg-row" style={{ gap: 12 }}>
-              <span style={{ width: 40, height: 40, borderRadius: 10, background: "var(--paper)", color: "var(--text)", display: "grid", placeItems: "center", border: "1px solid var(--border)" }}>
-                <Icon name="users" size={18} />
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontWeight: 600, fontSize: 15 }}>Dividir frete <span className="pg-tag pg-tag--green" style={{ marginLeft: 6 }}>NOVO</span></div>
-                <div style={{ fontSize: 13, color: "var(--text-soft)", marginTop: 2 }}>Combine com vizinhos no mesmo trajeto e divida o custo.</div>
-              </div>
-              <button className="pg-btn pg-btn--ghost pg-btn--sm" onClick={() => go("joint")}>Ver</button>
-            </div>
-          </div>
-
-          {/* Wallet preview */}
-          <button onClick={() => go("wallet")} className="pg-card"
-            style={{ padding: 18, cursor: "pointer", border: "1px solid var(--border)", textAlign: "left", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-            <div>
-              <div className="pg-h-eyebrow" style={{ margin: 0 }}>SEU SALDO</div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 6, marginTop: 4 }}>
-                <span style={{ fontFamily: "var(--font-mono)", fontWeight: 700, fontSize: 24 }}>R$ 47,80</span>
-                <span style={{ fontSize: 12, color: "var(--green-700)", fontWeight: 600 }}>+R$ 12 esta semana</span>
-              </div>
-              <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 4 }}>Cashback de pedidos · use em qualquer serviço</div>
-            </div>
-            <Icon name="arrow-right" size={20} />
-          </button>
-
-          {/* Refer banner */}
-          <button onClick={() => go("refer")}
-            style={{
-              border: "none", cursor: "pointer", textAlign: "left",
-              background: "linear-gradient(120deg, var(--night-900) 0%, var(--night-700) 100%)",
-              color: "#fff", borderRadius: "var(--r-xl)", padding: "18px 20px",
-              display: "flex", justifyContent: "space-between", alignItems: "center", gap: 14,
-            }}>
-            <div>
-              <div className="pg-h-eyebrow" style={{ margin: 0, color: "var(--green-500)" }}>INDIQUE E GANHE</div>
-              <div style={{ fontSize: 16, fontWeight: 600, marginTop: 4 }}>R$ 30 pra você + R$ 30 pra seu amigo</div>
-            </div>
-            <Icon name="heart" size={22} />
-          </button>
-
-          <div style={{ textAlign: "center", padding: "10px 0", color: "var(--text-mute)", fontSize: 12 }}>
-            <Logo size={14} />
-          </div>
+          ))}
         </div>
-      </div>
 
-      <BottomNav active="home" go={go} />
+        {/* ── BANNER INDICAÇÃO (preto + verde, mesma identidade Carteira) ── */}
+        <div style={{ padding: "0 16px 20px" }}>
+          <button onClick={() => go("refer")} style={{
+            width: "100%", border: "none", cursor: "pointer", textAlign: "left",
+            background: "#070E1A",
+            borderRadius: 18,
+            padding: "18px 20px",
+            display: "flex", justifyContent: "space-between", alignItems: "center",
+            gap: 12, position: "relative", overflow: "hidden",
+            boxShadow: "0 12px 28px rgba(7,14,26,0.18)",
+          }}>
+            <div style={{ position: "absolute", top: -40, right: -20, width: 180, height: 180, borderRadius: "50%", background: "radial-gradient(circle, rgba(34,227,163,0.22) 0%, transparent 65%)", pointerEvents: "none" }} />
+            <div style={{ position: "relative" }}>
+              <div className="pg-h-eyebrow" style={{ color: "var(--green-500)", margin: 0 }}>INDIQUE E GANHE</div>
+              <div className="pg-mono" style={{ fontSize: 26, fontWeight: 700, color: "#fff", marginTop: 6, lineHeight: 1, letterSpacing: "-0.02em" }}>
+                R$ 30<span style={{ color: "rgba(255,255,255,0.4)" }}> pra você</span>
+              </div>
+              <div style={{ fontSize: 12, color: "rgba(255,255,255,0.6)", marginTop: 6 }}>+ R$ 30 pra seu amigo</div>
+            </div>
+            <div style={{ width: 52, height: 52, borderRadius: 14, background: "rgba(34,227,163,0.14)", border: "1px solid rgba(34,227,163,0.3)", display: "grid", placeItems: "center", flexShrink: 0, position: "relative" }}>
+              <Icon name="share" size={22} color="#22E3A3" />
+            </div>
+          </button>
+        </div>
+      </div>}
+
     </div>
   );
 };
@@ -612,7 +813,7 @@ const Chat = ({ go }) => {
     setMessages([...messages, { from: "u", t: msg, time }]);
     setMsg("");
     setTimeout(() => {
-      setMessages(m => [...m, { from: "p", t: "Boa, mandou bem 👍", time }]);
+      setMessages(m => [...m, { from: "p", t: "Boa, mandou bem!", time }]);
     }, 1100);
   };
 
@@ -774,8 +975,9 @@ const Rate = ({ go }) => {
                         background: tags.includes(t) ? "var(--night-900)" : "var(--paper)",
                         color: tags.includes(t) ? "#fff" : "var(--text)",
                         fontSize: 13, fontWeight: 500, cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: 5,
                       }}>
-                      {tags.includes(t) && "✓ "}{t}
+                      {tags.includes(t) && <Icon name="check" size={12} strokeWidth={2.5} color="var(--green-500)" />}{t}
                     </button>
                   ))}
                 </div>

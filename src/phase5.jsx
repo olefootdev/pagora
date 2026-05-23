@@ -56,7 +56,7 @@ const ProvEarning = ({ go }) => (
           </div>
           <div className="pg-row pg-row--between" style={{ marginBottom: 8 }}>
             <span style={{ color: "var(--text-soft)", fontSize: 13 }}>Avaliação recebida</span>
-            <span style={{ fontSize: 13, fontWeight: 700, color: "#B8930F" }}>★ 5,0</span>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "#B8930F", display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="star-fill" size={13} color="var(--amber-400)" /> 5,0</span>
           </div>
           <div className="pg-row pg-row--between" style={{ marginBottom: 8 }}>
             <span style={{ color: "var(--text-soft)", fontSize: 13 }}>Duração</span>
@@ -69,8 +69,8 @@ const ProvEarning = ({ go }) => (
         </div>
 
         <div className="pg-row" style={{ gap: 8 }}>
-          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ flex: 1 }} onClick={() => go("prov-invoice")}>📄 Nota fiscal</button>
-          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ flex: 1 }}>⬇ Comprovante</button>
+          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ flex: 1, display: "inline-flex", alignItems: "center", gap: 6 }} onClick={() => go("prov-invoice")}><Icon name="doc" size={14} color="currentColor" /> Nota fiscal</button>
+          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ flex: 1, display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="download" size={14} color="currentColor" /> Comprovante</button>
         </div>
       </div>
     </div>
@@ -144,7 +144,7 @@ const ProvWithdraw = ({ go }) => {
           </div>
 
           <div style={{ padding: 12, background: "var(--green-50)", borderRadius: 10, fontSize: 12, color: "var(--green-700)", fontWeight: 600, textAlign: "center" }}>
-            ⚡ Cai na sua conta em até 30 segundos
+            <span style={{display:"inline-flex",alignItems:"center",gap:6}}><Icon name="bolt" size={14} color="currentColor" /> Cai na sua conta em até 30 segundos</span>
           </div>
         </div>
       </div>
@@ -186,7 +186,7 @@ const ProvStatement = ({ go }) => {
   return (
     <div className="pg-screen" data-screen-label="P5-3 Extrato filtros">
       <SBp5 />
-      <TBp5 onBack={() => go("provider-dash")} title="Extrato" right={<button style={{ background: "none", border: "none", color: "var(--green-700)", fontWeight: 600, fontSize: 13, cursor: "pointer" }}>⬇ CSV</button>}/>
+      <TBp5 onBack={() => go("provider-dash")} title="Extrato" right={<button style={{ background: "none", border: "none", color: "var(--green-700)", fontWeight: 600, fontSize: 13, cursor: "pointer", display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="download" size={13} color="var(--green-700)" /> CSV</button>}/>
 
       <div style={{ padding: "12px 20px 0", borderBottom: "1px solid var(--border)", background: "var(--paper)" }}>
         <div className="pg-segmented" style={{ marginBottom: 12 }}>
@@ -232,10 +232,10 @@ const ProvStatement = ({ go }) => {
               <div className="pg-card" style={{ padding: 0 }}>
                 {g.items.filter(it => type === "all" || it.k === type).map((it, i) => {
                   const colors = { income: "var(--green-700)", bonus: "var(--green-700)", withdraw: "var(--text)", fee: "var(--orange-600)" };
-                  const icons = { income: "↓", bonus: "✦", withdraw: "↑", fee: "%" };
+                  const textIcons = { income: "↓", withdraw: "↑", fee: "%" };
                   return (
                     <div key={i} className="pg-row" style={{ padding: "12px 14px", gap: 12, borderTop: i === 0 ? "none" : "1px solid var(--border)" }}>
-                      <div style={{ width: 32, height: 32, borderRadius: 16, background: "var(--bg-soft)", display: "grid", placeItems: "center", color: colors[it.k], fontSize: 14, fontWeight: 700 }}>{icons[it.k]}</div>
+                      <div style={{ width: 32, height: 32, borderRadius: 16, background: "var(--bg-soft)", display: "grid", placeItems: "center", color: colors[it.k], fontSize: 14, fontWeight: 700 }}>{it.k === "bonus" ? <Icon name="spark" size={16} color={colors.bonus} /> : textIcons[it.k]}</div>
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 13, fontWeight: 600 }}>{it.t}</div>
                         <div className="pg-mono" style={{ fontSize: 10, color: "var(--text-mute)", marginTop: 2 }}>{it.time}</div>
@@ -273,7 +273,7 @@ const ProvInvoice = ({ go }) => {
                 <div className="pg-mono" style={{ fontSize: 18, fontWeight: 700, marginTop: 4 }}>12.345.678/0001-90</div>
                 <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>Carlos Mudanças ME · Ativo</div>
               </div>
-              <div style={{ fontSize: 32 }}>📋</div>
+              <Icon name="clipboard" size={32} color="currentColor" />
             </div>
           </div>
 
@@ -312,7 +312,7 @@ const ProvInvoice = ({ go }) => {
               { n: "NFS-e 1244", v: 304.00, d: "29 abr · A. Lima", st: "pendente" },
             ].map((nf, i) => (
               <div key={i} className="pg-row" style={{ padding: "12px 14px", gap: 12, borderTop: i === 0 ? "none" : "1px solid var(--border)" }}>
-                <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--bg-soft)", display: "grid", placeItems: "center", fontSize: 14 }}>📄</div>
+                <div style={{ width: 36, height: 36, borderRadius: 8, background: "var(--bg-soft)", display: "grid", placeItems: "center" }}><Icon name="doc" size={18} color="currentColor" /></div>
                 <div style={{ flex: 1 }}>
                   <div className="pg-mono" style={{ fontSize: 13, fontWeight: 700 }}>{nf.n}</div>
                   <div style={{ fontSize: 11, color: "var(--text-mute)", marginTop: 2 }}>{nf.d}</div>
@@ -374,7 +374,7 @@ const ProvAdvance = ({ go }) => {
           </div>
 
           <div className="pg-card pg-card--padded" style={{ background: "var(--orange-50)", borderColor: "var(--orange-500)" }}>
-            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--orange-600)", marginBottom: 6 }}>⚠️ Importante</div>
+            <div style={{ fontSize: 13, fontWeight: 700, color: "var(--orange-600)", marginBottom: 6, display: "flex", alignItems: "center", gap: 6 }}><Icon name="alert" size={14} color="var(--orange-600)" /> Importante</div>
             <div style={{ fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6 }}>
               Em caso de cancelamento ou disputa nas próximas 7 corridas, o valor antecipado é descontado do próximo recebimento.
             </div>
@@ -436,7 +436,7 @@ const ProvMetrics = ({ go }) => {
             {[
               { k: "Pedidos", v: "47", sub: "↑ 12%", c: "var(--green-700)" },
               { k: "Aceitação", v: "94%", sub: "Top 10%", c: "var(--green-700)" },
-              { k: "Avaliação", v: "4,9", sub: "★", c: "#B8930F" },
+              { k: "Avaliação", v: "4,9", sub: <Icon name="star-fill" size={11} color="var(--amber-400)" />, c: "#B8930F" },
               { k: "No-shows", v: "0", sub: "Excelente", c: "var(--green-700)" },
               { k: "Cancelamentos", v: "2%", sub: "Aceitável", c: "var(--orange-600)" },
               { k: "Tempo médio", v: "1h 32", sub: "Por pedido", c: "var(--text)" },
@@ -469,7 +469,7 @@ const ProvMetrics = ({ go }) => {
           </div>
 
           <div className="pg-card pg-card--soft" style={{ padding: 14, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6 }}>
-            💡 <strong>Insight:</strong> Suas tardes são <strong>3,4× mais lucrativas</strong>. Considere ficar online entre 12-18h para maximizar ganhos.
+            <Icon name="lightbulb" size={14} color="var(--green-700)" /> <strong>Insight:</strong> Suas tardes são <strong>3,4× mais lucrativas</strong>. Considere ficar online entre 12-18h para maximizar ganhos.
           </div>
         </div>
       </div>
@@ -483,7 +483,7 @@ const ProvMetrics = ({ go }) => {
 const ProvReviews = ({ go }) => {
   const reviews = [
     { id: 1, n: "Joana S.", r: 5, d: "Hoje", t: "Atendimento impecável! Carlos é educado, pontual e profissional. Cuidou super bem da geladeira.", reply: null, tags: ["Pontual", "Cuidadoso"] },
-    { id: 2, n: "Marcelo C.", r: 5, d: "Ontem", t: "Tudo certo. Recomendo!", reply: "Obrigado, Marcelo! Espero atender de novo 😊", tags: ["Rápido"] },
+    { id: 2, n: "Marcelo C.", r: 5, d: "Ontem", t: "Tudo certo. Recomendo!", reply: "Obrigado, Marcelo! Espero atender de novo", tags: ["Rápido"] },
     { id: 3, n: "Letícia S.", r: 4, d: "30 abr", t: "Boa experiência. Demorou um pouco mais que o esperado mas fez tudo certo.", reply: null, tags: ["Cuidadoso"] },
     { id: 4, n: "Anônimo", r: 3, d: "28 abr", t: "Ok. Achei o preço meio alto pra distância.", reply: null, tags: [] },
   ];
@@ -504,13 +504,13 @@ const ProvReviews = ({ go }) => {
             <div className="pg-row" style={{ gap: 20, alignItems: "center" }}>
               <div style={{ textAlign: "center" }}>
                 <div className="pg-mono" style={{ fontSize: 48, fontWeight: 800, lineHeight: 1, color: "#B8930F" }}>4,9</div>
-                <div style={{ marginTop: 4 }}>{"★".repeat(5)}</div>
+                <div style={{ marginTop: 4, display: "flex", justifyContent: "center", gap: 2 }}>{Array.from({length:5}).map((_,i) => <Icon key={i} name="star-fill" size={13} color="var(--amber-400)" />)}</div>
                 <div style={{ fontSize: 11, color: "var(--text-mute)", marginTop: 4, fontFamily: "var(--font-mono)" }}>{total} AVAL.</div>
               </div>
               <div style={{ flex: 1 }}>
                 {dist.map(d => (
                   <div key={d.s} className="pg-row" style={{ gap: 8, marginBottom: 4, fontSize: 11 }}>
-                    <span className="pg-mono" style={{ width: 16 }}>{d.s}★</span>
+                    <span className="pg-mono" style={{ width: 24, display: "flex", alignItems: "center", gap: 2 }}>{d.s}<Icon name="star-fill" size={9} color="var(--amber-400)" /></span>
                     <div style={{ flex: 1, height: 6, background: "var(--ink-100)", borderRadius: 3 }}>
                       <div style={{ width: `${(d.n / total) * 100}%`, height: "100%", background: d.s >= 4 ? "var(--green-500)" : d.s === 3 ? "#FBC02D" : "var(--orange-500)", borderRadius: 3 }}/>
                     </div>
@@ -540,7 +540,7 @@ const ProvReviews = ({ go }) => {
                     <span style={{ fontSize: 13, fontWeight: 700 }}>{r.n}</span>
                     <span style={{ fontSize: 11, color: "var(--text-mute)", marginLeft: 8 }}>{r.d}</span>
                   </div>
-                  <span style={{ color: "#B8930F", fontSize: 13 }}>{"★".repeat(r.r)}{"☆".repeat(5 - r.r)}</span>
+                  <span style={{ display: "flex", alignItems: "center", gap: 2 }}>{Array.from({length:r.r}).map((_,i) => <Icon key={i} name="star-fill" size={13} color="var(--amber-400)" />)}{Array.from({length:5-r.r}).map((_,i) => <Icon key={i} name="star" size={13} color="var(--amber-400)" />)}</span>
                 </div>
                 <div style={{ fontSize: 13, color: "var(--text-soft)", lineHeight: 1.5 }}>{r.t}</div>
                 {r.tags.length > 0 && (
@@ -586,24 +586,24 @@ const ProvLevels = ({ go }) => {
               display: "grid", placeItems: "center",
               position: "relative", boxShadow: "0 12px 40px rgba(192,192,192,0.3)",
             }}>
-              <div style={{ fontSize: 56 }}>🥈</div>
+              <Icon name="medal" size={56} color="var(--text-mute)" />
             </div>
             <div className="pg-h-eyebrow" style={{ color: "rgba(255,255,255,0.5)", margin: 0 }}>SEU NÍVEL ATUAL</div>
             <h1 style={{ fontSize: 32, fontWeight: 800, margin: "4px 0 8px", letterSpacing: "-0.02em" }}>{current}</h1>
-            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)" }}>87 corridas · ★ 4,9 · 6 meses ativo</p>
+            <p style={{ fontSize: 13, color: "rgba(255,255,255,0.7)", display: "flex", justifyContent: "center", alignItems: "center", gap: 4 }}>87 corridas · <Icon name="star-fill" size={11} color="var(--amber-400)" /> 4,9 · 6 meses ativo</p>
           </div>
 
           {/* progress to next */}
           <div style={{ background: "rgba(255,255,255,0.06)", borderRadius: 14, padding: 18, marginBottom: 24 }}>
             <div className="pg-row pg-row--between" style={{ marginBottom: 10 }}>
-              <span className="pg-mono" style={{ fontSize: 11, color: "rgba(255,255,255,0.5)" }}>PRÓXIMO NÍVEL: OURO 🥇</span>
+              <span className="pg-mono" style={{ fontSize: 11, color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", gap: 6 }}>PRÓXIMO NÍVEL: OURO <Icon name="trophy" size={11} color="var(--amber-400)" /></span>
               <span className="pg-mono" style={{ fontSize: 11, fontWeight: 700, color: "var(--green-500)" }}>{progress}%</span>
             </div>
             <div style={{ height: 10, background: "rgba(255,255,255,0.1)", borderRadius: 5, overflow: "hidden" }}>
               <div style={{ width: `${progress}%`, height: "100%", background: "linear-gradient(90deg, #FFD700, #FFA500)", borderRadius: 5 }}/>
             </div>
             <div style={{ fontSize: 12, color: "rgba(255,255,255,0.7)", marginTop: 12, lineHeight: 1.5 }}>
-              Faltam <strong style={{ color: "#fff" }}>13 corridas</strong> em 30 dias mantendo ★ 4,8+ para subir.
+              Faltam <strong style={{ color: "#fff" }}>13 corridas</strong> em 30 dias mantendo <span style={{ display: "inline-flex", alignItems: "center", gap: 3, verticalAlign: "middle" }}><Icon name="star-fill" size={12} color="var(--amber-400)" /> 4,8+</span> para subir.
             </div>
           </div>
 
@@ -611,10 +611,10 @@ const ProvLevels = ({ go }) => {
           <div className="pg-h-eyebrow" style={{ color: "rgba(255,255,255,0.5)", margin: "0 0 12px" }}>TODOS OS NÍVEIS</div>
           <div className="pg-stack pg-stack--sm">
             {[
-              { n: "Bronze", e: "🥉", req: "0 corridas", bonus: "Sem bônus", c: "#CD7F32" },
-              { n: "Prata", e: "🥈", req: "50+ corridas · ★ 4,5", bonus: "+5% no preço, prioridade fila", c: "#C0C0C0", current: true },
-              { n: "Ouro", e: "🥇", req: "100+ corridas · ★ 4,8", bonus: "+10% preço, antecipação grátis", c: "#FFD700" },
-              { n: "Diamante", e: "💎", req: "300+ corridas · ★ 4,9", bonus: "+15%, suporte VIP, badge no perfil", c: "#B9F2FF" },
+              { n: "Bronze", icon: "trophy", iconColor: "#CD7F32", req: "0 corridas", bonus: "Sem bônus", c: "#CD7F32" },
+              { n: "Prata", icon: "medal", iconColor: "var(--text-mute)", req: "50+ corridas · nota 4,5+", bonus: "+5% no preço, prioridade fila", c: "#C0C0C0", current: true },
+              { n: "Ouro", icon: "trophy", iconColor: "#FFD700", req: "100+ corridas · nota 4,8+", bonus: "+10% preço, antecipação grátis", c: "#FFD700" },
+              { n: "Diamante", icon: "diamond", iconColor: "#0EA5E9", req: "300+ corridas · nota 4,9+", bonus: "+15%, suporte VIP, badge no perfil", c: "#B9F2FF" },
             ].map(lv => (
               <div key={lv.n} style={{
                 padding: 16, borderRadius: 12,
@@ -622,7 +622,7 @@ const ProvLevels = ({ go }) => {
                 border: lv.current ? "1.5px solid var(--green-500)" : "1px solid rgba(255,255,255,0.08)",
               }}>
                 <div className="pg-row" style={{ gap: 12 }}>
-                  <div style={{ width: 48, height: 48, borderRadius: 24, background: `${lv.c}30`, display: "grid", placeItems: "center", fontSize: 24 }}>{lv.e}</div>
+                  <div style={{ width: 48, height: 48, borderRadius: 24, background: `${lv.c}30`, display: "grid", placeItems: "center" }}><Icon name={lv.icon} size={24} color={lv.iconColor} /></div>
                   <div style={{ flex: 1 }}>
                     <div className="pg-row" style={{ gap: 8 }}>
                       <span style={{ fontSize: 16, fontWeight: 800 }}>{lv.n}</span>
@@ -653,13 +653,13 @@ const ProvBonuses = ({ go }) => (
         <div className="pg-h-eyebrow" style={{ margin: "0 0 10px" }}>DESAFIOS ATIVOS</div>
         <div className="pg-stack pg-stack--sm" style={{ marginBottom: 28 }}>
           {[
-            { t: "10 corridas até domingo", e: "🏁", p: 70, of: "7/10", v: "+ R$ 50", left: "2 dias" },
-            { t: "Trabalhe na madrugada (0-5h)", e: "🌙", p: 0, of: "0/3", v: "+ R$ 80", left: "esta semana" },
-            { t: "Mantenha ★ 4,9+ por 30 dias", e: "⭐", p: 88, of: "26/30 dias", v: "Badge Diamante", left: "4 dias" },
+            { t: "10 corridas até domingo", icon: "flag", iconColor: "currentColor", p: 70, of: "7/10", v: "+ R$ 50", left: "2 dias" },
+            { t: "Trabalhe na madrugada (0-5h)", icon: "moon", iconColor: "currentColor", p: 0, of: "0/3", v: "+ R$ 80", left: "esta semana" },
+            { t: "Mantenha nota 4,9+ por 30 dias", icon: "star-fill", iconColor: "var(--amber-400)", p: 88, of: "26/30 dias", v: "Badge Diamante", left: "4 dias" },
           ].map(c => (
             <div key={c.t} className="pg-card pg-card--padded">
               <div className="pg-row" style={{ gap: 14 }}>
-                <div style={{ width: 50, height: 50, borderRadius: 25, background: "var(--bg-soft)", display: "grid", placeItems: "center", fontSize: 24 }}>{c.e}</div>
+                <div style={{ width: 50, height: 50, borderRadius: 25, background: "var(--bg-soft)", display: "grid", placeItems: "center" }}><Icon name={c.icon} size={24} color={c.iconColor} /></div>
                 <div style={{ flex: 1 }}>
                   <div className="pg-row pg-row--between" style={{ marginBottom: 4 }}>
                     <span style={{ fontSize: 14, fontWeight: 700 }}>{c.t}</span>
@@ -687,7 +687,7 @@ const ProvBonuses = ({ go }) => (
           ].map((b, i) => (
             <div key={i} className="pg-row pg-row--between" style={{ padding: "12px 14px", borderTop: i === 0 ? "none" : "1px solid var(--border)" }}>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 600 }}>🎉 {b.t}</div>
+                <div style={{ fontSize: 13, fontWeight: 600, display: "flex", alignItems: "center", gap: 6 }}><Icon name="spark" size={14} color="currentColor" /> {b.t}</div>
                 <div style={{ fontSize: 11, color: "var(--text-mute)", marginTop: 2 }}>{b.d}</div>
               </div>
               <span className="pg-mono" style={{ fontSize: 14, fontWeight: 700, color: "var(--green-700)" }}>+ R$ {b.v}</span>
@@ -722,8 +722,8 @@ const ProvPublic = ({ go }) => {
               <div style={{ flex: 1 }}>
                 <div style={{ fontSize: 16, fontWeight: 700 }}>Carlos Mudanças</div>
                 <div className="pg-row" style={{ gap: 6, fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>
-                  <span style={{ color: "#B8930F", fontWeight: 700 }}>★ 4,9</span><span>·</span><span>87 corridas</span>
-                  <span className="pg-tag pg-tag--green" style={{ fontSize: 9 }}>🥈 PRATA</span>
+                  <span style={{ color: "#B8930F", fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="star-fill" size={11} color="var(--amber-400)" /> 4,9</span><span>·</span><span>87 corridas</span>
+                  <span className="pg-tag pg-tag--green" style={{ fontSize: 9, display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="medal" size={9} color="currentColor" /> PRATA</span>
                 </div>
               </div>
             </div>
@@ -798,7 +798,7 @@ const ProvAvailability = ({ go }) => {
                 <div style={{ fontSize: 20, fontWeight: 800, letterSpacing: "-0.01em" }}>{online ? "ONLINE" : "OFFLINE"}</div>
                 <div style={{ fontSize: 12, opacity: 0.8 }}>{online ? "Recebendo pedidos · vai ficar online?" : "Toque para começar a receber"}</div>
               </div>
-              <span style={{ fontSize: 22 }}>{online ? "🟢" : "⚪"}</span>
+              <span style={{width:22,height:22,borderRadius:"50%",background:online?"var(--green-500)":"var(--ink-300)",display:"inline-block",flexShrink:0}} />
             </div>
           </div>
 
@@ -865,13 +865,13 @@ const ProvSupport = ({ go }) => (
 
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 24 }}>
           {[
-            { i: "💬", t: "Chat ao vivo", s: "< 4 min" },
-            { i: "📞", t: "Ligar suporte", s: "0800 grátis" },
-            { i: "📧", t: "Email", s: "< 12h" },
-            { i: "🆘", t: "Emergência", s: "24/7", urgent: true },
+            { i: "message", t: "Chat ao vivo", s: "< 4 min" },
+            { i: "phone", t: "Ligar suporte", s: "0800 grátis" },
+            { i: "mail", t: "Email", s: "< 12h" },
+            { i: "siren", t: "Emergência", s: "24/7", urgent: true },
           ].map(c => (
             <button key={c.t} className="pg-card" style={{ padding: 16, textAlign: "center", cursor: "pointer", border: c.urgent ? "1.5px solid var(--orange-500)" : "1px solid var(--border)" }}>
-              <div style={{ fontSize: 26, marginBottom: 6 }}>{c.i}</div>
+              <div style={{ marginBottom: 6, display: "flex", justifyContent: "center" }}><Icon name={c.i} size={26} color={c.urgent ? "var(--orange-600)" : "currentColor"} /></div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>{c.t}</div>
               <div style={{ fontSize: 11, color: c.urgent ? "var(--orange-600)" : "var(--text-mute)", marginTop: 2, fontFamily: "var(--font-mono)" }}>{c.s.toUpperCase()}</div>
             </button>
@@ -921,7 +921,7 @@ const ProvDocs = ({ go }) => {
         <div style={{ padding: 20 }}>
           {docs.some(d => d.st === "expired") && (
             <div className="pg-card pg-card--padded" style={{ background: "var(--orange-50)", borderColor: "var(--orange-500)", marginBottom: 16 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--orange-600)" }}>⚠️ Você tem documento vencido</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: "var(--orange-600)", display: "flex", alignItems: "center", gap: 6 }}><Icon name="alert" size={14} color="var(--orange-600)" /> Você tem documento vencido</div>
               <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 4, lineHeight: 1.5 }}>Você pode receber novos pedidos, mas em <strong>3 dias</strong> sua conta será suspensa até regularizar.</div>
             </div>
           )}
@@ -943,8 +943,8 @@ const ProvDocs = ({ go }) => {
                     <span style={{ color: colors[d.st], fontWeight: 600 }}>{d.left}</span>
                   </div>
                   {d.st !== "ok" && (
-                    <button className="pg-btn pg-btn--primary pg-btn--sm pg-btn--block" style={{ marginTop: 12 }}>
-                      📷 Renovar agora
+                    <button className="pg-btn pg-btn--primary pg-btn--sm pg-btn--block" style={{ marginTop: 12, display: "inline-flex", alignItems: "center", justifyContent: "center", gap: 6 }}>
+                      <Icon name="camera" size={14} color="currentColor" /> Renovar agora
                     </button>
                   )}
                 </div>

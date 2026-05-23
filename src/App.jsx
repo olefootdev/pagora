@@ -37,6 +37,45 @@ const groups = [
   { t: "Admin", screens: [["admin-dash","Dashboard operações"]] },
 ];
 
+// Screens that belong to the authenticated consumer experience
+const CONSUMER_SCREENS = new Set([
+  "home", "tracking", "chat", "rate", "receipt",
+  "map", "notifications", "favorites", "addresses",
+  "refer", "profile", "wallet", "history-list",
+  "recurring", "joint", "accessibility", "locator",
+  "compare", "filters-adv", "counter", "schedule", "stops", "items",
+  "coupon", "pay-success", "pay-fail", "call", "share-route", "sos", "cancel", "report",
+  "dispute", "refund", "service-done", "tip",
+  "settings", "help", "legal", "delete-account", "edit-profile",
+  "services", "how",
+  "frete-1", "frete-2", "frete-3", "frete-4", "frete-summary", "frete-confirm",
+  "guincho-1", "guincho-2", "guincho-3", "guincho-4",
+  "cacamba-1", "cacamba-2", "cacamba-3",
+  "proposals",
+]);
+
+const NAV_TAB = {
+  home: "home", tracking: "home", chat: "home", rate: "home", locator: "home",
+  compare: "home", "filters-adv": "home", counter: "home", schedule: "home",
+  stops: "home", items: "home", coupon: "home", "pay-success": "home",
+  "pay-fail": "home", call: "home", "share-route": "home", sos: "home",
+  cancel: "home", report: "home",
+  services: "home", how: "home",
+  "frete-1": "home", "frete-2": "home", "frete-3": "home", "frete-4": "home",
+  "frete-summary": "home", "frete-confirm": "home",
+  "guincho-1": "home", "guincho-2": "home", "guincho-3": "home", "guincho-4": "home",
+  "cacamba-1": "home", "cacamba-2": "home", "cacamba-3": "home",
+  proposals: "home",
+  map: "map",
+  "history-list": "history-list", receipt: "history-list", "service-done": "history-list",
+  tip: "history-list", dispute: "history-list", refund: "history-list",
+  recurring: "history-list", joint: "history-list",
+  notifications: "notifications",
+  profile: "profile", settings: "profile", wallet: "profile", refer: "profile",
+  addresses: "profile", favorites: "profile", "edit-profile": "profile",
+  "delete-account": "profile", accessibility: "profile", help: "profile", legal: "profile",
+};
+
 export default function App() {
   const initial = window.location.hash.replace("#", "") || "landing";
   const [route, setRoute] = useState(ALL_SCREENS.includes(initial) ? initial : "landing");
@@ -237,7 +276,13 @@ export default function App() {
         </div>
         <div className="pg-phone-wrap">
           <div className="pg-phone">
-            {renderScreen()}
+            <div style={{ flex: 1, overflow: "hidden", minHeight: 0, display: "flex", flexDirection: "column" }}>
+              {renderScreen()}
+            </div>
+            {CONSUMER_SCREENS.has(route) && (() => {
+              const { BottomNav } = window.PagoraApp || {};
+              return BottomNav ? React.createElement(BottomNav, { active: NAV_TAB[route] || "home", go }) : null;
+            })()}
           </div>
         </div>
       </div>

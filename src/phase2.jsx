@@ -70,7 +70,7 @@ const Coupon = ({ go }) => {
                             color: isApplied ? "var(--night-900)" : "var(--green-500)",
                             fontSize: 12, fontWeight: 700, cursor: "pointer", fontFamily: "inherit",
                           }}>
-                          {isApplied ? "✓ Aplicado" : "Usar"}
+                          {isApplied ? <span style={{ display: "inline-flex", alignItems: "center", gap: 4 }}><Icon name="check" size={12} strokeWidth={2.5} color="var(--night-900)" /> Aplicado</span> : "Usar"}
                         </button>
                       </div>
                     </div>
@@ -130,7 +130,7 @@ const PaySuccess = ({ go }) => {
           </div>
 
           <div style={{ marginTop: 28, display: "flex", gap: 6, alignItems: "center", color: "rgba(255,255,255,0.5)", fontSize: 12 }}>
-            <span>📧 Recibo enviado para joao@email.com</span>
+            <Icon name="mail" size={14} color="rgba(255,255,255,0.5)" /><span>Recibo enviado para joao@email.com</span>
           </div>
         </div>
       </div>
@@ -183,10 +183,10 @@ const PayFail = ({ go }) => {
           <div className="pg-h-eyebrow" style={{ margin: "0 0 12px", textAlign: "left" }}>O QUE FAZER</div>
 
           <div className="pg-stack pg-stack--sm" style={{ textAlign: "left" }}>
-            <ActionRow icon="🔁" t="Tentar de novo" s="Mesmo cartão, mesmo valor" onClick={() => go("frete-summary")} />
-            <ActionRow icon="💳" t="Trocar método" s="Outro cartão, Pix ou boleto" onClick={() => go("frete-summary")} />
-            <ActionRow icon="📞" t="Falar com seu banco" s="Liberar a transação" />
-            <ActionRow icon="🆘" t="Ajuda PAGORA" s="Suporte humano em 2 min" onClick={() => go("help")} />
+            <ActionRow icon="refresh" t="Tentar de novo" s="Mesmo cartão, mesmo valor" onClick={() => go("frete-summary")} />
+            <ActionRow icon="credit-card" t="Trocar método" s="Outro cartão, Pix ou boleto" onClick={() => go("frete-summary")} />
+            <ActionRow icon="phone" t="Falar com seu banco" s="Liberar a transação" />
+            <ActionRow icon="headset" t="Ajuda PAGORA" s="Suporte humano em 2 min" onClick={() => go("help")} />
           </div>
         </div>
       </div>
@@ -199,12 +199,14 @@ const PayFail = ({ go }) => {
 const ActionRow = ({ icon, t, s, onClick }) => (
   <button onClick={onClick} className="pg-card" style={{ width: "100%", padding: 14, textAlign: "left", cursor: "pointer", border: "1px solid var(--border)" }}>
     <div className="pg-row" style={{ gap: 12 }}>
-      <span style={{ fontSize: 22 }}>{icon}</span>
+      <div style={{ width: 40, height: 40, borderRadius: 11, background: "var(--bg-soft)", border: "1px solid var(--border)", display: "grid", placeItems: "center", flexShrink: 0 }}>
+        <Icon name={icon} size={18} color="var(--text-soft)" />
+      </div>
       <div style={{ flex: 1 }}>
         <div style={{ fontSize: 14, fontWeight: 600 }}>{t}</div>
         <div style={{ fontSize: 12, color: "var(--text-mute)", marginTop: 2 }}>{s}</div>
       </div>
-      <span style={{ color: "var(--text-mute)" }}>›</span>
+      <Icon name="arrow-right" size={16} color="var(--text-mute)" />
     </div>
   </button>
 );
@@ -246,14 +248,14 @@ const CallProvider = ({ go }) => {
           <h1 style={{ fontSize: 26, fontWeight: 700, margin: 0, letterSpacing: "-0.01em" }}>JM Transportes</h1>
           <div style={{ marginTop: 8, color: "rgba(255,255,255,0.7)", fontSize: 14 }}>Pedido #PG-2741 · em rota</div>
           <div className="pg-mono" style={{ marginTop: 16, fontSize: 22, color: "var(--green-500)", fontWeight: 700 }}>{fmt(seconds)}</div>
-          <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.5)" }}>🔒 Número mascarado · sua privacidade preservada</div>
+          <div style={{ marginTop: 6, fontSize: 11, color: "rgba(255,255,255,0.5)", display: "flex", alignItems: "center", gap: 5 }}><Icon name="lock" size={11} color="rgba(255,255,255,0.5)" /> Número mascarado · sua privacidade preservada</div>
         </div>
 
         {/* controls */}
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 16, marginBottom: 24 }}>
-          <CallBtn icon={muted ? "🔇" : "🎤"} label={muted ? "Mudo" : "Microfone"} active={muted} onClick={() => setMuted(!muted)} />
-          <CallBtn icon="⌨️" label="Teclado" />
-          <CallBtn icon="🔊" label="Viva-voz" active={speaker} onClick={() => setSpeaker(!speaker)} />
+          <CallBtn icon={muted ? "mic-off" : "mic"} label={muted ? "Mudo" : "Microfone"} active={muted} onClick={() => setMuted(!muted)} />
+          <CallBtn icon="keyboard" label="Teclado" />
+          <CallBtn icon="volume" label="Viva-voz" active={speaker} onClick={() => setSpeaker(!speaker)} />
         </div>
 
         {/* hangup */}
@@ -273,7 +275,7 @@ const CallBtn = ({ icon, label, active, onClick }) => (
     display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center",
     cursor: "pointer", fontFamily: "inherit", gap: 6,
   }}>
-    <span style={{ fontSize: 28 }}>{icon}</span>
+    <Icon name={icon} size={26} color={active ? "var(--night-900)" : "#fff"} />
     <span style={{ fontSize: 11, fontWeight: 600 }}>{label}</span>
   </button>
 );
@@ -297,7 +299,7 @@ const ShareRoute = ({ go }) => {
       <div className="pg-viewport" style={{ paddingBottom: 100 }}>
         <div style={{ padding: 20 }}>
           <div className="pg-card pg-card--padded" style={{ background: "var(--bg-soft)", borderColor: "transparent", marginBottom: 24 }}>
-            <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9 }}>👁 LINK COM ACOMPANHAMENTO AO VIVO</div>
+            <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9, display: "flex", alignItems: "center", gap: 5 }}><Icon name="eye" size={11} color="currentColor" /> LINK COM ACOMPANHAMENTO AO VIVO</div>
             <div className="pg-row pg-row--between" style={{ marginTop: 10, gap: 8 }}>
               <code style={{ fontFamily: "var(--font-mono)", fontSize: 13, fontWeight: 600, flex: 1, overflowWrap: "anywhere" }}>{url}</code>
               <button onClick={() => { setCopied(true); setTimeout(() => setCopied(false), 1500); }}
@@ -306,7 +308,7 @@ const ShareRoute = ({ go }) => {
               </button>
             </div>
             <div style={{ marginTop: 12, fontSize: 11, color: "var(--text-soft)" }}>
-              ⏱️ Link expira em <strong>2h</strong> após o término · sem necessidade de cadastro
+              <span style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="clock" size={12} color="var(--text-soft)" /> Link expira em <strong>2h</strong> após o término · sem necessidade de cadastro</span>
             </div>
           </div>
 
@@ -383,7 +385,7 @@ const SOS = ({ go }) => {
       <div className="pg-screen" data-screen-label="C12 SOS ativado" style={{ background: "var(--orange-500)", color: "#fff" }}>
         <StatusBarP2 dark />
         <div className="pg-viewport" style={{ padding: 24, display: "flex", flexDirection: "column", justifyContent: "center", textAlign: "center" }}>
-          <div style={{ fontSize: 64, marginBottom: 16, animation: "pgPulse 1.2s ease-in-out infinite" }}>🚨</div>
+          <div style={{ width: 80, height: 80, borderRadius: 24, background: "rgba(0,0,0,0.25)", display: "grid", placeItems: "center", margin: "0 auto 16px", animation: "pgPulse 1.2s ease-in-out infinite" }}><Icon name="siren" size={40} color="#fff" /></div>
           <h1 style={{ fontSize: 32, fontWeight: 800, margin: 0, letterSpacing: "-0.02em" }}>SOS ATIVADO</h1>
           <p style={{ fontSize: 16, margin: "12px 0 28px", opacity: 0.9 }}>
             Você está conectada com o atendimento de emergência da PAGORA.
@@ -392,17 +394,15 @@ const SOS = ({ go }) => {
           <div style={{ background: "rgba(0,0,0,0.2)", borderRadius: 14, padding: 18, textAlign: "left", marginBottom: 16 }}>
             <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9, color: "rgba(255,255,255,0.7)" }}>EM CURSO</div>
             <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.7 }}>
-              <div>✓ Localização compartilhada</div>
-              <div>✓ Pedido pausado</div>
-              <div>✓ Atendente Marina está conectando...</div>
-              <div>○ 190 em standby</div>
-              <div>○ Contatos de emergência avisados</div>
+              {[["Localização compartilhada",true],["Pedido pausado",true],["Atendente Marina está conectando...",true],["190 em standby",false],["Contatos de emergência avisados",false]].map(([t,done])=>(
+                <div key={t} style={{ display:"flex", alignItems:"center", gap:8 }}><Icon name={done?"check-circle":"clock"} size={13} color={done?"rgba(255,255,255,0.9)":"rgba(255,255,255,0.4)"} />{t}</div>
+              ))}
             </div>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10 }}>
-            <button style={{ background: "rgba(0,0,0,0.3)", border: "none", color: "#fff", padding: 14, borderRadius: 12, fontWeight: 700, cursor: "pointer", fontSize: 14 }}>📞 Atendente</button>
-            <button style={{ background: "#000", border: "none", color: "#fff", padding: 14, borderRadius: 12, fontWeight: 700, cursor: "pointer", fontSize: 14 }}>☎ 190</button>
+            <button style={{ background: "rgba(0,0,0,0.3)", border: "none", color: "#fff", padding: 14, borderRadius: 12, fontWeight: 700, cursor: "pointer", fontSize: 14, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}><Icon name="headset" size={18} color="#fff" /> Atendente</button>
+            <button style={{ background: "#000", border: "none", color: "#fff", padding: 14, borderRadius: 12, fontWeight: 700, cursor: "pointer", fontSize: 14, display:"flex", alignItems:"center", justifyContent:"center", gap:8 }}><Icon name="phone" size={18} color="#fff" /> 190</button>
           </div>
 
           <button onClick={() => { setActivated(false); setProgress(0); go("tracking"); }} style={{ marginTop: 24, background: "transparent", border: "1px solid rgba(255,255,255,0.3)", color: "#fff", padding: "12px 16px", borderRadius: 10, fontSize: 13, cursor: "pointer", fontFamily: "inherit" }}>
@@ -419,7 +419,7 @@ const SOS = ({ go }) => {
       <TopBarP2 onBack={() => go("tracking")} title="Emergência" />
       <div className="pg-viewport" style={{ padding: 24 }}>
         <div style={{ textAlign: "center", marginTop: 16 }}>
-          <div className="pg-h-eyebrow" style={{ margin: 0, color: "var(--orange-600)" }}>⚠️ ATIVAÇÃO DE EMERGÊNCIA</div>
+          <div className="pg-h-eyebrow" style={{ margin: 0, color: "var(--orange-600)", display:"flex", alignItems:"center", gap:5 }}><Icon name="alert" size={12} color="var(--orange-600)" /> ATIVAÇÃO DE EMERGÊNCIA</div>
           <h1 className="pg-h-title" style={{ marginTop: 8 }}>Você está em perigo?</h1>
           <p className="pg-h-sub" style={{ fontSize: 14 }}>
             Pressione e segure o botão por <strong>2 segundos</strong> para ativar. Não use por engano — temos câmeras e gravação em tempo real.
@@ -457,15 +457,17 @@ const SOS = ({ go }) => {
         <div className="pg-stack pg-stack--sm" style={{ marginTop: 36 }}>
           <button className="pg-card" style={{ width: "100%", padding: 14, textAlign: "left", cursor: "pointer", border: "1px solid var(--border)" }}>
             <div className="pg-row" style={{ gap: 12 }}>
-              <span style={{ fontSize: 22 }}>📞</span>
+              <div style={{ width:40, height:40, borderRadius:11, background:"var(--bg-soft)", border:"1px solid var(--border)", display:"grid", placeItems:"center", flexShrink:0 }}><Icon name="phone" size={18} color="var(--text-soft)" /></div>
               <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Ligar 190 direto</div><div style={{ fontSize: 12, color: "var(--text-mute)" }}>Polícia militar</div></div>
+              <Icon name="arrow-right" size={16} color="var(--text-mute)" />
             </div>
           </button>
           <button className="pg-card" style={{ width: "100%", padding: 14, textAlign: "left", cursor: "pointer", border: "1px solid var(--border)" }}
             onClick={() => go("report")}>
             <div className="pg-row" style={{ gap: 12 }}>
-              <span style={{ fontSize: 22 }}>⚠️</span>
+              <div style={{ width:40, height:40, borderRadius:11, background:"var(--bg-soft)", border:"1px solid var(--border)", display:"grid", placeItems:"center", flexShrink:0 }}><Icon name="alert" size={18} color="var(--text-soft)" /></div>
               <div style={{ flex: 1 }}><div style={{ fontWeight: 600 }}>Reportar problema (sem urgência)</div><div style={{ fontSize: 12, color: "var(--text-mute)" }}>Comportamento, atraso, conduta</div></div>
+              <Icon name="arrow-right" size={16} color="var(--text-mute)" />
             </div>
           </button>
         </div>
@@ -570,12 +572,12 @@ const ReportIssue = ({ go }) => {
   const [photos, setPhotos] = useStateP2([]);
   const [desc, setDesc] = useStateP2("");
   const issues = [
-    { id: "delay", icon: "⏱", t: "Atraso significativo", s: "Mais de 30 min do ETA" },
-    { id: "wrong-vehicle", icon: "🚚", t: "Veículo errado", s: "Diferente do contratado" },
-    { id: "damage", icon: "📦", t: "Dano em item", s: "Algo quebrou ou amassou" },
-    { id: "missing", icon: "❓", t: "Item faltando", s: "Não chegou no destino" },
-    { id: "behavior", icon: "🚫", t: "Conduta inadequada", s: "Tratamento ou linguagem" },
-    { id: "extra-charge", icon: "💰", t: "Cobrança extra indevida", s: "Valor combinado mudou" },
+    { id: "delay", icon: "clock", t: "Atraso significativo", s: "Mais de 30 min do ETA" },
+    { id: "wrong-vehicle", icon: "truck", t: "Veículo errado", s: "Diferente do contratado" },
+    { id: "damage", icon: "package", t: "Dano em item", s: "Algo quebrou ou amassou" },
+    { id: "missing", icon: "search", t: "Item faltando", s: "Não chegou no destino" },
+    { id: "behavior", icon: "alert", t: "Conduta inadequada", s: "Tratamento ou linguagem" },
+    { id: "extra-charge", icon: "money", t: "Cobrança extra indevida", s: "Valor combinado mudou" },
   ];
 
   return (
@@ -600,7 +602,7 @@ const ReportIssue = ({ go }) => {
                     borderRadius: 10, background: active ? "var(--night-900)" : "var(--paper)",
                     color: active ? "#fff" : "var(--text)", cursor: "pointer",
                   }}>
-                  <div style={{ fontSize: 20, marginBottom: 4 }}>{i.icon}</div>
+                  <div style={{ marginBottom: 8 }}><Icon name={i.icon} size={20} color={active ? "rgba(255,255,255,0.9)" : "var(--text-soft)"} /></div>
                   <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{i.t}</div>
                   <div style={{ fontSize: 11, marginTop: 2, color: active ? "rgba(255,255,255,0.6)" : "var(--text-mute)" }}>{i.s}</div>
                 </button>

@@ -50,7 +50,7 @@ const Compare = ({ go }) => {
                       background: active ? "var(--night-900)" : "transparent",
                       display: "grid", placeItems: "center", flexShrink: 0,
                     }}>
-                      {active && <span style={{ color: "var(--green-500)", fontSize: 13, fontWeight: 800, lineHeight: 1 }}>✓</span>}
+                      {active && <Icon name="check" size={13} strokeWidth={3} color="var(--green-500)" />}
                     </div>
                     <div style={{ flex: 1, fontSize: 14, fontWeight: 600 }}>{p.name}</div>
                     <div className="pg-mono" style={{ fontSize: 13, fontWeight: 700 }}>R$ {p.price}</div>
@@ -97,7 +97,7 @@ const Compare = ({ go }) => {
               <div style={cellLabelStyle}>Avaliação</div>
               {selected.map(p => (
                 <div key={p.id} style={cellStyle}>
-                  ★ {p.rating} <span style={{ color: "var(--text-mute)", fontSize: 11 }}>({p.reviews})</span>
+                  <span style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 3 }}><Icon name="star-fill" size={11} color="var(--amber-400)" /> {p.rating} <span style={{ color: "var(--text-mute)", fontSize: 11 }}>({p.reviews})</span></span>
                   {p.rating === bestRating && selected.length > 1 && <div className="pg-tag pg-tag--green" style={{ fontSize: 9, marginTop: 4 }}>MELHOR</div>}
                 </div>
               ))}
@@ -118,7 +118,7 @@ const Compare = ({ go }) => {
               <div style={cellLabelStyle}>Inclui</div>
               {selected.map(p => (
                 <div key={p.id} style={{ ...cellStyle, fontSize: 11, lineHeight: 1.5 }}>
-                  {p.free.map(f => <div key={f}>✓ {f}</div>)}
+                  {p.free.map(f => <div key={f} style={{ display: "flex", alignItems: "center", gap: 4 }}><Icon name="check" size={11} strokeWidth={2.5} color="var(--green-700)" />{f}</div>)}
                 </div>
               ))}
             </div>
@@ -127,7 +127,7 @@ const Compare = ({ go }) => {
 
         <div style={{ padding: "16px 20px" }}>
           <div className="pg-card pg-card--soft" style={{ padding: 14, fontSize: 12, color: "var(--text-soft)" }}>
-            <strong style={{ color: "var(--text)" }}>💡 Dica:</strong> O preço é importante, mas considere também avaliação e o que está incluso. Embalagem inclusa pode economizar R$ 80–150.
+            <span style={{ display: "flex", alignItems: "flex-start", gap: 8 }}><Icon name="lightbulb" size={14} color="var(--green-700)" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong style={{ color: "var(--text)" }}>Dica:</strong> O preço é importante, mas considere também avaliação e o que está incluso. Embalagem inclusa pode economizar R$ 80–150.</span></span>
           </div>
         </div>
       </div>
@@ -220,7 +220,7 @@ const FiltersAdv = ({ go }) => {
             <div className="pg-segmented">
               {[0, 3, 4, 4.5].map(r => (
                 <button key={r} className={`pg-segmented-item${rating === r ? " is-active" : ""}`} onClick={() => setRating(r)}>
-                  {r === 0 ? "Qualquer" : `★ ${r}+`}
+                  {r === 0 ? "Qualquer" : <span style={{ display: "flex", alignItems: "center", gap: 3 }}><Icon name="star-fill" size={11} color="currentColor" />{r}+</span>}
                 </button>
               ))}
             </div>
@@ -293,7 +293,7 @@ const Counter = ({ go }) => {
               <div style={{ width: 44, height: 44, borderRadius: 12, background: "var(--night-900)", color: "var(--green-500)", display: "grid", placeItems: "center", fontWeight: 700, fontFamily: "var(--font-mono)", fontSize: 13 }}>FJ</div>
               <div style={{ flex: 1 }}>
                 <div style={{ fontWeight: 700, fontSize: 15 }}>Frete Já SP</div>
-                <div style={{ fontSize: 12, color: "var(--text-mute)" }}>★ 4.8 · 256 avaliações</div>
+                <div style={{ fontSize: 12, color: "var(--text-mute)", display: "flex", alignItems: "center", gap: 4 }}><Icon name="star-fill" size={11} color="var(--amber-400)" /> 4.8 · 256 avaliações</div>
               </div>
               <div style={{ textAlign: "right" }}>
                 <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9 }}>PROPOSTA</div>
@@ -344,7 +344,7 @@ const Counter = ({ go }) => {
           </div>
 
           <div className="pg-card pg-card--soft" style={{ padding: 12, fontSize: 12, color: "var(--text-soft)", marginTop: 20 }}>
-            ⚠️ O prestador tem 30 minutos para aceitar, recusar ou enviar uma nova proposta.
+            <span style={{ display: "flex", alignItems: "flex-start", gap: 8 }}><Icon name="alert" size={14} color="var(--orange-600)" style={{ flexShrink: 0, marginTop: 1 }} /><span>O prestador tem 30 minutos para aceitar, recusar ou enviar uma nova proposta.</span></span>
           </div>
         </div>
       </div>
@@ -486,7 +486,7 @@ const Stops = ({ go }) => {
       <div className="pg-viewport" style={{ paddingBottom: 100 }}>
         <div style={{ padding: 20 }}>
           <div className="pg-card pg-card--soft" style={{ padding: 12, marginBottom: 20, fontSize: 12, color: "var(--text-soft)" }}>
-            💡 Cada parada extra adiciona ~R$ 25 ao orçamento e aumenta o tempo total.
+            <span style={{ display: "flex", alignItems: "flex-start", gap: 8 }}><Icon name="lightbulb" size={14} color="var(--green-700)" style={{ flexShrink: 0, marginTop: 1 }} /><span>Cada parada extra adiciona ~R$ 25 ao orçamento e aumenta o tempo total.</span></span>
           </div>
 
           <div style={{ position: "relative" }}>

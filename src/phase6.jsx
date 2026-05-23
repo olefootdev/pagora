@@ -9,12 +9,12 @@ const { useState: useStateP6, useMemo: useMemoP6 } = React;
 // ---------------------------------------------------------------------
 const AdminShell = ({ children, active, go, title, crumbs }) => {
   const nav = [
-    ["admin-dash", "Dashboard", "📊"],
-    ["admin-order", "Pedidos", "📦"],
-    ["admin-dispute", "Disputas", "⚖️"],
-    ["admin-users", "Usuários", "👥"],
-    ["admin-coupons", "Cupons", "🎟"],
-    ["admin-config", "Sistema", "⚙️"],
+    ["admin-dash", "Dashboard", "bar-chart"],
+    ["admin-order", "Pedidos", "package"],
+    ["admin-dispute", "Disputas", "scales"],
+    ["admin-users", "Usuários", "users"],
+    ["admin-coupons", "Cupons", "ticket"],
+    ["admin-config", "Sistema", "settings"],
   ];
   return (
     <div className="pg-screen" data-screen-label={`P6 ${title}`} style={{ background: "#F4F5F7" }}>
@@ -41,7 +41,7 @@ const AdminShell = ({ children, active, go, title, crumbs }) => {
               fontSize: 13, fontWeight: active === id ? 700 : 500,
               color: active === id ? "var(--text)" : "var(--text-soft)",
             }}>
-              <span style={{ fontSize: 14 }}>{e}</span>
+              <Icon name={e} size={16} color={active === id ? "var(--text)" : "var(--text-soft)"} />
               <span>{label}</span>
             </button>
           ))}
@@ -79,7 +79,7 @@ const AdminDispute = ({ go }) => {
     <AdminShell go={go} active="admin-dispute" title="Disputa #DSP-0312" crumbs="OPS / DISPUTAS / #DSP-0312">
       {/* Banner */}
       <div style={{ background: "#FFF6E6", border: "1px solid var(--orange-500)", padding: 14, borderRadius: 10, marginBottom: 18, display: "flex", gap: 12, alignItems: "center" }}>
-        <span style={{ fontSize: 22 }}>⚠️</span>
+        <Icon name="alert" size={22} color="var(--orange-600)" />
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 13, fontWeight: 700, color: "var(--orange-600)" }}>Disputa aberta há 4h 12min</div>
           <div style={{ fontSize: 12, color: "var(--text-soft)" }}>SLA de 24h · Cliente pediu reembolso parcial. Valor em escrow: R$ 251,30</div>
@@ -108,7 +108,7 @@ const AdminDispute = ({ go }) => {
               </div>
               <div style={{ width: 80, height: 80, borderRadius: 8, background: "linear-gradient(135deg,#A0826D,#6B4423)", position: "relative" }}>
                 <span className="pg-mono" style={{ position: "absolute", top: 4, left: 4, background: "rgba(0,0,0,0.6)", color: "#fff", padding: "2px 6px", borderRadius: 3, fontSize: 8 }}>DEPOIS</span>
-                <span style={{ position: "absolute", bottom: 6, right: 6, fontSize: 16 }}>🔴</span>
+                <span style={{ position: "absolute", bottom: 6, right: 6, width: 12, height: 12, borderRadius: "50%", background: "#EF4444", border: "2px solid #fff" }} />
               </div>
               <div style={{ width: 80, height: 80, borderRadius: 8, background: "var(--bg-soft)", display: "grid", placeItems: "center", color: "var(--text-mute)", fontSize: 11 }}>+1</div>
             </div>
@@ -119,8 +119,8 @@ const AdminDispute = ({ go }) => {
             <div className="pg-row" style={{ gap: 10, marginBottom: 12 }}>
               <div style={{ width: 36, height: 36, borderRadius: 18, background: "var(--green-500)", display: "grid", placeItems: "center", fontSize: 14, fontWeight: 700, fontFamily: "var(--font-mono)", color: "var(--night-900)" }}>CM</div>
               <div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>Carlos Mudanças <span className="pg-tag pg-tag--green" style={{ fontSize: 9, marginLeft: 4 }}>🥈 PRATA</span></div>
-                <div className="pg-mono" style={{ fontSize: 11, color: "var(--text-mute)" }}>★ 4,9 · 87 corridas · 0 disputas anteriores</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>Carlos Mudanças <span className="pg-tag pg-tag--green" style={{ fontSize: 9, marginLeft: 4, display: "inline-flex", alignItems: "center", gap: 3 }}><Icon name="medal" size={9} color="currentColor" /> PRATA</span></div>
+                <div className="pg-mono" style={{ fontSize: 11, color: "var(--text-mute)", display: "flex", alignItems: "center", gap: 4 }}><Icon name="star-fill" size={10} color="var(--amber-400)" /> 4,9 · 87 corridas · 0 disputas anteriores</div>
               </div>
             </div>
             <div style={{ background: "var(--bg-soft)", padding: 14, borderRadius: 10, fontSize: 13, lineHeight: 1.6, color: "var(--text)" }}>
@@ -187,9 +187,9 @@ const AdminDispute = ({ go }) => {
           <div className="pg-card pg-card--padded">
             <div className="pg-h-eyebrow" style={{ margin: 0, marginBottom: 10 }}>CONTEXTO IA</div>
             <div style={{ fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6 }}>
-              <p style={{ margin: "0 0 8px" }}>📊 <strong>Padrão histórico:</strong> em 78% das disputas com fotos antes/depois claras, o sistema decide reembolso parcial.</p>
-              <p style={{ margin: "0 0 8px" }}>⚖️ <strong>Risco:</strong> baixo. Prestador tem 0 disputas, cliente tem 1 disputa anterior (resolvida a favor do prestador).</p>
-              <p style={{ margin: 0 }}>💰 <strong>Custo médio dessa categoria:</strong> R$ 65 cobertos pela PAGORA.</p>
+              <p style={{ margin: "0 0 8px", display: "flex", gap: 6, alignItems: "flex-start" }}><Icon name="bar-chart" size={14} color="var(--text-mute)" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>Padrão histórico:</strong> em 78% das disputas com fotos antes/depois claras, o sistema decide reembolso parcial.</span></p>
+              <p style={{ margin: "0 0 8px", display: "flex", gap: 6, alignItems: "flex-start" }}><Icon name="scales" size={14} color="var(--text-mute)" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>Risco:</strong> baixo. Prestador tem 0 disputas, cliente tem 1 disputa anterior (resolvida a favor do prestador).</span></p>
+              <p style={{ margin: 0, display: "flex", gap: 6, alignItems: "flex-start" }}><Icon name="money" size={14} color="var(--text-mute)" style={{ flexShrink: 0, marginTop: 1 }} /><span><strong>Custo médio dessa categoria:</strong> R$ 65 cobertos pela PAGORA.</span></p>
             </div>
           </div>
         </div>
@@ -243,7 +243,7 @@ const AdminOrder = ({ go }) => (
             ["15:14", "Saiu para entrega (foto checklist OK)", "go"],
             ["15:58", "Chegou no destino", "arrive"],
             ["16:14", "Concluído + pago", "done"],
-            ["16:18", "Cliente avaliou ★ 5", "rating"],
+            ["16:18", "Cliente avaliou nota 5", "rating"],
           ].map(([t, d, k], i) => (
             <div key={i} className="pg-row" style={{ gap: 12, padding: "8px 0", borderBottom: i < 7 ? "1px solid var(--border)" : "none" }}>
               <span className="pg-mono" style={{ width: 50, fontSize: 12, color: "var(--text-mute)" }}>{t}</span>
@@ -260,8 +260,8 @@ const AdminOrder = ({ go }) => (
             <svg viewBox="0 0 400 200" style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}>
               <path d="M 50 150 Q 150 100, 220 80 T 350 50" stroke="var(--green-700)" strokeWidth="3" fill="none" strokeDasharray="2 4"/>
             </svg>
-            <span style={{ position: "absolute", bottom: 30, left: 30, background: "var(--night-900)", color: "#fff", padding: "4px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700 }}>📍 ORIGEM</span>
-            <span style={{ position: "absolute", top: 30, right: 30, background: "var(--green-500)", color: "var(--night-900)", padding: "4px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700 }}>🏁 DESTINO</span>
+            <span style={{ position: "absolute", bottom: 30, left: 30, background: "var(--night-900)", color: "#fff", padding: "4px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="pin-fill" size={12} color="#fff" /> ORIGEM</span>
+            <span style={{ position: "absolute", top: 30, right: 30, background: "var(--green-500)", color: "var(--night-900)", padding: "4px 8px", borderRadius: 4, fontSize: 11, fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="flag" size={12} color="var(--night-900)" /> DESTINO</span>
             <div style={{ position: "absolute", bottom: 8, left: 8, padding: "4px 8px", background: "rgba(255,255,255,0.9)", borderRadius: 4, fontSize: 10, fontFamily: "var(--font-mono)" }}>18,4 km · 1h 47</div>
           </div>
         </div>
@@ -311,10 +311,10 @@ const AdminOrder = ({ go }) => (
 
         <div className="pg-card pg-card--padded">
           <div className="pg-h-eyebrow" style={{ margin: 0, marginBottom: 10 }}>AÇÕES</div>
-          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ marginBottom: 6 }}>📧 Email para ambas as partes</button>
-          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ marginBottom: 6 }}>↩️ Reverter pagamento</button>
-          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ marginBottom: 6, color: "var(--orange-600)" }}>⚖️ Abrir disputa manual</button>
-          <button className="pg-btn pg-btn--ghost pg-btn--block">📥 Exportar logs (JSON)</button>
+          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ marginBottom: 6, display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}><Icon name="mail" size={14} color="currentColor" /> Email para ambas as partes</button>
+          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ marginBottom: 6, display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}><Icon name="refresh" size={14} color="currentColor" /> Reverter pagamento</button>
+          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ marginBottom: 6, color: "var(--orange-600)", display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}><Icon name="scales" size={14} color="var(--orange-600)" /> Abrir disputa manual</button>
+          <button className="pg-btn pg-btn--ghost pg-btn--block" style={{ display: "inline-flex", alignItems: "center", gap: 8, justifyContent: "center" }}><Icon name="download" size={14} color="currentColor" /> Exportar logs (JSON)</button>
         </div>
       </div>
     </div>
@@ -336,10 +336,10 @@ const AdminUsers = ({ go }) => {
     { n: "Ana Beatriz", e: "ana@email.com", id: "USR-4002", st: "active", o: 31, sp: 8420, j: "Fev 23" },
   ];
   const providers = [
-    { n: "Carlos Mudanças", e: "carlos@email.com", id: "PRV-0438", st: "active", o: 87, sp: 32840, j: "Set 25", lvl: "🥈" },
+    { n: "Carlos Mudanças", e: "carlos@email.com", id: "PRV-0438", st: "active", o: 87, sp: 32840, j: "Set 25", lvl: "medal", lvlColor: "#C0C0C0" },
     { n: "Raquel Frete", e: "raquel@email.com", id: "PRV-0521", st: "pending", o: 0, sp: 0, j: "01 abr 26", flag: "Documentos em análise" },
-    { n: "João Caçambas", e: "joao@email.com", id: "PRV-0398", st: "active", o: 142, sp: 87320, j: "Jan 25", lvl: "🥇" },
-    { n: "Helena Mudanças", e: "helena@email.com", id: "PRV-0612", st: "blocked", o: 23, sp: 4820, j: "Ago 25", flag: "★ 3,2 - 3 disputas perdidas" },
+    { n: "João Caçambas", e: "joao@email.com", id: "PRV-0398", st: "active", o: 142, sp: 87320, j: "Jan 25", lvl: "trophy", lvlColor: "#FFD700" },
+    { n: "Helena Mudanças", e: "helena@email.com", id: "PRV-0612", st: "blocked", o: 23, sp: 4820, j: "Ago 25", flag: "nota 3,2 · 3 disputas perdidas" },
   ];
   const data = tab === "clients" ? clients : providers;
 
@@ -370,7 +370,7 @@ const AdminUsers = ({ go }) => {
             fontSize: 12, cursor: "pointer", fontFamily: "inherit",
           }}>{t}</button>
         ))}
-        <button className="pg-btn pg-btn--ghost pg-btn--sm">⬇ CSV</button>
+        <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="download" size={13} color="currentColor" /> CSV</button>
       </div>
 
       {/* table */}
@@ -385,8 +385,8 @@ const AdminUsers = ({ go }) => {
             <div className="pg-row" style={{ gap: 8 }}>
               <div style={{ width: 28, height: 28, borderRadius: 14, background: "var(--bg-soft)", display: "grid", placeItems: "center", fontSize: 10, fontWeight: 700, fontFamily: "var(--font-mono)" }}>{u.n.split(" ").map(s => s[0]).join("")}</div>
               <div>
-                <div style={{ fontWeight: 700 }}>{u.n} {u.lvl}</div>
-                {u.flag && <div className="pg-mono" style={{ fontSize: 9, color: "var(--orange-600)" }}>⚠ {u.flag}</div>}
+                <div style={{ fontWeight: 700, display: "flex", alignItems: "center", gap: 5 }}>{u.n} {u.lvl && <Icon name={u.lvl} size={13} color={u.lvlColor} />}</div>
+                {u.flag && <div className="pg-mono" style={{ fontSize: 9, color: "var(--orange-600)", display: "flex", alignItems: "center", gap: 3 }}><Icon name="alert" size={9} color="var(--orange-600)" /> {u.flag}</div>}
               </div>
             </div>
             <div className="pg-mono" style={{ fontSize: 12, color: "var(--text-soft)" }}>{u.e}</div>
@@ -497,7 +497,7 @@ const AdminCoupons = ({ go }) => {
               <div className="pg-mono" style={{ fontSize: 12 }}>{c.uses}</div>
               <div className="pg-mono" style={{ fontSize: 11, color: "var(--text-soft)" }}>{c.exp}</div>
               <div><span style={{ padding: "2px 8px", borderRadius: 100, background: bg, color: fg, fontSize: 9, fontWeight: 700, fontFamily: "var(--font-mono)" }}>{c.st.toUpperCase()}</span></div>
-              <div><button style={{ background: "none", border: "none", fontSize: 16, color: "var(--text-mute)", cursor: "pointer" }}>⋯</button></div>
+              <div><button style={{ background: "none", border: "none", color: "var(--text-mute)", cursor: "pointer", padding: 4 }}><Icon name="menu" size={16} color="var(--text-mute)" /></button></div>
             </div>
           );
         })}
@@ -520,12 +520,12 @@ const AdminConfig = ({ go }) => {
       <div style={{ display: "grid", gridTemplateColumns: "220px 1fr", gap: 20 }}>
         <aside>
           {[
-            ["comissao", "Comissão & Taxas", "💰"],
-            ["pricing", "Preços dinâmicos", "📈"],
-            ["payments", "Pagamentos", "💳"],
-            ["notifications", "Notificações", "🔔"],
-            ["compliance", "Compliance & LGPD", "🔐"],
-            ["danger", "Zona de risco", "⚠️"],
+            ["comissao", "Comissão & Taxas", "money"],
+            ["pricing", "Preços dinâmicos", "trending-up"],
+            ["payments", "Pagamentos", "credit-card"],
+            ["notifications", "Notificações", "bell"],
+            ["compliance", "Compliance & LGPD", "lock"],
+            ["danger", "Zona de risco", "alert"],
           ].map(([id, t, e]) => (
             <button key={id} onClick={() => setTab(id)} style={{
               display: "flex", alignItems: "center", gap: 10,
@@ -536,7 +536,7 @@ const AdminConfig = ({ go }) => {
               fontSize: 13, fontWeight: tab === id ? 700 : 500,
               color: id === "danger" ? "var(--danger)" : "var(--text-soft)",
             }}>
-              <span>{e}</span><span>{t}</span>
+              <Icon name={e} size={16} color={id === "danger" ? "var(--danger)" : tab === id ? "var(--text)" : "var(--text-soft)"} /><span>{t}</span>
             </button>
           ))}
         </aside>
@@ -556,21 +556,22 @@ const AdminConfig = ({ go }) => {
                 <div className="pg-row pg-row--between" style={{ marginTop: 6, fontSize: 10, color: "var(--text-mute)", fontFamily: "var(--font-mono)" }}>
                   <span>5%</span><span>15% atual</span><span>25%</span>
                 </div>
-                <div style={{ marginTop: 16, padding: 12, background: "var(--orange-50)", borderRadius: 8, fontSize: 12, color: "var(--orange-600)" }}>
-                  ⚠ Mudanças impactam <strong>2.847 prestadores ativos</strong>. Período de aviso prévio mínimo: 30 dias.
+                <div style={{ marginTop: 16, padding: 12, background: "var(--orange-50)", borderRadius: 8, fontSize: 12, color: "var(--orange-600)", display: "flex", gap: 8, alignItems: "flex-start" }}>
+                  <Icon name="alert" size={14} color="var(--orange-600)" style={{ flexShrink: 0, marginTop: 1 }} />
+                  <span>Mudanças impactam <strong>2.847 prestadores ativos</strong>. Período de aviso prévio mínimo: 30 dias.</span>
                 </div>
               </div>
 
               <div className="pg-h-eyebrow" style={{ margin: "0 0 10px" }}>OVERRIDES POR NÍVEL</div>
               <div className="pg-card" style={{ padding: 0, marginBottom: 16 }}>
                 {[
-                  ["🥉 Bronze", 15, ""],
-                  ["🥈 Prata", 13, "−2pp"],
-                  ["🥇 Ouro", 11, "−4pp"],
-                  ["💎 Diamante", 9, "−6pp"],
-                ].map(([n, v, d], i) => (
+                  ["Bronze", "trophy", "#CD7F32", 15, ""],
+                  ["Prata", "medal", "#C0C0C0", 13, "−2pp"],
+                  ["Ouro", "trophy", "#FFD700", 11, "−4pp"],
+                  ["Diamante", "diamond", "#0EA5E9", 9, "−6pp"],
+                ].map(([n, ico, ic, v, d], i) => (
                   <div key={n} className="pg-row pg-row--between" style={{ padding: "12px 16px", borderTop: i === 0 ? "none" : "1px solid var(--border)" }}>
-                    <span style={{ fontSize: 13, fontWeight: 600 }}>{n}</span>
+                    <div style={{ display: "flex", alignItems: "center", gap: 8 }}><Icon name={ico} size={16} color={ic} /><span style={{ fontSize: 13, fontWeight: 600 }}>{n}</span></div>
                     <div className="pg-row" style={{ gap: 12 }}>
                       <span className="pg-mono" style={{ fontSize: 13, fontWeight: 700 }}>{v}%</span>
                       {d && <span className="pg-mono" style={{ fontSize: 11, color: "var(--green-700)" }}>{d}</span>}
@@ -695,7 +696,7 @@ const AdminConfig = ({ go }) => {
               <div className="pg-stack pg-stack--sm">
                 <div className="pg-row pg-row--between" style={{ padding: 12, background: "var(--green-50)", borderRadius: 8 }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--green-700)" }}>✓ DPO designado</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: "var(--green-700)", display: "flex", alignItems: "center", gap: 6 }}><Icon name="check" size={14} strokeWidth={2.5} color="var(--green-700)" /> DPO designado</div>
                     <div className="pg-mono" style={{ fontSize: 11, color: "var(--text-soft)", marginTop: 2 }}>dpo@pagora.com.br · CT-2024-0418</div>
                   </div>
                 </div>
@@ -711,7 +712,7 @@ const AdminConfig = ({ go }) => {
                     <div style={{ fontSize: 13, fontWeight: 700 }}>Logs de auditoria (90 dias)</div>
                     <div className="pg-mono" style={{ fontSize: 11, color: "var(--text-soft)" }}>847.302 eventos · S3 criptografado</div>
                   </div>
-                  <button className="pg-btn pg-btn--ghost pg-btn--sm">⬇ exportar</button>
+                  <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ display: "inline-flex", alignItems: "center", gap: 5 }}><Icon name="download" size={13} color="currentColor" /> exportar</button>
                 </div>
                 <div className="pg-row pg-row--between" style={{ padding: 12, border: "1px solid var(--border)", borderRadius: 8 }}>
                   <div>
@@ -726,12 +727,12 @@ const AdminConfig = ({ go }) => {
 
           {tab === "danger" && (
             <div className="pg-card pg-card--padded" style={{ borderColor: "var(--danger)" }}>
-              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--danger)", marginBottom: 6 }}>⚠️ Zona de risco</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: "var(--danger)", marginBottom: 6, display: "flex", alignItems: "center", gap: 8 }}><Icon name="alert" size={18} color="var(--danger)" /> Zona de risco</div>
               <div style={{ fontSize: 12, color: "var(--text-soft)", marginBottom: 18 }}>Ações destrutivas. Requerem 2FA + aprovação de outro admin.</div>
 
               <div className="pg-row pg-row--between" style={{ padding: 14, background: maint ? "var(--orange-50)" : "var(--bg-soft)", borderRadius: 8, marginBottom: 10 }}>
                 <div>
-                  <div style={{ fontSize: 14, fontWeight: 700 }}>{maint ? "🔧 Modo manutenção ATIVO" : "Modo manutenção"}</div>
+                  <div style={{ fontSize: 14, fontWeight: 700, display: "flex", alignItems: "center", gap: 6 }}>{maint && <Icon name="wrench" size={14} color="var(--orange-600)" />}{maint ? "Modo manutenção ATIVO" : "Modo manutenção"}</div>
                   <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>{maint ? "App offline para clientes desde 22:48" : "Pausa novos pedidos. Pedidos em andamento continuam."}</div>
                 </div>
                 <button className={`pg-btn ${maint ? "pg-btn--ghost" : "pg-btn--accent"}`} onClick={() => setMaint(!maint)} style={{ borderColor: maint ? "var(--orange-500)" : undefined, color: maint ? "var(--orange-600)" : undefined }}>{maint ? "Reativar" : "Ativar"}</button>

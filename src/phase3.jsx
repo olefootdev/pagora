@@ -52,7 +52,7 @@ const ServiceDone = ({ go }) => (
 
         {/* signature confirmation */}
         <div style={{ marginTop: 28, padding: "14px 16px", background: "rgba(34,227,163,0.1)", borderRadius: 12, border: "1px solid rgba(34,227,163,0.3)", fontSize: 12, color: "rgba(255,255,255,0.85)" }}>
-          ✓ Recebimento confirmado pela sua assinatura digital às 16:09
+          <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}><Icon name="check-circle" size={14} color="rgba(34,227,163,0.8)" /> Recebimento confirmado pela sua assinatura digital às 16:09</span>
         </div>
       </div>
       <div style={{ padding: 16, paddingBottom: 28, display: "flex", flexDirection: "column", gap: 8 }}>
@@ -80,7 +80,7 @@ const Tip = ({ go }) => {
       <div className="pg-viewport" style={{ paddingBottom: 100 }}>
         <div style={{ padding: "8px 24px 20px", textAlign: "center" }}>
           <div className="pg-anim-in" style={{ width: 80, height: 80, margin: "20px auto 16px", borderRadius: 40, background: "var(--green-50)", display: "grid", placeItems: "center" }}>
-            <span style={{ fontSize: 38 }}>🎁</span>
+            <Icon name="gift" size={36} color="var(--green-700)" />
           </div>
           <div className="pg-h-eyebrow" style={{ margin: 0 }}>VOCÊ DEU 5 ESTRELAS</div>
           <h1 style={{ fontSize: 24, fontWeight: 700, margin: "8px 0 8px", letterSpacing: "-0.02em" }}>Quer reconhecer o JM?</h1>
@@ -130,7 +130,7 @@ const Tip = ({ go }) => {
 
           {/* impact info */}
           <div className="pg-card pg-card--soft" style={{ padding: 14, marginTop: 24, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6 }}>
-            🟢 100% da gorjeta vai para o prestador, sem comissão. Você pode adicionar até 24h após o serviço.
+            <span style={{ display:"flex", alignItems:"flex-start", gap:8 }}><span style={{ width:8, height:8, borderRadius:"50%", background:"var(--green-500)", flexShrink:0, marginTop:3, display:"inline-block" }} /><span>100% da gorjeta vai para o prestador, sem comissão. Você pode adicionar até 24h após o serviço.</span></span>
           </div>
         </div>
       </div>
@@ -179,18 +179,18 @@ const Dispute = ({ go }) => {
             <div style={{ position: "absolute", left: 9, top: 12, bottom: 12, width: 2, background: "var(--border)" }} />
 
             {[
-              { who: "you", t: "Você abriu a disputa", time: "Hoje, 09:14", body: "Fui cobrada R$ 80 a mais sem combinar previamente.", icon: "📝", iconColor: "var(--night-900)" },
-              { who: "system", t: "PAGORA recebeu o caso", time: "Hoje, 09:14", body: "Analista designado: Marina S.", icon: "🛎", iconColor: "var(--green-500)" },
-              { who: "provider", t: "JM Transportes respondeu", time: "Hoje, 11:22", body: "Cliente solicitou içamento de geladeira pelo 3º andar — informei taxa de R$ 80 por mensagem na hora.", icon: "🚚", iconColor: "var(--orange-500)" },
-              { who: "you", t: "Você anexou evidência", time: "Hoje, 13:45", body: "Print do chat sem menção a taxa adicional.", icon: "📎", iconColor: "var(--night-900)" },
-              { who: "system", t: "Aguardando análise", time: "Em curso", body: "Marina está revisando as evidências.", icon: "⏱", iconColor: "var(--ink-300)", current: true },
+              { who: "you", t: "Você abriu a disputa", time: "Hoje, 09:14", body: "Fui cobrada R$ 80 a mais sem combinar previamente.", icon: "edit", iconColor: "var(--night-900)" },
+              { who: "system", t: "PAGORA recebeu o caso", time: "Hoje, 09:14", body: "Analista designado: Marina S.", icon: "bell", iconColor: "var(--green-500)" },
+              { who: "provider", t: "JM Transportes respondeu", time: "Hoje, 11:22", body: "Cliente solicitou içamento de geladeira pelo 3º andar — informei taxa de R$ 80 por mensagem na hora.", icon: "truck", iconColor: "var(--orange-500)" },
+              { who: "you", t: "Você anexou evidência", time: "Hoje, 13:45", body: "Print do chat sem menção a taxa adicional.", icon: "attach", iconColor: "var(--night-900)" },
+              { who: "system", t: "Aguardando análise", time: "Em curso", body: "Marina está revisando as evidências.", icon: "clock", iconColor: "var(--ink-300)", current: true },
             ].map((e, i) => (
               <div key={i} style={{ position: "relative", paddingBottom: 18 }}>
                 <div style={{
                   position: "absolute", left: -28, top: 4, width: 22, height: 22, borderRadius: 11,
                   background: e.iconColor, color: "#fff", display: "grid", placeItems: "center",
-                  fontSize: 11, border: e.current ? "3px solid var(--green-500)" : "none",
-                }}>{e.icon}</div>
+                  border: e.current ? "3px solid var(--green-500)" : "none",
+                }}><Icon name={e.icon} size={12} color="#fff" /></div>
                 <div className="pg-card" style={{ padding: 10, background: e.current ? "var(--bg-soft)" : "var(--paper)" }}>
                   <div className="pg-row pg-row--between">
                     <span style={{ fontSize: 13, fontWeight: 700 }}>{e.t}</span>
@@ -416,12 +416,12 @@ const Help = ({ go }) => {
   const [search, setSearch] = useStateP3("");
   const [open, setOpen] = useStateP3(0);
   const cats = [
-    { icon: "📦", t: "Sobre pedidos", n: 18 },
-    { icon: "💳", t: "Pagamentos", n: 12 },
-    { icon: "🚚", t: "Frete e mudança", n: 24 },
-    { icon: "🔧", t: "Guincho", n: 9 },
-    { icon: "🪣", t: "Caçamba", n: 7 },
-    { icon: "👤", t: "Minha conta", n: 11 },
+    { icon: "package", t: "Sobre pedidos", n: 18 },
+    { icon: "credit-card", t: "Pagamentos", n: 12 },
+    { icon: "truck", t: "Frete e mudança", n: 24 },
+    { icon: "tow", t: "Guincho", n: 9 },
+    { icon: "dumpster", t: "Caçamba", n: 7 },
+    { icon: "user", t: "Minha conta", n: 11 },
   ];
   const faqs = [
     { q: "Como funciona o orçamento?", a: "Você descreve o serviço, prestadores próximos avaliam e te enviam propostas em até 2h. Você compara preço, avaliação e o que está incluso, e escolhe quem prefere." },
@@ -439,19 +439,19 @@ const Help = ({ go }) => {
         <div style={{ padding: 20 }}>
           {/* search */}
           <div className="pg-input-wrap" style={{ marginBottom: 24 }}>
-            <span className="pg-input-icon">🔍</span>
+            <span className="pg-input-icon"><Icon name="search" size={16} color="var(--text-mute)" /></span>
             <input className="pg-input pg-input--with-icon" placeholder="Como podemos ajudar?" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
 
           {/* quick contact */}
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 28 }}>
             <button className="pg-card" style={{ padding: 16, textAlign: "center", cursor: "pointer", border: "1px solid var(--border)" }}>
-              <div style={{ fontSize: 28, marginBottom: 4 }}>💬</div>
+              <div style={{ display:"grid", placeItems:"center", width:44, height:44, borderRadius:12, background:"var(--green-50)", margin:"0 auto 8px" }}><Icon name="headset" size={22} color="var(--green-700)" /></div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>Falar com humano</div>
               <div style={{ fontSize: 11, color: "var(--text-mute)" }}>resposta em &lt; 2 min</div>
             </button>
             <button className="pg-card" style={{ padding: 16, textAlign: "center", cursor: "pointer", border: "1px solid var(--border)" }}>
-              <div style={{ fontSize: 28, marginBottom: 4 }}>📧</div>
+              <div style={{ display:"grid", placeItems:"center", width:44, height:44, borderRadius:12, background:"rgba(37,99,235,0.08)", margin:"0 auto 8px" }}><Icon name="mail" size={22} color="#2563EB" /></div>
               <div style={{ fontSize: 13, fontWeight: 700 }}>Email</div>
               <div style={{ fontSize: 11, color: "var(--text-mute)" }}>resposta em 24h</div>
             </button>
@@ -462,7 +462,7 @@ const Help = ({ go }) => {
           <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 28 }}>
             {cats.map(c => (
               <button key={c.t} className="pg-card" style={{ padding: 14, textAlign: "left", cursor: "pointer", border: "1px solid var(--border)" }}>
-                <div style={{ fontSize: 24, marginBottom: 6 }}>{c.icon}</div>
+                <div style={{ marginBottom: 8 }}><Icon name={c.icon} size={22} color="var(--text-soft)" /></div>
                 <div style={{ fontSize: 13, fontWeight: 700 }}>{c.t}</div>
                 <div style={{ fontSize: 11, color: "var(--text-mute)", fontFamily: "var(--font-mono)", marginTop: 2 }}>{c.n} ARTIGOS</div>
               </button>
@@ -478,7 +478,7 @@ const Help = ({ go }) => {
                   style={{ width: "100%", padding: "16px 16px", background: "transparent", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit" }}>
                   <div className="pg-row pg-row--between">
                     <span style={{ fontSize: 14, fontWeight: 600, paddingRight: 12 }}>{f.q}</span>
-                    <span style={{ color: "var(--text-mute)", fontSize: 18, transform: open === i ? "rotate(180deg)" : "none", transition: "transform 200ms" }}>⌄</span>
+                    <span style={{ color: "var(--text-mute)", display:"flex", transform: open === i ? "rotate(180deg)" : "none", transition: "transform 200ms" }}><Icon name="arrow-left" size={16} color="var(--text-mute)" style={{ transform:"rotate(-90deg)" }} /></span>
                   </div>
                 </button>
                 {open === i && (
@@ -489,7 +489,7 @@ const Help = ({ go }) => {
           </div>
 
           <div className="pg-card pg-card--soft" style={{ padding: 14, marginTop: 20, fontSize: 12, color: "var(--text-soft)", lineHeight: 1.6 }}>
-            🟢 Suporte 7 dias por semana, 7h-23h. Em emergências, use o botão <button onClick={() => go("sos")} style={{ color: "var(--orange-500)", fontWeight: 700, background: "none", border: "none", padding: 0, cursor: "pointer" }}>SOS</button>.
+            <span style={{ display:"flex", alignItems:"flex-start", gap:8 }}><span style={{ width:8, height:8, borderRadius:"50%", background:"var(--green-500)", flexShrink:0, marginTop:3, display:"inline-block" }} /><span>Suporte 7 dias por semana, 7h-23h. Em emergências, use o botão <button onClick={() => go("sos")} style={{ color: "var(--orange-500)", fontWeight: 700, background: "none", border: "none", padding: 0, cursor: "pointer" }}>SOS</button>.</span></span>
           </div>
         </div>
       </div>
@@ -520,7 +520,7 @@ const Legal = ({ go }) => {
           <div style={{ padding: 20 }}>
             <div className="pg-card pg-card--padded" style={{ background: "var(--bg-soft)", borderColor: "transparent", marginBottom: 20 }}>
               <div className="pg-row" style={{ gap: 12 }}>
-                <div style={{ width: 40, height: 40, borderRadius: 20, background: "var(--green-500)", color: "var(--night-900)", display: "grid", placeItems: "center", fontSize: 20, fontWeight: 800 }}>🔒</div>
+                <div style={{ width: 40, height: 40, borderRadius: 20, background: "var(--green-500)", color: "var(--night-900)", display: "grid", placeItems: "center" }}><Icon name="lock" size={20} color="var(--night-900)" /></div>
                 <div style={{ flex: 1 }}>
                   <div style={{ fontSize: 14, fontWeight: 700 }}>Seus dados, suas regras</div>
                   <div style={{ fontSize: 12, color: "var(--text-soft)", marginTop: 2 }}>Você controla o que compartilhamos.</div>
@@ -531,21 +531,21 @@ const Legal = ({ go }) => {
             <div className="pg-h-eyebrow" style={{ margin: "0 0 10px" }}>DIREITOS DO TITULAR (LGPD)</div>
             <div className="pg-stack pg-stack--sm" style={{ marginBottom: 24 }}>
               {[
-                { i: "📥", t: "Acessar seus dados", s: "Solicite uma cópia completa em CSV/JSON" },
-                { i: "✏️", t: "Corrigir dados incorretos", s: "Edite ou peça correção" },
-                { i: "🗑", t: "Apagar dados", s: "Solicite remoção parcial ou total" },
-                { i: "⏸", t: "Pausar tratamento", s: "Restrinja o uso temporariamente" },
-                { i: "📤", t: "Portabilidade", s: "Exportar para outro serviço" },
-                { i: "❌", t: "Revogar consentimento", s: "Para finalidades específicas" },
+                { i: "download", t: "Acessar seus dados", s: "Solicite uma cópia completa em CSV/JSON" },
+                { i: "edit", t: "Corrigir dados incorretos", s: "Edite ou peça correção" },
+                { i: "trash", t: "Apagar dados", s: "Solicite remoção parcial ou total" },
+                { i: "clock", t: "Pausar tratamento", s: "Restrinja o uso temporariamente" },
+                { i: "upload", t: "Portabilidade", s: "Exportar para outro serviço" },
+                { i: "close", t: "Revogar consentimento", s: "Para finalidades específicas" },
               ].map(r => (
                 <button key={r.t} className="pg-card" style={{ width: "100%", padding: 14, textAlign: "left", cursor: "pointer", border: "1px solid var(--border)" }}>
                   <div className="pg-row" style={{ gap: 12 }}>
-                    <span style={{ fontSize: 22 }}>{r.i}</span>
+                    <div style={{ width:40, height:40, borderRadius:11, background:"var(--bg-soft)", border:"1px solid var(--border)", display:"grid", placeItems:"center", flexShrink:0 }}><Icon name={r.i} size={18} color="var(--text-soft)" /></div>
                     <div style={{ flex: 1 }}>
                       <div style={{ fontSize: 14, fontWeight: 600 }}>{r.t}</div>
                       <div style={{ fontSize: 12, color: "var(--text-mute)" }}>{r.s}</div>
                     </div>
-                    <span style={{ color: "var(--text-mute)" }}>›</span>
+                    <Icon name="arrow-right" size={16} color="var(--text-mute)" />
                   </div>
                 </button>
               ))}
@@ -634,7 +634,7 @@ const EditProfile = ({ go }) => {
                 width: 32, height: 32, borderRadius: 16,
                 background: "var(--night-900)", color: "var(--green-500)",
                 border: "3px solid var(--paper)", cursor: "pointer", fontSize: 14, fontWeight: 700, fontFamily: "inherit",
-              }}>📷</button>
+              }}><Icon name="camera" size={14} color="var(--green-500)" /></button>
             </div>
             <div style={{ marginTop: 10, fontSize: 13, color: "var(--text-soft)" }}>Toque para trocar a foto</div>
           </div>
@@ -647,12 +647,12 @@ const EditProfile = ({ go }) => {
             <div className="pg-field">
               <label className="pg-label">Telefone</label>
               <input className="pg-input" value={phone} onChange={(e) => setPhone(e.target.value)} style={{ fontFamily: "var(--font-mono)" }} />
-              <div className="pg-helper">✓ Verificado</div>
+              <div className="pg-helper" style={{ display:"flex", alignItems:"center", gap:4 }}><Icon name="check" size={11} strokeWidth={2.5} color="var(--green-700)" /> Verificado</div>
             </div>
             <div className="pg-field">
               <label className="pg-label">Email</label>
               <input className="pg-input" value={email} onChange={(e) => setEmail(e.target.value)} type="email" />
-              <div className="pg-helper">✓ Verificado</div>
+              <div className="pg-helper" style={{ display:"flex", alignItems:"center", gap:4 }}><Icon name="check" size={11} strokeWidth={2.5} color="var(--green-700)" /> Verificado</div>
             </div>
             <div className="pg-field">
               <label className="pg-label">CPF</label>
@@ -696,7 +696,7 @@ const DeleteAccount = ({ go }) => {
         <TopBarP3 onBack={() => go("settings")} title="Excluir conta" />
         <div className="pg-viewport" style={{ paddingBottom: 100 }}>
           <div style={{ padding: 24, textAlign: "center" }}>
-            <div style={{ fontSize: 48, marginBottom: 12 }}>👋</div>
+            <div style={{ width:72, height:72, borderRadius:22, background:"var(--orange-50)", display:"grid", placeItems:"center", margin:"0 auto 16px" }}><Icon name="user" size={34} color="var(--orange-600)" /></div>
             <h1 style={{ fontSize: 22, fontWeight: 700, margin: "0 0 12px", letterSpacing: "-0.02em" }}>Vai mesmo?</h1>
             <p style={{ color: "var(--text-soft)", fontSize: 14, lineHeight: 1.5 }}>
               Antes de prosseguir, queremos entender o que aconteceu para melhorar.
@@ -708,14 +708,14 @@ const DeleteAccount = ({ go }) => {
               <div className="pg-stack pg-stack--sm" style={{ marginTop: 12 }}>
                 <button className="pg-row pg-row--between" style={{ padding: "10px 0", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", borderTop: "1px solid var(--border)" }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>🔕 Pausar notificações</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, display:"flex", alignItems:"center", gap:7 }}><Icon name="bell-off" size={15} color="var(--text)" /> Pausar notificações</div>
                     <div style={{ fontSize: 11, color: "var(--text-mute)" }}>Manter conta sem receber emails</div>
                   </div>
                   <span style={{ color: "var(--text-mute)" }}>›</span>
                 </button>
                 <button className="pg-row pg-row--between" style={{ padding: "10px 0", background: "none", border: "none", textAlign: "left", cursor: "pointer", fontFamily: "inherit", borderTop: "1px solid var(--border)" }}>
                   <div>
-                    <div style={{ fontSize: 13, fontWeight: 600 }}>🆘 Falar com o suporte</div>
+                    <div style={{ fontSize: 13, fontWeight: 600, display:"flex", alignItems:"center", gap:7 }}><Icon name="headset" size={15} color="var(--text)" /> Falar com o suporte</div>
                     <div style={{ fontSize: 11, color: "var(--text-mute)" }}>Resolver o que está incomodando</div>
                   </div>
                   <span style={{ color: "var(--text-mute)" }}>›</span>
@@ -780,7 +780,7 @@ const DeleteAccount = ({ go }) => {
       <div className="pg-viewport" style={{ paddingBottom: 100 }}>
         <div style={{ padding: 20 }}>
           <div className="pg-card pg-card--padded" style={{ background: "var(--orange-50)", borderColor: "var(--orange-500)", marginBottom: 20 }}>
-            <div className="pg-h-eyebrow" style={{ margin: 0, color: "var(--orange-600)" }}>⚠️ AÇÃO IRREVERSÍVEL</div>
+            <div className="pg-h-eyebrow" style={{ margin: 0, color: "var(--orange-600)", display:"flex", alignItems:"center", gap:5 }}><Icon name="alert" size={12} color="var(--orange-600)" /> AÇÃO IRREVERSÍVEL</div>
             <div style={{ marginTop: 10, fontSize: 13, lineHeight: 1.6, color: "var(--text-soft)" }}>
               <div>→ Todo seu histórico de pedidos será apagado</div>
               <div>→ Endereços, favoritos e preferências serão removidos</div>
@@ -796,7 +796,7 @@ const DeleteAccount = ({ go }) => {
           </div>
 
           <div className="pg-card pg-card--soft" style={{ padding: 14, marginTop: 20, fontSize: 12, color: "var(--text-soft)" }}>
-            💡 Antes de excluir definitivamente, você receberá um email com link para recuperar nas próximas 7 dias.
+            <span style={{ display:"flex", alignItems:"flex-start", gap:8 }}><Icon name="lightbulb" size={14} color="var(--green-700)" style={{ flexShrink:0, marginTop:1 }} /><span>Antes de excluir definitivamente, você receberá um email com link para recuperar nas próximas 7 dias.</span></span>
           </div>
         </div>
       </div>
