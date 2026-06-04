@@ -1,28 +1,17 @@
 /* @jsxRuntime classic */
 /* global React, Icon */
-const { useState: useStateF, useMemo: useMemoF } = React;
+const { useState: useStateF, useMemo: useMemoF, useEffect: useEffectF } = React;
 
-// Pricing model (rough — for demo)
-const calcFrete = (s) => {
-  const km = s.distance || 15;
-  const baseKm = km * 12;
-  const vehicle = { van: 0, bau: 50, grande: 130 }[s.vehicle] || 50;
-  const helpers = (s.helpers || 0) * 50;
-  const access = (s.originAccess?.needHelp ? 30 : 0) + (s.destAccess?.needHelp ? 30 : 0);
-  const noElev = (s.originAccess?.type === "apt" && !s.originAccess?.elevator ? 25 : 0)
-              + (s.destAccess?.type === "apt" && !s.destAccess?.elevator ? 25 : 0);
-  const baseFee = 30;
-  let total = baseKm + vehicle + helpers + access + noElev + baseFee;
-  if (s.urgency === "today") total = Math.round(total * 1.3);
-  const low = Math.round(total);
-  const high = Math.round(total * 1.25);
-  return { low, high, breakdown: { baseKm, vehicle, helpers, access, noElev, baseFee, urgency: s.urgency === "today" ? "+30%" : "—" } };
-};
+// Pricing centralizado em window.PagoraPricing (src/lib/pricing.js)
+const calcFrete = (s) => window.PagoraPricing.calcFrete(s);
 
 // =====================================================================
 // FRETE 1 — Cargo type
 // =====================================================================
 const Frete1 = ({ go, state, set }) => {
+  useEffectF(() => {
+    window.PagoraAnalytics?.track("simulacao_iniciada", { tipo_servico: "frete" });
+  }, []);
   const opts = [
     { id: "mudanca-res", t: "Mudança residencial completa", s: "Casa ou apartamento inteiro" },
     { id: "mudanca-com", t: "Mudança comercial / escritório", s: "Empresa, loja, consultório" },
@@ -475,7 +464,23 @@ const FreteSummary = ({ go, state }) => {
         </div>
 
         <div className="pg-page-foot">
-          <button className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg" onClick={() => go("frete-confirm")}>
+          <button
+            className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
+            onClick={() => {
+              const W = window.PagoraWhatsApp;
+              const A = window.PagoraAnalytics;
+              const adicionais = [
+                state.helpers > 0 && "ajudante",
+                state.urgency === "today" && "urgencia",
+                state.originAccess?.needHelp && "acesso-origem",
+                state.destAccess?.needHelp && "acesso-destino",
+              ].filter(Boolean);
+              A?.track("pedido_enviado", { valor: price.low, tipo: "frete", adicionais });
+              A?.track("whatsapp_clicado", { origem: "frete-summary" });
+              if (W) W.abrirWhatsApp(W.mensagemFrete(state, price));
+              go("frete-confirm");
+            }}
+          >
             <Icon name="whatsapp" size={20} /> Solicitar orçamentos
           </button>
           <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-mute)" }}>
@@ -587,7 +592,14 @@ const FreteConfirm = ({ go, state, reset }) => {
                   onChange={e => setEmail(e.target.value)}
                   style={{ background: "rgba(255,255,255,0.06)", borderColor: "rgba(255,255,255,0.16)", color: "#fff" }}
                 />
-                <button className="pg-btn pg-btn--accent" onClick={() => setSent(true)} disabled={!email.includes("@")}>Enviar</button>
+                <button
+                  className="pg-btn pg-btn--accent"
+                  onClick={() => {
+                    window.PagoraAnalytics?.track("email_capturado", { origem: "frete-confirm" });
+                    setSent(true);
+                  }}
+                  disabled={!email.includes("@")}
+                >Enviar</button>
               </div>
             )}
           </div>

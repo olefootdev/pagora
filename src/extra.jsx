@@ -1,30 +1,18 @@
 /* @jsxRuntime classic */
 /* global React, Icon */
-const { useState: useStateG, useMemo: useMemoG } = React;
+const { useState: useStateG, useMemo: useMemoG, useEffect: useEffectG } = React;
 
-// Pricing
-const calcGuincho = (s) => {
-  const km = s.distance || 8;
-  const baseKm = km * 15;
-  const veh = { popular: 0, medio: 30, grande: 60, suv: 80, pickup: 80, moto: -20, van: 60 }[s.vehicleType] || 30;
-  const access = { rua: 0, garagem: 40, dificil: 80, expressa: 120 }[s.location] || 0;
-  const baseFee = 60;
-  let total = baseKm + veh + access + baseFee;
-  if (s.urgency === "now") total = Math.round(total * 1.5);
-  return { low: Math.round(total), high: Math.round(total * 1.3), breakdown: { baseKm, veh, access, baseFee, urgency: s.urgency === "now" ? "+50%" : "—" } };
-};
-
-const calcCacamba = (s) => {
-  const sizePrice = { p3: 180, p5: 280, p8: 380 }[s.size] || 280;
-  const time = { d1: 0, d3: 60, d7: 120 }[s.duration] || 0;
-  const total = sizePrice + time;
-  return { low: total, high: Math.round(total * 1.15), breakdown: { sizePrice, time } };
-};
+// Pricing centralizado em window.PagoraPricing (src/lib/pricing.js)
+const calcGuincho = (s) => window.PagoraPricing.calcGuincho(s);
+const calcCacamba = (s) => window.PagoraPricing.calcCacamba(s);
 
 // =====================================================================
 // GUINCHO 1 — Tipo de problema
 // =====================================================================
 const Guincho1 = ({ go, state, set }) => {
+  useEffectG(() => {
+    window.PagoraAnalytics?.track("simulacao_iniciada", { tipo_servico: "guincho" });
+  }, []);
   const opts = [
     { id: "pane", t: "Pane mecânica / Não liga", s: "Carro travou, motor não dá partida", icon: "wrench" },
     { id: "pneu", t: "Pneu furado", s: "Pode não precisar guincho — confirme com prestador", icon: "alert" },
@@ -299,7 +287,22 @@ const Guincho4 = ({ go, state, set }) => {
           </div>
         </div>
         <div className="pg-page-foot">
-          <button className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg" disabled={!state.urgency} onClick={() => go("proposals")}>
+          <button
+            className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
+            disabled={!state.urgency}
+            onClick={() => {
+              const W = window.PagoraWhatsApp;
+              const A = window.PagoraAnalytics;
+              A?.track("pedido_enviado", {
+                valor: price.low,
+                tipo: "guincho",
+                adicionais: state.urgency === "now" ? ["urgencia"] : [],
+              });
+              A?.track("whatsapp_clicado", { origem: "guincho-4" });
+              if (W) W.abrirWhatsApp(W.mensagemGuincho(state, price));
+              go("proposals");
+            }}
+          >
             <Icon name="whatsapp" size={20} /> {state.urgency === "now" ? "Solicitar guincho urgente" : "Solicitar orçamentos"}
           </button>
           <div style={{ textAlign: "center", fontSize: 12, color: "var(--text-mute)" }}>
@@ -315,6 +318,9 @@ const Guincho4 = ({ go, state, set }) => {
 // CAÇAMBA 1 — Material
 // =====================================================================
 const Cacamba1 = ({ go, state, set }) => {
+  useEffectG(() => {
+    window.PagoraAnalytics?.track("simulacao_iniciada", { tipo_servico: "cacamba" });
+  }, []);
   const opts = [
     { id: "construcao", t: "Entulho de construção", s: "Tijolos, concreto, argamassa" },
     { id: "demolicao", t: "Entulho de demolição", s: "Madeira, gesso, cerâmica" },
@@ -517,8 +523,18 @@ const Cacamba3 = ({ go, state, set }) => {
           </div>
         </div>
         <div className="pg-page-foot">
-          <button className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
-            disabled={!state.address || !state.placement} onClick={() => go("proposals")}>
+          <button
+            className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
+            disabled={!state.address || !state.placement}
+            onClick={() => {
+              const W = window.PagoraWhatsApp;
+              const A = window.PagoraAnalytics;
+              A?.track("pedido_enviado", { valor: price.low, tipo: "cacamba", adicionais: [] });
+              A?.track("whatsapp_clicado", { origem: "cacamba-3" });
+              if (W) W.abrirWhatsApp(W.mensagemCacamba(state, price));
+              go("proposals");
+            }}
+          >
             <Icon name="whatsapp" size={20} /> Solicitar orçamentos
           </button>
         </div>

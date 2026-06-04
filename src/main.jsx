@@ -1,6 +1,12 @@
 import './globals.js';
 import './pagora.css';
 
+// libs (puro JS) — populam window.PagoraPricing/WhatsApp/Analytics
+// Carregadas ANTES dos componentes para estarem disponíveis em render time.
+import './lib/pricing.js';
+import './lib/whatsapp.js';
+import './lib/analytics.js';
+
 // side-effect imports — cada arquivo popula window.PagoraXxx
 import './icons.jsx';
 import './core.jsx';
