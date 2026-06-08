@@ -1,4 +1,4 @@
-import { useState as useStateA, useMemo as useMemoA, useEffect as useEffectA } from 'react';
+import { useState as useStateA } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar, Logo } from './core';
 import type { ScreenProps } from './types';
@@ -415,51 +415,516 @@ const Onboarding = ({ go }: ScreenProps) => {
 };
 
 // =====================================================================
-// HOME (autenticada)
+// HOME (autenticada) — design language NURA-inspired:
+// dark canvas, editorial type mix (sans heavy + Instrument Serif italic),
+// chunky tags, stat pills, price hero, ▶ card actions, map+slab hero.
 // =====================================================================
+const HOME_INK = '#FFFFFF';
+const HOME_INK_MUTE = 'rgba(255,255,255,0.62)';
+const HOME_INK_DIM = 'rgba(255,255,255,0.38)';
+const HOME_HAIR = 'rgba(255,255,255,0.08)';
+const HOME_BG = '#070E1A';
+const HOME_BG_RAISED = '#0E1726';
+const HOME_BRAND = '#22E3A3';
+const HOME_LIME = '#C8FF3D';
+const HOME_SERIF = '"Instrument Serif", "Times New Roman", serif';
+const HOME_SANS = '"Plus Jakarta Sans", system-ui, sans-serif';
+const HOME_MONO = '"JetBrains Mono", ui-monospace, monospace';
+
+const HEyebrow = ({
+  children,
+  color = HOME_BRAND,
+}: {
+  children: React.ReactNode;
+  color?: string;
+}) => (
+  <div
+    style={{
+      fontFamily: HOME_MONO,
+      fontSize: 11,
+      fontWeight: 600,
+      letterSpacing: '0.18em',
+      textTransform: 'uppercase',
+      color,
+    }}
+  >
+    {children}
+  </div>
+);
+
+const HSectionLabel = ({
+  children,
+  action,
+}: {
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) => (
+  <div
+    style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'baseline',
+      marginBottom: 18,
+    }}
+  >
+    <div
+      style={{
+        fontFamily: HOME_MONO,
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.18em',
+        textTransform: 'uppercase',
+        color: HOME_INK_MUTE,
+      }}
+    >
+      {children}
+    </div>
+    {action}
+  </div>
+);
+
+const HChunkyTag = ({
+  children,
+  variant = 'dark',
+}: {
+  children: React.ReactNode;
+  variant?: 'dark' | 'lime';
+}) => (
+  <span
+    style={{
+      display: 'inline-flex',
+      alignItems: 'center',
+      gap: 6,
+      padding: '6px 12px',
+      borderRadius: 4,
+      background: variant === 'lime' ? HOME_LIME : HOME_BG,
+      color: variant === 'lime' ? HOME_BG : HOME_BRAND,
+      border: variant === 'lime' ? 'none' : `1.5px solid ${HOME_BRAND}`,
+      fontFamily: HOME_SANS,
+      fontWeight: 800,
+      fontSize: 11,
+      letterSpacing: '0.08em',
+      textTransform: 'uppercase',
+      boxShadow:
+        variant === 'lime' ? `3px 3px 0 0 ${HOME_BG}` : '3px 3px 0 0 rgba(34,227,163,0.35)',
+    }}
+  >
+    {children}
+  </span>
+);
+
+const HStatPill = ({ icon, value, label }: { icon: string; value: string; label: string }) => (
+  <div
+    style={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 8,
+      textAlign: 'center',
+    }}
+  >
+    <span
+      style={{
+        width: 44,
+        height: 44,
+        borderRadius: 999,
+        background: 'rgba(34,227,163,0.14)',
+        color: HOME_BRAND,
+        display: 'grid',
+        placeItems: 'center',
+      }}
+    >
+      <Icon name={icon} size={20} strokeWidth={2.2} />
+    </span>
+    <div
+      style={{
+        fontFamily: HOME_SANS,
+        fontWeight: 800,
+        fontSize: 18,
+        color: HOME_INK,
+        lineHeight: 1,
+      }}
+    >
+      {value}
+    </div>
+    <div
+      style={{
+        fontFamily: HOME_MONO,
+        fontSize: 9.5,
+        fontWeight: 600,
+        letterSpacing: '0.12em',
+        textTransform: 'uppercase',
+        color: HOME_INK_DIM,
+      }}
+    >
+      {label}
+    </div>
+  </div>
+);
+
+const HServiceTile = ({
+  icon,
+  title,
+  desc,
+  status,
+  onClick,
+}: {
+  icon: string;
+  title: string;
+  desc: string;
+  status: 'live' | 'soon';
+  onClick?: () => void;
+}) => {
+  const isLive = status === 'live';
+  return (
+    <button
+      onClick={isLive ? onClick : undefined}
+      disabled={!isLive}
+      style={{
+        background: HOME_BG_RAISED,
+        border: `1px solid ${HOME_HAIR}`,
+        borderRadius: 18,
+        padding: 22,
+        display: 'flex',
+        flexDirection: 'column',
+        gap: 22,
+        cursor: isLive ? 'pointer' : 'default',
+        opacity: isLive ? 1 : 0.55,
+        textAlign: 'left',
+        fontFamily: HOME_SANS,
+        color: HOME_INK,
+        minHeight: 190,
+      }}
+    >
+      <div
+        style={{
+          width: 48,
+          height: 48,
+          borderRadius: 12,
+          background: isLive ? 'rgba(34,227,163,0.14)' : 'rgba(255,255,255,0.04)',
+          color: isLive ? HOME_BRAND : HOME_INK_MUTE,
+          display: 'grid',
+          placeItems: 'center',
+        }}
+      >
+        <Icon name={icon} size={26} strokeWidth={2.2} />
+      </div>
+      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 6 }}>
+        <div
+          style={{
+            fontSize: 18,
+            fontWeight: 700,
+            color: HOME_INK,
+            letterSpacing: '-0.01em',
+          }}
+        >
+          {title}
+        </div>
+        <div
+          style={{
+            fontFamily: HOME_SERIF,
+            fontStyle: 'italic',
+            fontSize: 14,
+            color: HOME_INK_MUTE,
+            lineHeight: 1.4,
+          }}
+        >
+          {desc}
+        </div>
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+        }}
+      >
+        <span
+          style={{
+            fontFamily: HOME_MONO,
+            fontSize: 10,
+            fontWeight: 600,
+            letterSpacing: '0.14em',
+            textTransform: 'uppercase',
+            color: isLive ? HOME_BRAND : HOME_INK_DIM,
+          }}
+        >
+          {isLive ? 'Solicitar' : 'Em breve'}
+        </span>
+        {isLive && (
+          <span
+            style={{
+              width: 32,
+              height: 32,
+              borderRadius: 999,
+              background: HOME_BRAND,
+              color: HOME_BG,
+              display: 'grid',
+              placeItems: 'center',
+            }}
+          >
+            <Icon name="arrow-right" size={16} strokeWidth={3} />
+          </span>
+        )}
+      </div>
+    </button>
+  );
+};
+
+type HProvider = {
+  id: string;
+  initials: string;
+  name: string;
+  svc: string;
+  rating: string;
+  eta: string;
+  price: string;
+};
+const HProviderCard = ({ p, onClick }: { p: HProvider; onClick: () => void }) => (
+  <button
+    onClick={onClick}
+    style={{
+      background: HOME_BG_RAISED,
+      border: `1px solid ${HOME_HAIR}`,
+      borderRadius: 16,
+      padding: 18,
+      display: 'flex',
+      flexDirection: 'column',
+      gap: 14,
+      cursor: 'pointer',
+      textAlign: 'left',
+      fontFamily: HOME_SANS,
+      color: HOME_INK,
+    }}
+  >
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'flex-start',
+      }}
+    >
+      <div
+        style={{
+          width: 42,
+          height: 42,
+          borderRadius: 12,
+          background: HOME_BRAND,
+          color: HOME_BG,
+          display: 'grid',
+          placeItems: 'center',
+          fontFamily: HOME_MONO,
+          fontWeight: 700,
+          fontSize: 14,
+        }}
+      >
+        {p.initials}
+      </div>
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          gap: 4,
+          padding: '4px 8px',
+          background: HOME_BG,
+          borderRadius: 6,
+          fontFamily: HOME_MONO,
+          fontSize: 11,
+          fontWeight: 600,
+          color: HOME_INK,
+        }}
+      >
+        <Icon name="clock" size={11} color={HOME_BRAND} />
+        {p.eta}
+      </div>
+    </div>
+    <div>
+      <div
+        style={{
+          fontWeight: 700,
+          fontSize: 15,
+          color: HOME_INK,
+          letterSpacing: '-0.01em',
+        }}
+      >
+        {p.name}
+      </div>
+      <div
+        style={{
+          marginTop: 4,
+          display: 'flex',
+          gap: 8,
+          alignItems: 'center',
+          fontFamily: HOME_MONO,
+          fontSize: 11,
+          color: HOME_INK_MUTE,
+        }}
+      >
+        <span
+          style={{
+            padding: '2px 6px',
+            background: 'rgba(34,227,163,0.10)',
+            color: HOME_BRAND,
+            borderRadius: 4,
+            letterSpacing: '0.06em',
+            textTransform: 'uppercase',
+            fontWeight: 700,
+          }}
+        >
+          {p.svc}
+        </span>
+        <span style={{ color: HOME_BRAND }}>★ {p.rating}</span>
+      </div>
+    </div>
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'baseline',
+        justifyContent: 'space-between',
+        gap: 8,
+        paddingTop: 12,
+        borderTop: `1px dashed ${HOME_HAIR}`,
+      }}
+    >
+      <div
+        style={{
+          fontFamily: HOME_MONO,
+          fontSize: 9.5,
+          letterSpacing: '0.14em',
+          textTransform: 'uppercase',
+          color: HOME_INK_DIM,
+        }}
+      >
+        a partir de
+      </div>
+      <div
+        style={{
+          fontWeight: 800,
+          fontSize: 22,
+          color: HOME_INK,
+          letterSpacing: '-0.02em',
+        }}
+      >
+        {p.price}
+      </div>
+    </div>
+  </button>
+);
+
+const HShortcutCard = ({
+  icon,
+  label,
+  sub,
+  onClick,
+}: {
+  icon: string;
+  label: string;
+  sub: string;
+  onClick: () => void;
+}) => (
+  <button
+    onClick={onClick}
+    style={{
+      background: HOME_BG_RAISED,
+      border: `1px solid ${HOME_HAIR}`,
+      borderRadius: 14,
+      padding: '16px 14px',
+      display: 'flex',
+      alignItems: 'center',
+      gap: 12,
+      cursor: 'pointer',
+      fontFamily: HOME_SANS,
+      color: HOME_INK,
+      textAlign: 'left',
+    }}
+  >
+    <span
+      style={{
+        width: 38,
+        height: 38,
+        borderRadius: 11,
+        background: 'rgba(34,227,163,0.14)',
+        color: HOME_BRAND,
+        display: 'grid',
+        placeItems: 'center',
+        flexShrink: 0,
+      }}
+    >
+      <Icon name={icon} size={18} strokeWidth={2.2} />
+    </span>
+    <div style={{ minWidth: 0, flex: 1 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: HOME_INK, lineHeight: 1.1 }}>{label}</div>
+      <div
+        style={{
+          fontSize: 11,
+          color: HOME_INK_MUTE,
+          marginTop: 4,
+          fontFamily: HOME_MONO,
+          overflow: 'hidden',
+          textOverflow: 'ellipsis',
+          whiteSpace: 'nowrap',
+        }}
+      >
+        {sub}
+      </div>
+    </div>
+  </button>
+);
+
 const HomeAuth = ({ go }: ScreenProps) => {
-  const [mapExpanded, setMapExpanded] = useStateA(false);
-
-  const C = {
-    land: '#F5F1E8',
-    landAlt: '#EFEAD8',
-    park: '#C8E6C9',
-    water: '#A8D5F0',
-    road: '#FFFFFF',
-    roadStroke: '#E0DCD0',
-    arterial: '#FFE082',
-    arterialStroke: '#E5C66B',
-    highway: '#FFB74D',
-    highwayStroke: '#D89940',
-    label: '#5C5040',
-    labelLight: '#8B7E6C',
-  };
-
-  const pins = [
-    { id: 'p1', initials: 'CM', x: 62, y: 150, color: 'var(--green-700)' },
-    { id: 'p2', initials: 'JM', x: 285, y: 78, color: 'var(--green-700)' },
-    { id: 'p3', initials: 'RF', x: 336, y: 155, color: 'var(--orange-600)' },
-    { id: 'p4', initials: 'FJ', x: 48, y: 88, color: 'var(--orange-600)' },
-    { id: 'p5', initials: 'LC', x: 164, y: 180, color: '#9C27B0' },
-    { id: 'p6', initials: 'AS', x: 290, y: 170, color: '#B8930F' },
+  const pins: ReadonlyArray<readonly [string, string, number, number, string]> = [
+    ['p1', 'CM', 110, 165, '#0FA77A'],
+    ['p2', 'JM', 280, 100, '#0FA77A'],
+    ['p3', 'RF', 420, 120, '#F26B1F'],
+    ['p4', 'AS', 480, 220, '#F26B1F'],
+    ['p5', 'LC', 200, 260, '#7E57C2'],
+    ['p6', 'FJ', 70, 220, '#0FA77A'],
   ];
 
-  const actions = [
-    { id: 'frete', icon: 'truck', label: 'Frete', route: 'frete-1' },
-    { id: 'guincho', icon: 'tow', label: 'Guincho', route: 'guincho-1' },
-    { id: 'map', icon: 'pin', label: 'Mapa', route: 'map', isCenter: true },
-    { id: 'cacamba', icon: 'dumpster', label: 'Caçamba', route: 'cacamba-1' },
-    { id: 'pedidos', icon: 'package', label: 'Pedidos', route: 'history-list' },
+  const services: ReadonlyArray<{
+    icon: string;
+    title: string;
+    desc: string;
+    status: 'live' | 'soon';
+    route: string;
+  }> = [
+    {
+      icon: 'truck',
+      title: 'Frete',
+      desc: 'Mudanças, móveis, cargas em geral até 30m³',
+      status: 'live',
+      route: 'frete-1',
+    },
+    {
+      icon: 'tow',
+      title: 'Guincho',
+      desc: 'Pane, acidente, falta de combustível',
+      status: 'live',
+      route: 'guincho-1',
+    },
+    {
+      icon: 'dumpster',
+      title: 'Caçamba',
+      desc: 'Entulho, demolição, terra e galhos',
+      status: 'live',
+      route: 'cacamba-1',
+    },
+    {
+      icon: 'package',
+      title: 'Rodoviário',
+      desc: 'Cargas entre cidades — em breve',
+      status: 'soon',
+      route: 'home',
+    },
   ];
 
-  const nearby = [
+  const nearby: ReadonlyArray<HProvider> = [
     {
       id: 'p1',
       initials: 'CM',
       name: 'Carlos Mudanças',
       svc: 'Frete',
       rating: '4.7',
-      dist: '0.8 km',
       eta: '8 min',
       price: 'R$ 210',
     },
@@ -469,7 +934,6 @@ const HomeAuth = ({ go }: ScreenProps) => {
       name: 'Auto Socorro 24h',
       svc: 'Guincho',
       rating: '4.8',
-      dist: '1.2 km',
       eta: '11 min',
       price: 'R$ 285',
     },
@@ -479,7 +943,6 @@ const HomeAuth = ({ go }: ScreenProps) => {
       name: 'JM Transportes',
       svc: 'Frete',
       rating: '4.9',
-      dist: '1.4 km',
       eta: '14 min',
       price: 'R$ 240',
     },
@@ -489,7 +952,6 @@ const HomeAuth = ({ go }: ScreenProps) => {
       name: 'Roberto Frota',
       svc: 'Guincho',
       rating: '4.5',
-      dist: '2.8 km',
       eta: '22 min',
       price: 'R$ 260',
     },
@@ -497,985 +959,748 @@ const HomeAuth = ({ go }: ScreenProps) => {
 
   return (
     <div
-      className="pg-screen"
       data-screen-label="A3 Home autenticada"
-      style={{ background: '#FFFFFF', display: 'flex', flexDirection: 'column' }}
+      style={{
+        flex: 1,
+        minHeight: '100%',
+        background: HOME_BG,
+        color: HOME_INK,
+        fontFamily: HOME_SANS,
+        overflow: 'auto',
+      }}
     >
-      <StatusBar />
-
-      {/* ── HEADER ─────────────────────────────────────────── */}
       <div
         style={{
-          padding: '12px 20px 14px',
-          flexShrink: 0,
-          background: '#FFFFFF',
+          padding: 'clamp(20px, 4vw, 40px) clamp(16px, 4vw, 48px) clamp(40px, 6vw, 64px)',
           display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
+          flexDirection: 'column',
+          gap: 'clamp(28px, 4vw, 48px)',
+          maxWidth: 1280,
+          margin: '0 auto',
         }}
       >
-        <div>
-          <div style={{ fontSize: 12, color: '#64748B', fontWeight: 500 }}>Boa tarde,</div>
-          <div
-            style={{
-              fontSize: 22,
-              fontWeight: 800,
-              color: '#0F172A',
-              letterSpacing: '-0.02em',
-              marginTop: 2,
-              lineHeight: 1,
-            }}
-          >
-            Marina
+        {/* GREETING + WALLET */}
+        <header
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) auto',
+            gap: 24,
+            alignItems: 'flex-end',
+          }}
+          className="ha-greet"
+        >
+          <div>
+            <HEyebrow>São Paulo · Pinheiros</HEyebrow>
+            <h1
+              style={{
+                margin: '12px 0 0',
+                fontWeight: 800,
+                fontSize: 'clamp(34px, 5.5vw, 64px)',
+                lineHeight: 0.98,
+                letterSpacing: '-0.035em',
+                color: HOME_INK,
+              }}
+            >
+              Boa tarde,{' '}
+              <span
+                style={{
+                  fontFamily: HOME_SERIF,
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  color: HOME_BRAND,
+                }}
+              >
+                Marina
+              </span>
+              .
+            </h1>
+            <p
+              style={{
+                margin: '14px 0 0',
+                maxWidth: '50ch',
+                fontSize: 15,
+                lineHeight: 1.5,
+                color: HOME_INK_MUTE,
+              }}
+            >
+              Você tem{' '}
+              <span style={{ color: HOME_INK, fontWeight: 600 }}>1 pedido em andamento</span> e{' '}
+              <span style={{ color: HOME_INK, fontWeight: 600 }}>6 prestadores disponíveis</span> na
+              sua região agora.
+            </p>
           </div>
-        </div>
-        <div style={{ display: 'flex', gap: 6, alignItems: 'center', flexShrink: 0 }}>
+
           <button
             onClick={() => go('wallet')}
-            aria-label="Carteira"
             style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: 5,
-              padding: '7px 10px',
-              background: 'var(--night-900)',
-              border: '1px solid rgba(34,227,163,0.25)',
-              borderRadius: 100,
+              background: HOME_BG_RAISED,
+              border: `1px solid ${HOME_HAIR}`,
+              borderRadius: 18,
+              padding: '18px 22px',
+              minWidth: 200,
               cursor: 'pointer',
-              color: 'var(--green-500)',
-              whiteSpace: 'nowrap',
-              flexShrink: 0,
+              textAlign: 'left',
+              fontFamily: HOME_SANS,
+              color: HOME_INK,
             }}
           >
-            <Icon name="spark" size={12} color="#22E3A3" />
-            <span
+            <HEyebrow color={HOME_INK_DIM}>Carteira PAGORA</HEyebrow>
+            <div
               style={{
-                fontSize: 11.5,
+                marginTop: 6,
                 fontWeight: 800,
-                fontFamily: 'var(--font-mono)',
-                letterSpacing: '-0.01em',
-                color: '#fff',
+                fontSize: 32,
+                letterSpacing: '-0.025em',
+                color: HOME_INK,
               }}
             >
-              R$ 47,<span style={{ color: 'rgba(255,255,255,0.5)' }}>80</span>
-            </span>
+              R$ 47<span style={{ color: HOME_INK_MUTE, fontWeight: 500 }}>,80</span>
+            </div>
+            <div
+              style={{
+                marginTop: 4,
+                fontSize: 12,
+                color: HOME_BRAND,
+                fontFamily: HOME_MONO,
+              }}
+            >
+              +R$ 30,00 esta semana ↑
+            </div>
           </button>
+        </header>
+
+        {/* HERO ZONE — MAP + LIVE ORDER */}
+        <section
+          style={{
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1.25fr) minmax(340px, 0.75fr)',
+            gap: 20,
+          }}
+          className="ha-hero"
+        >
           <button
-            onClick={() => go('notifications')}
-            aria-label="Avisos"
+            onClick={() => go('map')}
             style={{
               position: 'relative',
-              width: 36,
-              height: 36,
-              background: '#F8FAFC',
-              border: '1px solid #E2E8F0',
-              borderRadius: 11,
-              display: 'grid',
-              placeItems: 'center',
+              height: 340,
+              borderRadius: 20,
+              overflow: 'hidden',
+              background: '#F5F1E8',
+              border: `1px solid ${HOME_HAIR}`,
               cursor: 'pointer',
-              flexShrink: 0,
+              padding: 0,
+              textAlign: 'left',
             }}
+            aria-label="Abrir mapa de prestadores"
           >
-            <Icon name="bell" size={17} color="#0F172A" />
-            <span
+            <svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 600 340"
+              preserveAspectRatio="xMidYMid slice"
+            >
+              <defs>
+                <filter id="hm-shadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="3" stdDeviation="3" floodOpacity="0.3" />
+                </filter>
+              </defs>
+              <rect width="600" height="340" fill="#F5F1E8" />
+              <rect x="0" y="0" width="300" height="150" fill="#EFEAD8" opacity="0.55" />
+              <rect x="300" y="190" width="300" height="150" fill="#EFEAD8" opacity="0.55" />
+              <path
+                d="M -10 60 Q 140 40, 280 80 T 510 100 L 620 95 L 620 130 Q 510 135, 380 110 T 120 100 L -10 110 Z"
+                fill="#A8D5F0"
+              />
+              <ellipse cx="450" cy="240" rx="70" ry="46" fill="#C8E6C9" />
+              <ellipse cx="90" cy="280" rx="50" ry="32" fill="#C8E6C9" />
+              <path d="M -10 170 L 620 170" stroke="#D89940" strokeWidth="16" />
+              <path d="M -10 170 L 620 170" stroke="#FFB74D" strokeWidth="13" />
+              <path d="M -10 240 L 620 240" stroke="#E5C66B" strokeWidth="12" />
+              <path d="M -10 240 L 620 240" stroke="#FFE082" strokeWidth="9.5" />
+              <path d="M 300 -10 L 300 350" stroke="#D89940" strokeWidth="16" />
+              <path d="M 300 -10 L 300 350" stroke="#FFB74D" strokeWidth="13" />
+              <path d="M 120 -10 L 120 350" stroke="#E5C66B" strokeWidth="11" />
+              <path d="M 120 -10 L 120 350" stroke="#FFE082" strokeWidth="8.5" />
+              <path d="M 480 -10 L 480 350" stroke="#E5C66B" strokeWidth="11" />
+              <path d="M 480 -10 L 480 350" stroke="#FFE082" strokeWidth="8.5" />
+              <g transform="translate(300 170)">
+                <circle r="36" fill="#4285F4" opacity="0.18">
+                  <animate
+                    attributeName="r"
+                    from="18"
+                    to="44"
+                    dur="2.4s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    from="0.35"
+                    to="0"
+                    dur="2.4s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+                <circle r="11" fill="#4285F4" stroke="#fff" strokeWidth="3" />
+              </g>
+              {pins.map(([id, init, x, y, color]) => (
+                <g key={id} transform={`translate(${x} ${y})`} filter="url(#hm-shadow)">
+                  <circle r="15" fill={color} stroke="#fff" strokeWidth="2.8" />
+                  <text
+                    textAnchor="middle"
+                    y="4"
+                    fontFamily="JetBrains Mono"
+                    fontSize="10"
+                    fontWeight="700"
+                    fill="#fff"
+                  >
+                    {init}
+                  </text>
+                </g>
+              ))}
+            </svg>
+
+            <div
               style={{
                 position: 'absolute',
-                top: 6,
-                right: 6,
-                width: 7,
-                height: 7,
-                borderRadius: '50%',
-                background: 'var(--green-500)',
-                border: '2px solid #fff',
+                top: 16,
+                left: 16,
+                background: HOME_BG,
+                color: HOME_INK,
+                borderRadius: 999,
+                padding: '7px 12px 7px 8px',
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 8,
+                fontFamily: HOME_SANS,
+                fontSize: 12,
+                fontWeight: 600,
+              }}
+            >
+              <span
+                style={{
+                  width: 9,
+                  height: 9,
+                  borderRadius: '50%',
+                  background: HOME_BRAND,
+                  boxShadow: '0 0 0 5px rgba(34,227,163,0.25)',
+                }}
+              />
+              6 prestadores online
+            </div>
+
+            <div
+              style={{
+                position: 'absolute',
+                bottom: 16,
+                left: 16,
+                right: 16,
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: HOME_BG,
+                color: HOME_INK,
+                fontFamily: HOME_SANS,
+                fontSize: 14,
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+              }}
+            >
+              Ver todos no mapa
+              <span style={{ color: HOME_BRAND }}>→</span>
+            </div>
+          </button>
+
+          <button
+            onClick={() => go('tracking')}
+            style={{
+              background: HOME_BG,
+              border: `1px solid ${HOME_BRAND}`,
+              borderRadius: 20,
+              padding: 24,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 18,
+              boxShadow: '0 24px 48px -24px rgba(34,227,163,0.25)',
+              position: 'relative',
+              overflow: 'hidden',
+              cursor: 'pointer',
+              textAlign: 'left',
+              color: HOME_INK,
+              fontFamily: HOME_SANS,
+            }}
+          >
+            <div
+              style={{
+                position: 'absolute',
+                top: -40,
+                right: -40,
+                width: 180,
+                height: 180,
+                background: 'radial-gradient(circle, rgba(34,227,163,0.18), transparent 70%)',
+                pointerEvents: 'none',
               }}
             />
-          </button>
-          <button
-            onClick={() => go('profile')}
-            aria-label="Perfil"
-            style={{
-              width: 36,
-              height: 36,
-              borderRadius: '50%',
-              background: 'var(--night-900)',
-              color: 'var(--green-500)',
-              fontWeight: 800,
-              fontSize: 12,
-              fontFamily: 'var(--font-mono)',
-              border: 'none',
-              cursor: 'pointer',
-              display: 'grid',
-              placeItems: 'center',
-              boxShadow: '0 4px 12px rgba(7,14,26,0.32)',
-              flexShrink: 0,
-            }}
-          >
-            MS
-          </button>
-        </div>
-      </div>
 
-      {/* ── MAPA ───────────────────────────────────────────── */}
-      <div
-        style={{
-          position: 'relative',
-          height: mapExpanded ? undefined : 220,
-          flex: mapExpanded ? 1 : undefined,
-          background: C.land,
-          flexShrink: 0,
-          margin: mapExpanded ? 0 : '0 16px',
-          borderRadius: mapExpanded ? 0 : 18,
-          overflow: 'hidden',
-          boxShadow: mapExpanded ? 'none' : '0 6px 20px rgba(15,23,42,0.08)',
-          border: mapExpanded ? 'none' : '1px solid #E2E8F0',
-          transition: 'flex 0.3s ease',
-        }}
-      >
-        <svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 390 240"
-          preserveAspectRatio="xMidYMid slice"
-          style={{ display: 'block', position: 'absolute', inset: 0 }}
-        >
-          <defs>
-            <filter id="ps2" x="-60%" y="-60%" width="220%" height="220%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2.5" floodOpacity="0.3" />
-            </filter>
-          </defs>
-          <rect width="390" height="240" fill={C.land} />
-          <rect x="0" y="0" width="195" height="110" fill={C.landAlt} opacity="0.5" />
-          <path
-            d="M -10 30 Q 80 14, 160 46 T 320 52 L 410 50 L 410 68 Q 330 72, 240 54 T 80 54 L -10 60 Z"
-            fill={C.water}
-          />
-          <ellipse cx="290" cy="168" rx="52" ry="38" fill={C.park} />
-          <ellipse cx="52" cy="182" rx="32" ry="22" fill={C.park} />
-          <path d="M -10 118 L 410 118" stroke={C.highwayStroke} strokeWidth="14" />
-          <path d="M 195 -10 L 195 230" stroke={C.highwayStroke} strokeWidth="14" />
-          <path d="M -10 168 L 410 168" stroke={C.arterialStroke} strokeWidth="11" />
-          <path d="M 80 -10 L 80 230" stroke={C.arterialStroke} strokeWidth="10" />
-          <path d="M 310 -10 L 310 230" stroke={C.arterialStroke} strokeWidth="10" />
-          <path d="M -10 88 L 410 88" stroke={C.roadStroke} strokeWidth="7" />
-          <path d="M 130 -10 L 130 230" stroke={C.roadStroke} strokeWidth="6" />
-          <path d="M 250 -10 L 250 230" stroke={C.roadStroke} strokeWidth="6" />
-          <path d="M -10 118 L 410 118" stroke={C.highway} strokeWidth="11" />
-          <path d="M 195 -10 L 195 230" stroke={C.highway} strokeWidth="11" />
-          <path d="M -10 168 L 410 168" stroke={C.arterial} strokeWidth="8.5" />
-          <path d="M 80 -10 L 80 230" stroke={C.arterial} strokeWidth="7.5" />
-          <path d="M 310 -10 L 310 230" stroke={C.arterial} strokeWidth="7.5" />
-          <path d="M -10 88 L 410 88" stroke={C.road} strokeWidth="5" />
-          <path d="M 130 -10 L 130 230" stroke={C.road} strokeWidth="5" />
-          <path d="M 250 -10 L 250 230" stroke={C.road} strokeWidth="5" />
-          <text
-            x="42"
-            y="20"
-            fontFamily="Inter,sans-serif"
-            fontSize="9"
-            fontWeight="600"
-            fill={C.label}
-            letterSpacing="0.5"
-          >
-            PINHEIROS
-          </text>
-          <text
-            x="268"
-            y="20"
-            fontFamily="Inter,sans-serif"
-            fontSize="9"
-            fontWeight="600"
-            fill={C.label}
-            letterSpacing="0.5"
-          >
-            VILA MADALENA
-          </text>
-          <text
-            x="34"
-            y="112"
-            fontFamily="Inter,sans-serif"
-            fontSize="8"
-            fontWeight="500"
-            fill={C.labelLight}
-          >
-            Itaim Bibi
-          </text>
-          <text
-            x="148"
-            y="44"
-            fontFamily="Inter,sans-serif"
-            fontSize="7"
-            fontStyle="italic"
-            fill="#3A6B9C"
-            textAnchor="middle"
-          >
-            Rio Pinheiros
-          </text>
-          <g transform="translate(195 118)">
-            <circle r="26" fill="#2563EB" opacity="0.14">
-              <animate attributeName="r" from="12" to="30" dur="2.4s" repeatCount="indefinite" />
-              <animate
-                attributeName="opacity"
-                from="0.3"
-                to="0"
-                dur="2.4s"
-                repeatCount="indefinite"
-              />
-            </circle>
-            <circle r="9" fill="#2563EB" stroke="#fff" strokeWidth="2.5" />
-          </g>
-          {pins.map((p) => (
-            <g key={p.id} transform={`translate(${p.x} ${p.y})`} filter="url(#ps2)">
-              <circle r="13" fill={p.color} stroke="#fff" strokeWidth="2.5" />
-              <text
-                textAnchor="middle"
-                y="4"
-                fontFamily="JetBrains Mono,monospace"
-                fontSize="8"
-                fontWeight="700"
-                fill="#fff"
-              >
-                {p.initials}
-              </text>
-            </g>
-          ))}
-        </svg>
-
-        {/* chip topo */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 10,
-            left: '50%',
-            transform: 'translateX(-50%)',
-            background: '#fff',
-            boxShadow: '0 4px 14px rgba(15,23,42,0.14)',
-            color: '#0F172A',
-            borderRadius: 100,
-            padding: '6px 13px',
-            fontSize: 12,
-            fontWeight: 600,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 7,
-            whiteSpace: 'nowrap',
-            zIndex: 3,
-          }}
-        >
-          <span
-            style={{
-              width: 7,
-              height: 7,
-              borderRadius: '50%',
-              background: '#10B981',
-              flexShrink: 0,
-              animation: 'pg-pulse 1.4s ease-in-out infinite',
-            }}
-          />
-          6 prestadores online
-        </div>
-
-        {/* Ver todos */}
-        <button
-          onClick={() => go('map')}
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            left: 10,
-            zIndex: 3,
-            background: '#fff',
-            border: '1px solid #E2E8F0',
-            borderRadius: 10,
-            padding: '6px 11px',
-            fontSize: 11,
-            fontWeight: 700,
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            color: '#0F172A',
-            boxShadow: '0 2px 8px rgba(15,23,42,0.1)',
-          }}
-        >
-          <Icon name="pin" size={12} color="#2563EB" /> Ver todos
-        </button>
-
-        {/* expandir */}
-        <button
-          onClick={() => setMapExpanded((e) => !e)}
-          style={{
-            position: 'absolute',
-            bottom: 10,
-            right: 10,
-            zIndex: 3,
-            width: 34,
-            height: 34,
-            background: '#fff',
-            border: '1px solid #E2E8F0',
-            borderRadius: 10,
-            cursor: 'pointer',
-            display: 'grid',
-            placeItems: 'center',
-            boxShadow: '0 2px 8px rgba(15,23,42,0.1)',
-          }}
-          aria-label={mapExpanded ? 'Recolher mapa' : 'Expandir mapa'}
-        >
-          <Icon name={mapExpanded ? 'minimize' : 'maximize'} size={16} color="#0F172A" />
-        </button>
-      </div>
-
-      {/* ── SCROLL AREA ────────────────────────────────────── */}
-      {!mapExpanded && (
-        <div className="pg-viewport" style={{ flex: 1, background: '#FFFFFF' }}>
-          {/* ── HERO PEDIDO ATIVO (identidade Carteira) ────────── */}
-          <div style={{ padding: '16px 16px 0' }}>
-            <button
-              onClick={() => go('tracking')}
+            <div
               style={{
-                width: '100%',
-                display: 'block',
-                border: 'none',
-                cursor: 'pointer',
-                textAlign: 'left',
-                background: 'var(--night-900)',
-                borderRadius: 20,
-                padding: 22,
-                boxShadow: '0 14px 32px rgba(7,14,26,0.18)',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
                 position: 'relative',
-                overflow: 'hidden',
               }}
             >
               <div
                 style={{
-                  position: 'absolute',
-                  top: -40,
-                  right: -40,
-                  width: 200,
-                  height: 200,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(34,227,163,0.22), transparent 60%)',
-                  pointerEvents: 'none',
-                }}
-              />
-
-              <div
-                style={{
                   display: 'flex',
-                  justifyContent: 'space-between',
                   alignItems: 'center',
-                  marginBottom: 14,
-                  position: 'relative',
+                  gap: 8,
+                  padding: '4px 10px 4px 8px',
+                  borderRadius: 999,
+                  background: 'rgba(34,227,163,0.14)',
+                  color: HOME_BRAND,
                 }}
               >
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  <span
-                    style={{
-                      width: 6,
-                      height: 6,
-                      borderRadius: '50%',
-                      background: 'var(--green-500)',
-                      display: 'inline-block',
-                      animation: 'pg-pulse 1.4s ease-in-out infinite',
-                      boxShadow: '0 0 8px var(--green-500)',
-                    }}
-                  />
-                  <span className="pg-h-eyebrow" style={{ color: 'var(--green-500)', margin: 0 }}>
-                    EM ANDAMENTO · #PG-1247
-                  </span>
-                </div>
                 <span
                   style={{
-                    fontSize: 10,
-                    color: 'rgba(255,255,255,0.65)',
-                    fontFamily: 'var(--font-mono)',
+                    width: 8,
+                    height: 8,
+                    borderRadius: '50%',
+                    background: HOME_BRAND,
+                    boxShadow: '0 0 0 4px rgba(34,227,163,0.22)',
+                  }}
+                />
+                <span
+                  style={{
+                    fontFamily: HOME_MONO,
+                    fontSize: 10.5,
                     fontWeight: 700,
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 4,
+                    letterSpacing: '0.14em',
+                    textTransform: 'uppercase',
                   }}
                 >
-                  Acompanhar <Icon name="arrow-right" size={10} color="rgba(255,255,255,0.65)" />
+                  Em andamento
                 </span>
               </div>
-
               <div
                 style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 12,
-                  marginBottom: 16,
-                  position: 'relative',
+                  fontFamily: HOME_MONO,
+                  fontSize: 11,
+                  letterSpacing: '0.1em',
+                  color: HOME_INK_DIM,
                 }}
               >
-                <div
-                  style={{
-                    width: 48,
-                    height: 48,
-                    borderRadius: 14,
-                    background: 'linear-gradient(135deg, var(--green-500), var(--green-700))',
-                    color: 'var(--night-900)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    fontWeight: 800,
-                    fontFamily: 'var(--font-mono)',
-                    fontSize: 14,
-                    flexShrink: 0,
-                    boxShadow: '0 0 18px rgba(34,227,163,0.35)',
-                  }}
-                >
-                  CM
-                </div>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: 17,
-                      fontWeight: 700,
-                      color: '#fff',
-                      lineHeight: 1.15,
-                      letterSpacing: '-0.01em',
-                    }}
-                  >
-                    Carlos Mudanças
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 11,
-                      color: 'rgba(255,255,255,0.55)',
-                      marginTop: 4,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 6,
-                    }}
-                  >
-                    <span
-                      style={{
-                        background: 'rgba(34,227,163,0.18)',
-                        color: 'var(--green-500)',
-                        padding: '2px 8px',
-                        borderRadius: 100,
-                        fontSize: 9,
-                        fontWeight: 700,
-                        fontFamily: 'var(--font-mono)',
-                      }}
-                    >
-                      FRETE
-                    </span>
-                    <span style={{ display: 'flex', alignItems: 'center', gap: 3 }}>
-                      <Icon name="star-fill" size={10} color="#FBBF24" /> 4.7
-                    </span>
-                  </div>
-                </div>
-                <div style={{ textAlign: 'right', flexShrink: 0 }}>
-                  <div
-                    className="pg-mono"
-                    style={{
-                      fontSize: 40,
-                      fontWeight: 700,
-                      letterSpacing: '-0.02em',
-                      lineHeight: 1,
-                      color: '#fff',
-                    }}
-                  >
-                    12<span style={{ color: 'rgba(255,255,255,0.4)' }}>min</span>
-                  </div>
-                  <div
-                    className="pg-h-eyebrow"
-                    style={{ color: 'var(--green-500)', margin: 0, marginTop: 4 }}
-                  >
-                    CHEGADA
-                  </div>
-                </div>
+                #PG-1247
               </div>
+            </div>
 
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12, position: 'relative' }}>
               <div
                 style={{
-                  background: 'rgba(255,255,255,0.08)',
-                  borderRadius: 6,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 14,
+                  background: HOME_BRAND,
+                  color: HOME_BG,
+                  display: 'grid',
+                  placeItems: 'center',
+                  fontFamily: HOME_MONO,
+                  fontWeight: 800,
+                  fontSize: 16,
+                }}
+              >
+                CM
+              </div>
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <div
+                  style={{
+                    fontWeight: 700,
+                    fontSize: 17,
+                    color: HOME_INK,
+                    letterSpacing: '-0.01em',
+                  }}
+                >
+                  Carlos Mudanças
+                </div>
+                <div
+                  style={{
+                    fontFamily: HOME_MONO,
+                    fontSize: 11,
+                    color: HOME_INK_MUTE,
+                    marginTop: 2,
+                    display: 'flex',
+                    gap: 8,
+                  }}
+                >
+                  <span>FRETE</span>
+                  <span style={{ color: HOME_BRAND }}>★ 4.7</span>
+                </div>
+              </div>
+            </div>
+
+            <div
+              style={{
+                background: HOME_BG_RAISED,
+                border: `1.5px solid ${HOME_BRAND}`,
+                borderRadius: 16,
+                padding: '16px 18px',
+                display: 'flex',
+                alignItems: 'baseline',
+                justifyContent: 'space-between',
+                position: 'relative',
+              }}
+            >
+              <div>
+                <HEyebrow>Chegada estimada</HEyebrow>
+                <div
+                  style={{
+                    marginTop: 4,
+                    fontWeight: 800,
+                    fontSize: 52,
+                    color: HOME_INK,
+                    letterSpacing: '-0.04em',
+                    lineHeight: 1,
+                  }}
+                >
+                  12
+                  <span style={{ fontSize: 22, color: HOME_INK_MUTE, fontWeight: 600 }}>min</span>
+                </div>
+              </div>
+              <div
+                style={{
+                  textAlign: 'right',
+                  fontFamily: HOME_MONO,
+                  fontSize: 11,
+                  color: HOME_INK_MUTE,
+                }}
+              >
+                <div>2,3 km</div>
+                <div style={{ marginTop: 2 }}>16:42 — 16:54</div>
+              </div>
+            </div>
+
+            <div style={{ position: 'relative' }}>
+              <div
+                style={{
                   height: 6,
-                  marginBottom: 8,
+                  borderRadius: 3,
+                  background: HOME_HAIR,
                   overflow: 'hidden',
-                  position: 'relative',
                 }}
               >
                 <div
                   style={{
                     width: '65%',
                     height: '100%',
-                    borderRadius: 6,
-                    background: 'linear-gradient(90deg, var(--green-500), var(--green-700))',
-                    position: 'relative',
+                    background: HOME_BRAND,
+                    borderRadius: 3,
                   }}
-                >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      right: -1,
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      width: 12,
-                      height: 12,
-                      borderRadius: '50%',
-                      background: 'var(--green-500)',
-                      border: '2px solid var(--night-900)',
-                      boxShadow: '0 0 10px rgba(34,227,163,0.8)',
-                    }}
-                  />
-                </div>
+                />
               </div>
               <div
                 style={{
                   display: 'flex',
                   justifyContent: 'space-between',
-                  fontSize: 9,
-                  color: 'rgba(255,255,255,0.4)',
-                  fontFamily: 'var(--font-mono)',
-                }}
-              >
-                <span>ORIGEM</span>
-                <span style={{ color: 'rgba(255,255,255,0.85)', fontWeight: 700 }}>
-                  65% concluído
-                </span>
-                <span>DESTINO</span>
-              </div>
-            </button>
-          </div>
-
-          {/* ── 5 BOTÕES PRINCIPAIS ────────────────────────────── */}
-          <div style={{ padding: '18px 16px 0' }}>
-            <div
-              style={{
-                background: '#fff',
-                borderRadius: 20,
-                border: '1px solid #E2E8F0',
-                padding: '16px 0 18px',
-                boxShadow: '0 4px 14px rgba(15,23,42,0.05)',
-              }}
-            >
-              <div
-                style={{
+                  marginTop: 8,
+                  fontFamily: HOME_MONO,
                   fontSize: 10,
-                  fontWeight: 700,
-                  color: '#94A3B8',
-                  letterSpacing: '0.12em',
+                  letterSpacing: '0.1em',
                   textTransform: 'uppercase',
-                  marginBottom: 14,
-                  paddingLeft: 18,
-                  fontFamily: 'var(--font-mono)',
+                  color: HOME_INK_DIM,
                 }}
               >
-                O que você precisa?
-              </div>
-              <div
-                style={{ display: 'flex', justifyContent: 'space-evenly', alignItems: 'flex-end' }}
-              >
-                {actions.map((a) => {
-                  const isCenter = a.isCenter;
-                  return (
-                    <button
-                      key={a.id}
-                      onClick={() => go(a.route)}
-                      style={{
-                        display: 'flex',
-                        flexDirection: 'column',
-                        alignItems: 'center',
-                        gap: 7,
-                        background: 'none',
-                        border: 'none',
-                        cursor: 'pointer',
-                        padding: '0 4px',
-                        transform: isCenter ? 'translateY(-12px)' : 'none',
-                        minWidth: 0,
-                        flexShrink: 0,
-                      }}
-                    >
-                      <div
-                        style={{
-                          width: isCenter ? 62 : 50,
-                          height: isCenter ? 62 : 50,
-                          borderRadius: isCenter ? 20 : 14,
-                          background: isCenter
-                            ? 'linear-gradient(135deg, var(--green-500), var(--green-700))'
-                            : 'rgba(34,227,163,0.14)',
-                          display: 'grid',
-                          placeItems: 'center',
-                          boxShadow: isCenter ? '0 10px 24px rgba(34,227,163,0.45)' : 'none',
-                          border: isCenter ? 'none' : '1px solid rgba(34,227,163,0.28)',
-                          flexShrink: 0,
-                        }}
-                      >
-                        <Icon
-                          name={a.icon}
-                          size={isCenter ? 26 : 20}
-                          color="#070E1A"
-                          strokeWidth={2}
-                        />
-                      </div>
-                      <span
-                        style={{
-                          fontSize: isCenter ? 12 : 11,
-                          fontWeight: isCenter ? 800 : 600,
-                          color: isCenter ? '#0F172A' : '#475569',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
-                        {a.label}
-                      </span>
-                    </button>
-                  );
-                })}
+                <span>Origem</span>
+                <span style={{ color: HOME_BRAND }}>65% concluído</span>
+                <span>Destino</span>
               </div>
             </div>
-          </div>
 
-          {/* ── PRESTADORES PRÓXIMOS (faixa branca, cards pretos) ── */}
-          <div style={{ padding: '20px 0 0' }}>
             <div
               style={{
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                padding: '0 16px',
-                marginBottom: 12,
+                justifyContent: 'space-between',
+                padding: '12px 16px',
+                borderRadius: 12,
+                background: HOME_BRAND,
+                color: HOME_BG,
+                fontFamily: HOME_SANS,
+                fontSize: 14,
+                fontWeight: 700,
               }}
             >
-              <span
-                style={{
-                  fontSize: 15,
-                  fontWeight: 800,
-                  color: '#0F172A',
-                  letterSpacing: '-0.01em',
-                }}
-              >
-                Próximos a você
+              <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <Icon name="pin-fill" size={16} /> Acompanhar ao vivo
               </span>
+              <span>→</span>
+            </div>
+          </button>
+        </section>
+
+        {/* STAT ROW */}
+        <section
+          style={{
+            background: HOME_BG_RAISED,
+            border: `1px solid ${HOME_HAIR}`,
+            borderRadius: 20,
+            padding: '26px 24px',
+          }}
+        >
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 20,
+            }}
+            className="ha-stats"
+          >
+            <HStatPill icon="package" value="8" label="Pedidos / mês" />
+            <HStatPill icon="money" value="R$ 1.840" label="Economia / ano" />
+            <HStatPill icon="clock" value="42 min" label="Tempo médio" />
+            <HStatPill icon="star" value="4.8" label="Sua avaliação" />
+          </div>
+        </section>
+
+        {/* SERVICES */}
+        <section>
+          <HSectionLabel>O que você precisa hoje</HSectionLabel>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, 1fr)',
+              gap: 14,
+            }}
+            className="ha-services"
+          >
+            {services.map((s) => (
+              <HServiceTile
+                key={s.icon}
+                icon={s.icon}
+                title={s.title}
+                desc={s.desc}
+                status={s.status}
+                onClick={() => go(s.route)}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* PROVIDERS */}
+        <section>
+          <HSectionLabel
+            action={
               <button
                 onClick={() => go('map')}
                 style={{
                   background: 'none',
                   border: 'none',
-                  fontSize: 12,
-                  color: 'var(--green-700)',
-                  fontWeight: 700,
                   cursor: 'pointer',
-                  padding: 0,
+                  fontFamily: HOME_MONO,
+                  fontSize: 11,
+                  fontWeight: 600,
+                  letterSpacing: '0.14em',
+                  textTransform: 'uppercase',
+                  color: HOME_BRAND,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 6,
                 }}
               >
-                Ver todos →
+                Ver todos · 23
+                <span>→</span>
               </button>
-            </div>
-            <div
-              style={{
-                display: 'flex',
-                gap: 10,
-                overflowX: 'auto',
-                padding: '2px 16px 14px',
-                scrollbarWidth: 'none',
-              }}
-            >
-              {nearby.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => go('map')}
-                  style={{
-                    flexShrink: 0,
-                    width: 168,
-                    background: 'var(--night-900)',
-                    border: '1px solid rgba(34,227,163,0.12)',
-                    borderRadius: 16,
-                    padding: '14px',
-                    textAlign: 'left',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    flexDirection: 'column',
-                    boxShadow: '0 6px 18px rgba(7,14,26,0.14)',
-                    position: 'relative',
-                    overflow: 'hidden',
-                  }}
-                >
-                  <div
-                    style={{
-                      position: 'absolute',
-                      top: -30,
-                      right: -30,
-                      width: 120,
-                      height: 120,
-                      borderRadius: '50%',
-                      background: 'radial-gradient(circle, rgba(34,227,163,0.18), transparent 60%)',
-                      pointerEvents: 'none',
-                    }}
-                  />
-                  <div
-                    style={{
-                      display: 'flex',
-                      alignItems: 'flex-start',
-                      justifyContent: 'space-between',
-                      position: 'relative',
-                    }}
-                  >
-                    <div
-                      style={{
-                        width: 40,
-                        height: 40,
-                        borderRadius: 12,
-                        background: 'linear-gradient(135deg, var(--green-500), var(--green-700))',
-                        color: 'var(--night-900)',
-                        display: 'grid',
-                        placeItems: 'center',
-                        fontWeight: 800,
-                        fontFamily: 'var(--font-mono)',
-                        fontSize: 12,
-                        flexShrink: 0,
-                      }}
-                    >
-                      {p.initials}
-                    </div>
-                    <div
-                      style={{
-                        background: 'rgba(34,227,163,0.14)',
-                        border: '1px solid rgba(34,227,163,0.28)',
-                        borderRadius: 10,
-                        padding: '5px 10px',
-                        textAlign: 'center',
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 18,
-                          fontWeight: 800,
-                          color: 'var(--green-500)',
-                          fontFamily: 'var(--font-mono)',
-                          lineHeight: 1,
-                        }}
-                      >
-                        {p.eta.split(' ')[0]}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: 8,
-                          color: 'rgba(255,255,255,0.5)',
-                          fontFamily: 'var(--font-mono)',
-                          marginTop: 1,
-                        }}
-                      >
-                        min
-                      </div>
-                    </div>
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 13,
-                      fontWeight: 700,
-                      color: '#fff',
-                      marginTop: 10,
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                      whiteSpace: 'nowrap',
-                      position: 'relative',
-                    }}
-                  >
-                    {p.name}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: 10,
-                      color: 'rgba(255,255,255,0.5)',
-                      marginTop: 4,
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 5,
-                      position: 'relative',
-                    }}
-                  >
-                    <span
-                      style={{
-                        background: 'rgba(34,227,163,0.18)',
-                        color: 'var(--green-500)',
-                        padding: '2px 8px',
-                        borderRadius: 100,
-                        fontSize: 9,
-                        fontWeight: 700,
-                        fontFamily: 'var(--font-mono)',
-                      }}
-                    >
-                      {p.svc.toUpperCase()}
-                    </span>
-                    <span
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: 3,
-                        color: 'rgba(255,255,255,0.7)',
-                      }}
-                    >
-                      <Icon name="star-fill" size={10} color="#FBBF24" /> {p.rating}
-                    </span>
-                  </div>
-                  <div
-                    style={{
-                      display: 'flex',
-                      justifyContent: 'space-between',
-                      alignItems: 'center',
-                      marginTop: 12,
-                      position: 'relative',
-                    }}
-                  >
-                    <div
-                      style={{
-                        fontSize: 16,
-                        fontWeight: 800,
-                        color: '#fff',
-                        fontFamily: 'var(--font-mono)',
-                      }}
-                    >
-                      {p.price}
-                    </div>
-                    {/* Visual pill — botão real é o card externo */}
-                    <span
-                      style={{
-                        display: 'inline-block',
-                        background: 'linear-gradient(135deg, var(--green-500), var(--green-700))',
-                        color: 'var(--night-900)',
-                        borderRadius: 9,
-                        padding: '7px 13px',
-                        fontSize: 10,
-                        fontWeight: 800,
-                        boxShadow: '0 4px 12px rgba(34,227,163,0.35)',
-                      }}
-                    >
-                      Solicitar
-                    </span>
-                  </div>
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* ── GRID DE ATALHOS (cards brancos, accent verde) ───── */}
+            }
+          >
+            Próximos a você
+          </HSectionLabel>
           <div
             style={{
-              padding: '4px 16px 16px',
               display: 'grid',
-              gridTemplateColumns: '1fr 1fr 1fr 1fr',
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+              gap: 14,
+            }}
+            className="ha-providers"
+          >
+            {nearby.map((p) => (
+              <HProviderCard key={p.id} p={p} onClick={() => go('map')} />
+            ))}
+          </div>
+        </section>
+
+        {/* SHORTCUTS */}
+        <section>
+          <HSectionLabel>Atalhos</HSectionLabel>
+          <div
+            style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(4, minmax(0, 1fr))',
+              gap: 12,
+            }}
+            className="ha-shortcuts"
+          >
+            <HShortcutCard
+              icon="spark"
+              label="Carteira"
+              sub="R$ 47,80"
+              onClick={() => go('wallet')}
+            />
+            <HShortcutCard
+              icon="calendar"
+              label="Recorrentes"
+              sub="3 agendados"
+              onClick={() => go('recurring')}
+            />
+            <HShortcutCard
+              icon="heart"
+              label="Favoritos"
+              sub="12 salvos"
+              onClick={() => go('favorites')}
+            />
+            <HShortcutCard
+              icon="users"
+              label="Dividir frete"
+              sub="Compartilhar custo"
+              onClick={() => go('joint')}
+            />
+          </div>
+        </section>
+
+        {/* PROMO */}
+        <section
+          style={{
+            background: HOME_BG,
+            border: `1.5px solid ${HOME_BRAND}`,
+            borderRadius: 24,
+            padding: 'clamp(28px, 4vw, 40px)',
+            display: 'grid',
+            gridTemplateColumns: 'minmax(0, 1fr) auto',
+            gap: 28,
+            alignItems: 'center',
+            position: 'relative',
+            overflow: 'hidden',
+          }}
+          className="ha-promo"
+        >
+          <div
+            style={{
+              position: 'absolute',
+              top: 0,
+              right: 0,
+              bottom: 0,
+              width: '40%',
+              background:
+                'radial-gradient(circle at right, rgba(34,227,163,0.12), transparent 70%)',
+              pointerEvents: 'none',
+            }}
+          />
+          <div style={{ position: 'relative' }}>
+            <div style={{ marginBottom: 12 }}>
+              <HChunkyTag variant="lime">Indique e ganhe</HChunkyTag>
+            </div>
+            <h2
+              style={{
+                margin: 0,
+                fontFamily: HOME_SANS,
+                fontWeight: 800,
+                fontSize: 'clamp(26px, 3.6vw, 40px)',
+                lineHeight: 1.05,
+                letterSpacing: '-0.025em',
+                color: HOME_INK,
+              }}
+            >
+              R$ 30 pra você,{' '}
+              <span
+                style={{
+                  fontFamily: HOME_SERIF,
+                  fontStyle: 'italic',
+                  fontWeight: 400,
+                  color: HOME_BRAND,
+                }}
+              >
+                +R$ 30 pra
+              </span>{' '}
+              seu amigo.
+            </h2>
+            <p
+              style={{
+                margin: '12px 0 0',
+                fontSize: 14,
+                color: HOME_INK_MUTE,
+                maxWidth: '46ch',
+                lineHeight: 1.5,
+              }}
+            >
+              Cada amigo seu que completar o primeiro frete pela PAGORA libera o crédito
+              automaticamente nas duas carteiras.
+            </p>
+          </div>
+          <div
+            style={{
+              position: 'relative',
+              display: 'flex',
+              flexDirection: 'column',
               gap: 8,
             }}
           >
-            {[
-              { icon: 'spark', label: 'Carteira', sub: 'R$ 47,80', route: 'wallet' },
-              { icon: 'calendar', label: 'Recorr.', sub: '3 agendados', route: 'recurring' },
-              { icon: 'heart', label: 'Favoritos', sub: '12 salvos', route: 'favorites' },
-              { icon: 'users', label: 'Dividir', sub: 'Frete', route: 'joint' },
-            ].map((s) => (
-              <button
-                key={s.route}
-                onClick={() => go(s.route)}
-                style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'center',
-                  gap: 7,
-                  padding: '14px 8px',
-                  background: '#fff',
-                  borderRadius: 14,
-                  border: '1px solid #E2E8F0',
-                  cursor: 'pointer',
-                  textAlign: 'center',
-                  boxShadow: '0 2px 8px rgba(15,23,42,0.04)',
-                }}
-              >
-                <div
-                  style={{
-                    width: 38,
-                    height: 38,
-                    borderRadius: 11,
-                    background: 'rgba(34,227,163,0.14)',
-                    border: '1px solid rgba(34,227,163,0.22)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    flexShrink: 0,
-                  }}
-                >
-                  <Icon name={s.icon} size={16} color="#070E1A" />
-                </div>
-                <div style={{ lineHeight: 1.15 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 700, color: '#0F172A' }}>{s.label}</div>
-                  <div style={{ fontSize: 9, color: '#64748B', marginTop: 2 }}>{s.sub}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          {/* ── BANNER INDICAÇÃO (preto + verde, mesma identidade Carteira) ── */}
-          <div style={{ padding: '0 16px 20px' }}>
             <button
               onClick={() => go('refer')}
               style={{
-                width: '100%',
+                padding: '16px 24px',
+                background: HOME_BRAND,
+                color: HOME_BG,
                 border: 'none',
+                borderRadius: 14,
                 cursor: 'pointer',
-                textAlign: 'left',
-                background: 'var(--night-900)',
-                borderRadius: 18,
-                padding: '18px 20px',
+                fontFamily: HOME_SANS,
+                fontSize: 15,
+                fontWeight: 700,
                 display: 'flex',
-                justifyContent: 'space-between',
                 alignItems: 'center',
-                gap: 12,
-                position: 'relative',
-                overflow: 'hidden',
-                boxShadow: '0 12px 28px rgba(7,14,26,0.18)',
+                gap: 10,
+                letterSpacing: '-0.01em',
+                whiteSpace: 'nowrap',
               }}
             >
-              <div
-                style={{
-                  position: 'absolute',
-                  top: -40,
-                  right: -20,
-                  width: 180,
-                  height: 180,
-                  borderRadius: '50%',
-                  background: 'radial-gradient(circle, rgba(34,227,163,0.22) 0%, transparent 65%)',
-                  pointerEvents: 'none',
-                }}
-              />
-              <div style={{ position: 'relative' }}>
-                <div className="pg-h-eyebrow" style={{ color: 'var(--green-500)', margin: 0 }}>
-                  INDIQUE E GANHE
-                </div>
-                <div
-                  className="pg-mono"
-                  style={{
-                    fontSize: 26,
-                    fontWeight: 700,
-                    color: '#fff',
-                    marginTop: 6,
-                    lineHeight: 1,
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  R$ 30<span style={{ color: 'rgba(255,255,255,0.4)' }}> pra você</span>
-                </div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.6)', marginTop: 6 }}>
-                  + R$ 30 pra seu amigo
-                </div>
-              </div>
-              <div
-                style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 14,
-                  background: 'rgba(34,227,163,0.14)',
-                  border: '1px solid rgba(34,227,163,0.3)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  flexShrink: 0,
-                  position: 'relative',
-                }}
-              >
-                <Icon name="share" size={22} color="#22E3A3" />
-              </div>
+              <Icon name="share" size={18} /> Compartilhar link
+            </button>
+            <button
+              onClick={() => go('refer')}
+              style={{
+                padding: '12px 24px',
+                background: 'transparent',
+                color: HOME_INK,
+                border: `1px solid ${HOME_HAIR}`,
+                borderRadius: 14,
+                cursor: 'pointer',
+                fontFamily: HOME_MONO,
+                fontSize: 11,
+                fontWeight: 600,
+                letterSpacing: '0.1em',
+                textTransform: 'uppercase',
+              }}
+            >
+              Minhas indicações · 3
             </button>
           </div>
-        </div>
-      )}
+        </section>
+
+        <style>{`
+          @media (max-width: 1024px) {
+            .ha-greet { grid-template-columns: 1fr !important; gap: 20px !important; }
+            .ha-hero { grid-template-columns: 1fr !important; }
+            .ha-stats { grid-template-columns: repeat(2, 1fr) !important; row-gap: 24px !important; }
+            .ha-services { grid-template-columns: repeat(2, 1fr) !important; }
+            .ha-providers { grid-template-columns: repeat(2, 1fr) !important; }
+            .ha-shortcuts { grid-template-columns: repeat(2, 1fr) !important; }
+            .ha-promo { grid-template-columns: 1fr !important; }
+          }
+          @media (max-width: 640px) {
+            .ha-services { grid-template-columns: 1fr !important; }
+            .ha-providers { grid-template-columns: 1fr !important; }
+            .ha-shortcuts { grid-template-columns: repeat(2, 1fr) !important; }
+          }
+        `}</style>
+      </div>
     </div>
   );
 };
