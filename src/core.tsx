@@ -22,12 +22,20 @@ export const StatusBar = ({ dark = false }: { dark?: boolean }) => (
 // =====================================================================
 // Logo
 // =====================================================================
-export const Logo = ({ dark = false, size = 18 }: { dark?: boolean; size?: number }) => (
-  <span className={`pg-logo${dark ? ' is-dark' : ''}`}>
-    <span className="pg-logo-mark">
-      <Icon name="logo" size={size} />
-    </span>
-    <span className="pg-logo-text">PAGORA</span>
+// `dark` controla o asset: true (fundo escuro) → wordmark branco
+//                          false (fundo claro)  → wordmark preto
+// `size` é a altura final em px (default 24). A largura é proporcional.
+export const Logo = ({ dark = false, size = 24 }: { dark?: boolean; size?: number }) => (
+  <span
+    className={`pg-logo${dark ? ' is-dark' : ''}`}
+    style={{ display: 'inline-flex', alignItems: 'center', lineHeight: 0 }}
+  >
+    <img
+      src={dark ? '/pagora-white.png' : '/pagora-black.png'}
+      alt="PAGORA"
+      style={{ height: size, width: 'auto', display: 'block' }}
+      draggable={false}
+    />
   </span>
 );
 

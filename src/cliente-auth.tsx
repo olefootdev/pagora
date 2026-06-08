@@ -131,7 +131,7 @@ const Login = ({ go }: ScreenProps) => {
       />
       <div className="pg-page">
         <div className="pg-page-body" style={{ paddingTop: 30 }}>
-          <Logo size={22} />
+          <Logo dark size={22} />
           {step === 'phone' ? (
             <>
               <div style={{ marginTop: 30 }}>
