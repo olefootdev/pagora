@@ -1,6 +1,8 @@
-import { useState as useStateG, useMemo as useMemoG } from 'react';
+import { useState as useStateG, useMemo as useMemoG, useEffect as useEffectG } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar } from './core';
+import { abrirWhatsApp, mensagemGuincho, mensagemCacamba } from './lib/whatsapp';
+import { track } from './lib/analytics';
 import type { PagoraState, PricingResult, FlowScreenProps, ScreenProps, ResetFn } from './types';
 
 // Pricing
@@ -46,6 +48,9 @@ const calcCacamba = (s: PagoraState): PricingResult => {
 // GUINCHO 1 — Tipo de problema
 // =====================================================================
 const Guincho1 = ({ go, state, set }: FlowScreenProps) => {
+  useEffectG(() => {
+    track('simulacao_iniciada', { tipo_servico: 'guincho' });
+  }, []);
   const opts = [
     {
       id: 'pane',
@@ -531,10 +536,19 @@ const Guincho4 = ({ go, state, set }: FlowScreenProps) => {
           <button
             className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
             disabled={!state.urgency}
-            onClick={() => go('proposals')}
+            onClick={() => {
+              track('pedido_enviado', {
+                tipo: 'guincho',
+                valor: price.low,
+                km: state.distance ?? 8,
+              });
+              track('whatsapp_clicado', { origem: 'guincho-4' });
+              abrirWhatsApp(mensagemGuincho(state, price));
+              go('proposals');
+            }}
           >
             <Icon name="whatsapp" size={20} />{' '}
-            {state.urgency === 'now' ? 'Solicitar guincho urgente' : 'Solicitar orçamentos'}
+            {state.urgency === 'now' ? 'Solicitar guincho urgente' : 'Enviar pedido pelo WhatsApp'}
           </button>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-mute)' }}>
             {state.urgency === 'now'
@@ -551,6 +565,9 @@ const Guincho4 = ({ go, state, set }: FlowScreenProps) => {
 // CAÇAMBA 1 — Material
 // =====================================================================
 const Cacamba1 = ({ go, state, set }: FlowScreenProps) => {
+  useEffectG(() => {
+    track('simulacao_iniciada', { tipo_servico: 'cacamba' });
+  }, []);
   const opts = [
     { id: 'construcao', t: 'Entulho de construção', s: 'Tijolos, concreto, argamassa' },
     { id: 'demolicao', t: 'Entulho de demolição', s: 'Madeira, gesso, cerâmica' },
@@ -867,9 +884,14 @@ const Cacamba3 = ({ go, state, set }: FlowScreenProps) => {
           <button
             className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
             disabled={!state.address || !state.placement}
-            onClick={() => go('proposals')}
+            onClick={() => {
+              track('pedido_enviado', { tipo: 'cacamba', valor: price.low });
+              track('whatsapp_clicado', { origem: 'cacamba-3' });
+              abrirWhatsApp(mensagemCacamba(state, price));
+              go('proposals');
+            }}
           >
-            <Icon name="whatsapp" size={20} /> Solicitar orçamentos
+            <Icon name="whatsapp" size={20} /> Enviar pedido pelo WhatsApp
           </button>
         </div>
       </div>

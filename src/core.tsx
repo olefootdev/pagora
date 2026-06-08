@@ -2,6 +2,8 @@ import { useState } from 'react';
 import type { ReactNode } from 'react';
 import { Icon } from './icons';
 import type { ScreenProps } from './types';
+import { supabase } from './lib/supabase';
+import { track } from './lib/analytics';
 
 // =====================================================================
 // Status bar (visual only, inside the phone frame)
@@ -81,6 +83,295 @@ export const TopBar = ({
 );
 
 // =====================================================================
+// MAP PREVIEW — hero map enxuto pra Landing (não é o ProvidersMap real)
+// =====================================================================
+const MapPreview = () => (
+  <div
+    style={{
+      position: 'relative',
+      width: '100%',
+      height: 260,
+      overflow: 'hidden',
+      background: '#F5F1E8',
+    }}
+    aria-hidden="true"
+  >
+    <svg
+      width="100%"
+      height="100%"
+      viewBox="0 0 390 260"
+      preserveAspectRatio="xMidYMid slice"
+      style={{ display: 'block' }}
+    >
+      <defs>
+        <filter id="mapPreviewShadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3" />
+        </filter>
+      </defs>
+
+      {/* base land */}
+      <rect width="390" height="260" fill="#F5F1E8" />
+
+      {/* residential blocks */}
+      <rect x="0" y="0" width="195" height="90" fill="#EFEAD8" opacity="0.55" />
+      <rect x="195" y="170" width="195" height="90" fill="#EFEAD8" opacity="0.55" />
+
+      {/* WATER — rio diagonal */}
+      <path
+        d="M -10 40 Q 80 20, 160 60 T 320 80 L 410 75 L 410 105 Q 330 110, 240 85 T 80 75 L -10 85 Z"
+        fill="#A8D5F0"
+      />
+
+      {/* parques */}
+      <ellipse cx="290" cy="180" rx="55" ry="38" fill="#C8E6C9" />
+      <ellipse cx="60" cy="215" rx="38" ry="26" fill="#C8E6C9" />
+
+      {/* ROAD CASING + FILL — horizontais */}
+      <path d="M -10 135 L 410 135" stroke="#D89940" strokeWidth="14" />
+      <path d="M -10 135 L 410 135" stroke="#FFB74D" strokeWidth="11" />
+      <path d="M -10 190 L 410 190" stroke="#E5C66B" strokeWidth="11" />
+      <path d="M -10 190 L 410 190" stroke="#FFE082" strokeWidth="8.5" />
+      <path d="M -10 105 L 410 105" stroke="#E0DCD0" strokeWidth="7" />
+      <path d="M -10 105 L 410 105" stroke="#fff" strokeWidth="5" />
+      <path d="M -10 230 L 410 230" stroke="#E0DCD0" strokeWidth="6" />
+      <path d="M -10 230 L 410 230" stroke="#fff" strokeWidth="4.5" />
+
+      {/* ROAD verticais */}
+      <path d="M 195 -10 L 195 270" stroke="#D89940" strokeWidth="14" />
+      <path d="M 195 -10 L 195 270" stroke="#FFB74D" strokeWidth="11" />
+      <path d="M 80 -10 L 80 270" stroke="#E5C66B" strokeWidth="10" />
+      <path d="M 80 -10 L 80 270" stroke="#FFE082" strokeWidth="7.5" />
+      <path d="M 310 -10 L 310 270" stroke="#E5C66B" strokeWidth="10" />
+      <path d="M 310 -10 L 310 270" stroke="#FFE082" strokeWidth="7.5" />
+
+      {/* USER LOCATION — Google-style blue dot pulsando */}
+      <g transform="translate(195 135)">
+        <circle r="28" fill="#4285F4" opacity="0.18">
+          <animate attributeName="r" from="14" to="36" dur="2.4s" repeatCount="indefinite" />
+          <animate attributeName="opacity" from="0.35" to="0" dur="2.4s" repeatCount="indefinite" />
+        </circle>
+        <circle r="9" fill="#4285F4" stroke="#fff" strokeWidth="3" />
+      </g>
+
+      {/* 3 provider pins próximos — verde (frete) / laranja (guincho) / roxo (caçamba) */}
+      <g transform="translate(120 95)" filter="url(#mapPreviewShadow)">
+        <circle r="13" fill="#0FA77A" stroke="#fff" strokeWidth="2.5" />
+        <text
+          textAnchor="middle"
+          y="3.5"
+          fontFamily="JetBrains Mono, monospace"
+          fontSize="9"
+          fontWeight="700"
+          fill="#fff"
+        >
+          JM
+        </text>
+      </g>
+      <g transform="translate(286 65)" filter="url(#mapPreviewShadow)">
+        <circle r="13" fill="#F26B1F" stroke="#fff" strokeWidth="2.5" />
+        <text
+          textAnchor="middle"
+          y="3.5"
+          fontFamily="JetBrains Mono, monospace"
+          fontSize="9"
+          fontWeight="700"
+          fill="#fff"
+        >
+          AS
+        </text>
+      </g>
+      <g transform="translate(260 210)" filter="url(#mapPreviewShadow)">
+        <circle r="13" fill="#7E57C2" stroke="#fff" strokeWidth="2.5" />
+        <text
+          textAnchor="middle"
+          y="3.5"
+          fontFamily="JetBrains Mono, monospace"
+          fontSize="9"
+          fontWeight="700"
+          fill="#fff"
+        >
+          LC
+        </text>
+      </g>
+    </svg>
+
+    {/* Gradient overlay — fade do topo + fusão com night-900 no bottom */}
+    <div
+      style={{
+        position: 'absolute',
+        inset: 0,
+        background:
+          'linear-gradient(to bottom, rgba(7,14,26,0.35) 0%, rgba(7,14,26,0) 25%, rgba(7,14,26,0) 55%, rgba(7,14,26,0.85) 88%, var(--night-900) 100%)',
+        pointerEvents: 'none',
+      }}
+    />
+
+    {/* Chip "Ao vivo" — top-left */}
+    <div
+      style={{
+        position: 'absolute',
+        top: 12,
+        left: 16,
+        background: 'rgba(255,255,255,0.95)',
+        color: 'var(--night-900)',
+        borderRadius: 999,
+        padding: '5px 10px 5px 8px',
+        display: 'inline-flex',
+        alignItems: 'center',
+        gap: 6,
+        fontSize: 11,
+        fontWeight: 600,
+        letterSpacing: '0.02em',
+        boxShadow: '0 2px 8px rgba(0,0,0,0.15)',
+      }}
+    >
+      <span
+        style={{
+          width: 8,
+          height: 8,
+          borderRadius: '50%',
+          background: '#0FA77A',
+          boxShadow: '0 0 0 4px rgba(15,167,122,0.2)',
+        }}
+      />
+      <span>3 prestadores próximos</span>
+    </div>
+  </div>
+);
+
+// =====================================================================
+// WAITLIST CAPTURE — captura email/telefone na Landing antes do OTP
+// =====================================================================
+const WaitlistCapture = () => {
+  const [contact, setContact] = useState('');
+  const [city, setCity] = useState('');
+  const [status, setStatus] = useState<'idle' | 'sending' | 'ok' | 'err'>('idle');
+  const [errorMsg, setErrorMsg] = useState('');
+
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    const c = contact.trim();
+    if (!c || status === 'sending') return;
+    setStatus('sending');
+    setErrorMsg('');
+    try {
+      const isEmail = c.includes('@');
+      const payload = {
+        email: isEmail ? c : null,
+        phone: isEmail ? null : c,
+        city: city.trim() || null,
+        source: 'landing',
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 200) : null,
+      };
+      const { error } = await supabase.from('waitlist').insert(payload);
+      if (error) throw error;
+      track('email_capturado', { origem: 'landing' });
+      setStatus('ok');
+    } catch (err) {
+      setStatus('err');
+      const msg = err instanceof Error ? err.message : 'Tente novamente';
+      // Mensagem amigável pra duplicado (constraint unique)
+      setErrorMsg(/duplicate|unique/i.test(msg) ? 'Esse contato já está na lista.' : msg);
+    }
+  };
+
+  if (status === 'ok') {
+    return (
+      <div style={{ padding: '0 20px 28px' }}>
+        <div
+          style={{
+            background: 'rgba(34,227,163,0.08)',
+            border: '1px solid rgba(34,227,163,0.3)',
+            borderRadius: 14,
+            padding: 18,
+            color: '#fff',
+            display: 'flex',
+            gap: 12,
+            alignItems: 'flex-start',
+          }}
+        >
+          <span style={{ color: 'var(--green-500)', flexShrink: 0, marginTop: 2 }}>
+            <Icon name="check" size={18} strokeWidth={3} />
+          </span>
+          <div>
+            <strong style={{ fontSize: 15, display: 'block', marginBottom: 4 }}>
+              Você está na lista.
+            </strong>
+            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.65)', lineHeight: 1.5 }}>
+              Avisaremos por WhatsApp / email quando a PAGORA estiver ativa na sua região.
+            </span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div style={{ padding: '0 20px 28px' }}>
+      <div
+        style={{
+          background: 'var(--night-800)',
+          border: '1px solid rgba(255,255,255,0.08)',
+          borderRadius: 14,
+          padding: 18,
+        }}
+      >
+        <div className="pg-tag pg-tag--dark" style={{ background: 'rgba(34,227,163,0.12)' }}>
+          AINDA NÃO ATIVO NA SUA CIDADE?
+        </div>
+        <h3 style={{ margin: '10px 0 6px', fontSize: 17, fontWeight: 700, color: '#fff' }}>
+          Avise quando chegar
+        </h3>
+        <p style={{ margin: '0 0 14px', color: 'rgba(255,255,255,0.65)', fontSize: 13 }}>
+          Deixe email ou WhatsApp + cidade. Avisamos no dia que a PAGORA abrir aí.
+        </p>
+        <form onSubmit={submit} style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <input
+            className="pg-input"
+            type="text"
+            placeholder="Email ou WhatsApp"
+            value={contact}
+            onChange={(e) => setContact(e.target.value)}
+            autoComplete="email"
+            inputMode="email"
+            required
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              borderColor: 'rgba(255,255,255,0.16)',
+              color: '#fff',
+            }}
+          />
+          <input
+            className="pg-input"
+            type="text"
+            placeholder="Cidade / região"
+            value={city}
+            onChange={(e) => setCity(e.target.value)}
+            autoComplete="address-level2"
+            style={{
+              background: 'rgba(255,255,255,0.06)',
+              borderColor: 'rgba(255,255,255,0.16)',
+              color: '#fff',
+            }}
+          />
+          <button
+            type="submit"
+            className="pg-btn pg-btn--accent pg-btn--block"
+            disabled={status === 'sending' || !contact.trim()}
+            style={{ marginTop: 4 }}
+          >
+            {status === 'sending' ? 'Enviando…' : 'Quero ser avisado'}
+          </button>
+          {status === 'err' && (
+            <div style={{ fontSize: 12, color: '#FF8A8A', marginTop: 4 }}>{errorMsg}</div>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+};
+
+// =====================================================================
 // LANDING
 // =====================================================================
 export const Landing = ({ go }: ScreenProps) => (
@@ -118,8 +409,9 @@ export const Landing = ({ go }: ScreenProps) => (
     </div>
 
     <div className="pg-viewport" style={{ background: 'var(--night-900)', color: '#fff' }}>
-      {/* HERO */}
-      <div style={{ padding: '16px 20px 28px' }}>
+      {/* HERO — Map first */}
+      <MapPreview />
+      <div style={{ padding: '20px 20px 28px', position: 'relative' }}>
         <div
           className="pg-mono"
           style={{
@@ -127,15 +419,15 @@ export const Landing = ({ go }: ScreenProps) => (
             letterSpacing: '0.18em',
             textTransform: 'uppercase',
             color: 'var(--green-500)',
-            marginBottom: 12,
+            marginBottom: 10,
           }}
         >
-          MARKETPLACE DE LOGÍSTICA PESADA
+          PRESTADORES PERTO DE VOCÊ
         </div>
         <h1
           style={{
             margin: 0,
-            fontSize: 38,
+            fontSize: 34,
             lineHeight: 1.05,
             letterSpacing: '-0.025em',
             fontWeight: 700,
@@ -147,9 +439,9 @@ export const Landing = ({ go }: ScreenProps) => (
         </h1>
         <p
           style={{
-            margin: '16px 0 0',
+            margin: '14px 0 0',
             color: 'rgba(255,255,255,0.72)',
-            fontSize: 16,
+            fontSize: 15,
             lineHeight: 1.55,
             maxWidth: '32ch',
           }}
@@ -157,7 +449,7 @@ export const Landing = ({ go }: ScreenProps) => (
           Você descreve, prestadores verificados respondem em até 2h, você compara e escolhe.
         </p>
 
-        <div style={{ marginTop: 24, display: 'flex', flexDirection: 'column', gap: 10 }}>
+        <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
             className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
             onClick={() => go('services')}
@@ -181,7 +473,7 @@ export const Landing = ({ go }: ScreenProps) => (
         {/* trust strip */}
         <div
           style={{
-            marginTop: 28,
+            marginTop: 24,
             padding: '16px 0',
             borderTop: '1px dashed rgba(255,255,255,0.12)',
             borderBottom: '1px dashed rgba(255,255,255,0.12)',
@@ -205,6 +497,9 @@ export const Landing = ({ go }: ScreenProps) => (
           ))}
         </div>
       </div>
+
+      {/* WAITLIST — captura pré-OTP */}
+      <WaitlistCapture />
 
       {/* SERVICES */}
       <div style={{ padding: '8px 20px 28px' }}>

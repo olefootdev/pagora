@@ -235,29 +235,63 @@ type DisputeInsert = Partial<DisputeRow> & {
 };
 type DisputeUpdate = Partial<DisputeRow>;
 
+type WaitlistRow = {
+  id: string;
+  email: string | null;
+  phone: string | null;
+  city: string | null;
+  cep: string | null;
+  services: ServiceType[] | null;
+  source: string;
+  utm_campaign: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  ip_hash: string | null;
+  user_agent: string | null;
+  created_at: string;
+};
+type WaitlistInsert = {
+  email?: string | null;
+  phone?: string | null;
+  city?: string | null;
+  cep?: string | null;
+  services?: ServiceType[] | null;
+  source?: string;
+  utm_campaign?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  user_agent?: string | null;
+};
+type WaitlistUpdate = Partial<WaitlistRow>;
+
 // ---------------------------------------------------------------------------
 // Database — formato esperado pelo SupabaseClient<Database>
 // ---------------------------------------------------------------------------
+// postgrest-js (>=2) exige Relationships: [] em cada tabela pra inferir Insert/Update.
+// Sem isso o .from() degrada pro overload genérico que retorna never[].
+type Rel = { Relationships: [] };
+
 export type Database = {
   pagora: {
     Tables: {
-      profiles: { Row: ProfileRow; Insert: ProfileInsert; Update: ProfileUpdate };
-      providers: { Row: ProviderRow; Insert: ProviderInsert; Update: ProviderUpdate };
+      profiles: { Row: ProfileRow; Insert: ProfileInsert; Update: ProfileUpdate } & Rel;
+      providers: { Row: ProviderRow; Insert: ProviderInsert; Update: ProviderUpdate } & Rel;
       service_requests: {
         Row: ServiceRequestRow;
         Insert: ServiceRequestInsert;
         Update: ServiceRequestUpdate;
-      };
-      quotes: { Row: QuoteRow; Insert: QuoteInsert; Update: QuoteUpdate };
-      orders: { Row: OrderRow; Insert: OrderInsert; Update: OrderUpdate };
-      reviews: { Row: ReviewRow; Insert: ReviewInsert; Update: ReviewUpdate };
-      wallets: { Row: WalletRow; Insert: WalletInsert; Update: WalletUpdate };
+      } & Rel;
+      quotes: { Row: QuoteRow; Insert: QuoteInsert; Update: QuoteUpdate } & Rel;
+      orders: { Row: OrderRow; Insert: OrderInsert; Update: OrderUpdate } & Rel;
+      reviews: { Row: ReviewRow; Insert: ReviewInsert; Update: ReviewUpdate } & Rel;
+      wallets: { Row: WalletRow; Insert: WalletInsert; Update: WalletUpdate } & Rel;
       wallet_transactions: {
         Row: WalletTransactionRow;
         Insert: WalletTransactionInsert;
         Update: WalletTransactionUpdate;
-      };
-      disputes: { Row: DisputeRow; Insert: DisputeInsert; Update: DisputeUpdate };
+      } & Rel;
+      disputes: { Row: DisputeRow; Insert: DisputeInsert; Update: DisputeUpdate } & Rel;
+      waitlist: { Row: WaitlistRow; Insert: WaitlistInsert; Update: WaitlistUpdate } & Rel;
     };
     Views: Record<string, never>;
     Functions: {

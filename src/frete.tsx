@@ -1,6 +1,8 @@
-import { useState as useStateF, useMemo as useMemoF } from 'react';
+import { useState as useStateF, useMemo as useMemoF, useEffect as useEffectF } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar } from './core';
+import { abrirWhatsApp, mensagemFrete } from './lib/whatsapp';
+import { track } from './lib/analytics';
 import type {
   PagoraState,
   PricingResult,
@@ -45,6 +47,9 @@ export const calcFrete = (s: PagoraState): PricingResult => {
 // FRETE 1 — Cargo type
 // =====================================================================
 const Frete1 = ({ go, state, set }: FlowScreenProps) => {
+  useEffectF(() => {
+    track('simulacao_iniciada', { tipo_servico: 'frete' });
+  }, []);
   const opts = [
     { id: 'mudanca-res', t: 'Mudança residencial completa', s: 'Casa ou apartamento inteiro' },
     { id: 'mudanca-com', t: 'Mudança comercial / escritório', s: 'Empresa, loja, consultório' },
@@ -735,9 +740,18 @@ const FreteSummary = ({ go, state }: SummaryScreenProps) => {
         <div className="pg-page-foot">
           <button
             className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
-            onClick={() => go('frete-confirm')}
+            onClick={() => {
+              track('pedido_enviado', {
+                tipo: 'frete',
+                valor: price.low,
+                km: state.distance ?? 15,
+              });
+              track('whatsapp_clicado', { origem: 'frete-summary' });
+              abrirWhatsApp(mensagemFrete(state, price));
+              go('frete-confirm');
+            }}
           >
-            <Icon name="whatsapp" size={20} /> Solicitar orçamentos
+            <Icon name="whatsapp" size={20} /> Enviar pedido pelo WhatsApp
           </button>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-mute)' }}>
             Sem cobrança agora · pagamento direto com prestador

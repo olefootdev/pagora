@@ -1,6 +1,7 @@
 import { useState as useStateP } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar, Logo } from './core';
+import { track } from './lib/analytics';
 import type { ScreenProps } from './types';
 
 // =====================================================================
@@ -333,7 +334,13 @@ const ProviderSignup = ({ go }: ScreenProps) => {
           <button
             className="pg-btn pg-btn--primary pg-btn--block"
             disabled={!valid}
-            onClick={() => go('provider-confirm')}
+            onClick={() => {
+              track('prestador_cadastrado', {
+                tipo: form.services.join(','),
+                regiao: form.regions,
+              });
+              go('provider-confirm');
+            }}
           >
             Enviar cadastro
           </button>
