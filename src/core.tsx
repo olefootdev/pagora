@@ -385,7 +385,10 @@ const WaitlistCapture = () => {
 export const Landing = ({ go }: ScreenProps) => (
   <div className="pg-screen is-dark" data-screen-label="01 Landing">
     <StatusBar dark />
-    <div className="pg-topbar is-dark is-transparent" style={{ borderBottom: 'none' }}>
+    <div
+      className="pg-topbar pg-topbar--marketing is-dark is-transparent"
+      style={{ borderBottom: 'none' }}
+    >
       <Logo dark />
       <div style={{ display: 'flex', gap: 8 }}>
         <button

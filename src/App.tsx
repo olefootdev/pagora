@@ -108,87 +108,6 @@ const ALL_SCREENS = [
   'termos',
 ];
 
-type NavGroup = { t: string; screens: ReadonlyArray<readonly [string, string]> };
-const groups: NavGroup[] = [
-  {
-    t: 'Cliente · marketing',
-    screens: [
-      ['landing', 'Landing'],
-      ['how', 'Como funciona'],
-      ['services', 'Selecionar serviço'],
-      ['privacidade', 'Privacidade (LGPD)'],
-      ['termos', 'Termos de uso'],
-    ],
-  },
-  {
-    t: 'Cliente · autenticado',
-    screens: [
-      ['login', 'Login + OTP'],
-      ['onboarding', 'Onboarding'],
-      ['home', 'Home autenticada'],
-      ['tracking', 'Tracking ao vivo'],
-      ['locator', 'Localizador prestador'],
-      ['chat', 'Chat com prestador'],
-      ['rate', 'Avaliar serviço'],
-      ['receipt', 'Recibo'],
-      ['map', 'Mapa prestadores'],
-      ['notifications', 'Notificações'],
-      ['history-list', 'Pedidos'],
-      ['favorites', 'Favoritos'],
-      ['addresses', 'Endereços'],
-      ['profile', 'Perfil'],
-      ['wallet', 'Carteira'],
-      ['refer', 'Indicar amigo'],
-      ['recurring', 'Recorrentes'],
-      ['joint', 'Dividir frete'],
-      ['accessibility', 'Acessibilidade'],
-      ['service-done', 'Serviço concluído'],
-    ],
-  },
-  {
-    t: 'Fluxo Frete',
-    screens: [
-      ['frete-1', 'Frete · 1 Carga'],
-      ['frete-2', 'Frete · 2 Trajeto'],
-      ['frete-3', 'Frete · 3 Veículo'],
-      ['frete-4', 'Frete · 4 Quando'],
-      ['frete-summary', 'Resumo + Orçamento'],
-      ['frete-confirm', 'Confirmação enviada'],
-      ['proposals', 'Comparar propostas'],
-      ['compare', 'Comparador lado a lado'],
-    ],
-  },
-  {
-    t: 'Outros fluxos de cotação',
-    screens: [
-      ['guincho-1', 'Guincho · 1 Problema'],
-      ['guincho-2', 'Guincho · 2 Veículo'],
-      ['guincho-3', 'Guincho · 3 Local'],
-      ['guincho-4', 'Guincho · 4 Urgência'],
-      ['cacamba-1', 'Caçamba · 1 Material'],
-      ['cacamba-2', 'Caçamba · 2 Tamanho'],
-      ['cacamba-3', 'Caçamba · 3 Local'],
-    ],
-  },
-  {
-    t: 'Prestador',
-    screens: [
-      ['provider-landing', 'Landing prestador'],
-      ['provider-signup', 'Cadastro (simples)'],
-      ['prov-signup', 'Cadastro multi-step'],
-      ['provider-confirm', 'Cadastro enviado'],
-      ['provider-dash', 'Dashboard prestador'],
-    ],
-  },
-  {
-    t: 'Admin',
-    screens: [
-      ['admin-dash', 'Dashboard operações'],
-      ['admin-dispute', 'Detalhe disputa'],
-    ],
-  },
-];
-
 const CONSUMER_SCREENS = new Set([
   'home',
   'tracking',
@@ -397,77 +316,13 @@ function AppShell() {
     }
   };
 
+  const isConsumer = CONSUMER_SCREENS.has(route);
+  const activeTab = NAV_TAB[route] || 'home';
+
   return (
     <div className="pg-app">
+      <DesktopHeader route={route} isConsumer={isConsumer} activeTab={activeTab} go={go} />
       <div className="pg-stage">
-        <div className="pg-pane">
-          <div>
-            <Logo size={20} />
-          </div>
-          <div>
-            <div className="pg-pane-eyebrow">PROTÓTIPO · MOBILE</div>
-            <h1>Logística pesada com orçamento honesto.</h1>
-            <p>
-              Marketplace que conecta clientes a prestadores de frete, guincho e caçamba — sem
-              matching automático nem preço-armadilha.
-            </p>
-          </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
-            {groups.map((g) => (
-              <div key={g.t}>
-                <div className="pg-pane-eyebrow" style={{ marginBottom: 8 }}>
-                  {g.t}
-                </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
-                  {g.screens.map(([id, label]) => (
-                    <button
-                      key={id}
-                      onClick={() => go(id)}
-                      style={{
-                        textAlign: 'left',
-                        padding: '8px 12px',
-                        borderRadius: 8,
-                        border: 'none',
-                        background: route === id ? 'var(--night-900)' : 'transparent',
-                        color: route === id ? '#fff' : 'var(--text-soft)',
-                        fontSize: 14,
-                        cursor: 'pointer',
-                        fontWeight: route === id ? 600 : 500,
-                        fontFamily: 'inherit',
-                        display: 'flex',
-                        justifyContent: 'space-between',
-                        alignItems: 'center',
-                      }}
-                    >
-                      <span>{label}</span>
-                      {route === id && (
-                        <span
-                          style={{
-                            color: 'var(--green-500)',
-                            fontSize: 11,
-                            fontFamily: 'var(--font-mono)',
-                          }}
-                        >
-                          ●
-                        </span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="pg-pane-stats">
-            <div>
-              <div className="pg-pane-stat-num">2 h</div>
-              <div className="pg-pane-stat-lbl">PRIMEIRA PROPOSTA</div>
-            </div>
-            <div>
-              <div className="pg-pane-stat-num">R$ 0</div>
-              <div className="pg-pane-stat-lbl">SEM TAXA AO CLIENTE</div>
-            </div>
-          </div>
-        </div>
         <div className="pg-phone-wrap">
           <div className="pg-phone">
             <div
@@ -481,11 +336,118 @@ function AppShell() {
             >
               {renderScreen()}
             </div>
-            {CONSUMER_SCREENS.has(route) && <BottomNav active={NAV_TAB[route] || 'home'} go={go} />}
+            {isConsumer && <BottomNav active={activeTab} go={go} />}
           </div>
         </div>
       </div>
     </div>
+  );
+}
+
+// =====================================================================
+// Desktop Header — aparece apenas ≥1024px (CSS controla); em mobile some
+// e o BottomNav assume a navegação.
+// =====================================================================
+const PUBLIC_NAV: ReadonlyArray<readonly [string, string]> = [
+  ['landing', 'Início'],
+  ['how', 'Como funciona'],
+  ['services', 'Solicitar'],
+  ['provider-landing', 'Sou prestador'],
+];
+const CONSUMER_NAV: ReadonlyArray<readonly [string, string]> = [
+  ['home', 'Início'],
+  ['history-list', 'Pedidos'],
+  ['map', 'Mapa'],
+  ['notifications', 'Avisos'],
+  ['profile', 'Perfil'],
+];
+
+function DesktopHeader({
+  route,
+  isConsumer,
+  activeTab,
+  go,
+}: {
+  route: string;
+  isConsumer: boolean;
+  activeTab: string;
+  go: GoFn;
+}) {
+  const isProvider = route.startsWith('provider') || route === 'prov-signup';
+  const isAdmin = route.startsWith('admin');
+
+  let nav: ReadonlyArray<readonly [string, string]>;
+  let activeId = route;
+  if (isConsumer) {
+    nav = CONSUMER_NAV;
+    activeId = activeTab;
+  } else if (isProvider) {
+    nav = [
+      ['provider-landing', 'Sobre prestador'],
+      ['provider-signup', 'Cadastro'],
+      ['provider-dash', 'Painel'],
+    ];
+  } else if (isAdmin) {
+    nav = [
+      ['admin-dash', 'Operações'],
+      ['admin-dispute', 'Disputa'],
+    ];
+  } else {
+    nav = PUBLIC_NAV;
+  }
+
+  return (
+    <header className="pg-deskhead">
+      <div className="pg-deskhead-inner">
+        <button className="pg-deskhead-brand" onClick={() => go(isConsumer ? 'home' : 'landing')}>
+          <Logo dark size={26} />
+        </button>
+        <nav className="pg-deskhead-nav">
+          {nav.map(([id, label]) => (
+            <button
+              key={id}
+              onClick={() => go(id)}
+              className={`pg-deskhead-link${activeId === id ? ' is-active' : ''}`}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
+        <div className="pg-deskhead-cta">
+          {isConsumer || isProvider || isAdmin ? (
+            <button className="pg-btn pg-btn--sm" onClick={() => go('landing')}>
+              Sair
+            </button>
+          ) : (
+            <>
+              <button
+                className="pg-btn pg-btn--sm"
+                style={{
+                  background: 'transparent',
+                  color: '#fff',
+                  borderColor: 'rgba(255,255,255,0.16)',
+                }}
+                onClick={() => go('provider-landing')}
+              >
+                Sou prestador
+              </button>
+              <button
+                className="pg-btn pg-btn--sm"
+                style={{
+                  background: 'var(--green-500)',
+                  color: 'var(--night-900)',
+                  border: 'none',
+                  fontWeight: 700,
+                }}
+                onClick={() => go('login')}
+              >
+                Entrar
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+    </header>
   );
 }
 

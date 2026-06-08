@@ -114,59 +114,106 @@ textarea {
 .pg-app {
   min-height: 100vh;
   width: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 /* ==========================================================================
-   Phone frame (desktop only — on small viewports we go full-bleed)
+   Desktop header — fixo no topo ≥1024px; some em viewports menores
    ========================================================================== */
+.pg-deskhead {
+  display: none;
+}
 
+@media (min-width: 1024px) {
+  .pg-deskhead {
+    display: block;
+    background: var(--night-900);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .pg-deskhead-inner {
+    max-width: 1280px;
+    margin: 0 auto;
+    height: 68px;
+    padding: 0 32px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 32px;
+    align-items: center;
+  }
+  .pg-deskhead-brand {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+    display: flex;
+    align-items: center;
+  }
+  .pg-deskhead-nav {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+  }
+  .pg-deskhead-link {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 8px 14px;
+    border-radius: 8px;
+    color: rgba(255, 255, 255, 0.7);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    transition:
+      color 120ms,
+      background 120ms;
+  }
+  .pg-deskhead-link:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.06);
+  }
+  .pg-deskhead-link.is-active {
+    color: #fff;
+    background: rgba(34, 227, 163, 0.14);
+  }
+  .pg-deskhead-cta {
+    display: flex;
+    gap: 8px;
+  }
+}
+
+/* ==========================================================================
+   App stage — em mobile/tablet o conteúdo enche a tela; em desktop fica
+   centralizado num container com max-width pra não esticar em 4K.
+   ========================================================================== */
 .pg-stage {
-  min-height: 100vh;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
+  flex: 1;
+  min-height: 0;
+  display: flex;
   min-width: 0;
 }
 
-@media (min-width: 900px) {
+@media (min-width: 1024px) {
   .pg-stage {
-    grid-template-columns: minmax(360px, 1fr) 420px;
     background:
       radial-gradient(1200px 600px at 80% -10%, rgba(34, 227, 163, 0.06), transparent 60%),
       radial-gradient(800px 600px at -10% 110%, rgba(7, 14, 26, 0.04), transparent 60%),
       var(--bg-soft);
+    padding: 24px 0;
   }
 }
 
-/* desktop info pane */
-.pg-pane {
-  display: none;
-}
-@media (min-width: 900px) {
-  .pg-pane {
-    display: flex;
-    flex-direction: column;
-    padding: 64px 56px;
-    gap: 32px;
-    border-right: 1px solid var(--border);
-    background: var(--paper);
-  }
-}
-
-/* phone container */
+/* container do conteúdo principal */
 .pg-phone-wrap {
+  flex: 1;
   display: flex;
   align-items: stretch;
   justify-content: center;
-  min-height: 100vh;
-  padding: 0;
   min-width: 0;
   width: 100%;
-}
-@media (min-width: 900px) {
-  .pg-phone-wrap {
-    padding: 40px 0;
-    align-items: center;
-  }
 }
 
 .pg-phone {
@@ -181,16 +228,17 @@ textarea {
   overflow: hidden;
 }
 
-@media (min-width: 900px) {
+/* tablet/desktop: largura confortável + altura baseada no viewport menos o
+   header desktop (68px). Sem moldura de iPhone. */
+@media (min-width: 1024px) {
   .pg-phone {
-    width: 390px;
-    height: 844px;
-    border-radius: 44px;
-    border: 10px solid var(--night-900);
-    box-shadow:
-      0 30px 60px -20px rgba(7, 14, 26, 0.3),
-      0 0 0 2px rgba(7, 14, 26, 0.06),
-      inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+    width: 100%;
+    max-width: 1100px;
+    height: calc(100dvh - 68px - 48px);
+    min-height: 720px;
+    border-radius: 18px;
+    border: 1px solid var(--border);
+    box-shadow: 0 12px 32px -16px rgba(7, 14, 26, 0.18);
   }
 }
 
@@ -219,10 +267,10 @@ textarea {
   display: block;
 }
 
-@media (max-width: 899.99px) {
-  .pg-status {
-    display: none;
-  }
+/* O relógio mock "9:41" fazia sentido só dentro da moldura iPhone fake.
+   Agora que o app respira em desktop sem moldura, escondemos sempre. */
+.pg-status {
+  display: none;
 }
 
 /* viewport — the screen content scrolls here */
@@ -922,6 +970,18 @@ textarea {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   width: 100%;
   min-width: 0;
+}
+
+/* Em desktop o DesktopHeader (top) assume o papel de nav — bottom nav some. */
+@media (min-width: 1024px) {
+  .pg-bnav {
+    display: none;
+  }
+  /* Topbars das telas marketing (Landing, ProviderLanding) duplicariam o
+     DesktopHeader em desktop — escondemos pra evitar redundância. */
+  .pg-topbar--marketing {
+    display: none;
+  }
 }
 .pg-bnav-item {
   min-width: 0;

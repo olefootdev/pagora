@@ -16,7 +16,10 @@ const isServiceType = (id: string): id is ServiceType =>
 const ProviderLanding = ({ go }: ScreenProps) => (
   <div className="pg-screen is-dark" data-screen-label="P1 Prestador · Landing">
     <StatusBar dark />
-    <div className="pg-topbar is-dark is-transparent" style={{ borderBottom: 'none' }}>
+    <div
+      className="pg-topbar pg-topbar--marketing is-dark is-transparent"
+      style={{ borderBottom: 'none' }}
+    >
       <button className="pg-iconbtn is-dark" onClick={() => go('landing')}>
         <Icon name="arrow-left" />
       </button>
