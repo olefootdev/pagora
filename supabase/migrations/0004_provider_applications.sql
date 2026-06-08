@@ -40,9 +40,25 @@ create table if not exists pagora.provider_applications (
   constraint provider_apps_services_nonempty check (array_length(services, 1) >= 1)
 );
 
--- Dedup defensivo: mesmo telefone, mesma janela de 24h → bloqueia
-create unique index if not exists provider_apps_phone_day_uniq
-  on pagora.provider_applications (phone, date_trunc('day', created_at));
+-- Dedup defensivo: queremos evitar mesmo telefone cadastrando várias vezes
+-- no mesmo dia. Originalmente tentamos UNIQUE INDEX com date_trunc('day',
+-- created_at), mas Postgres exige expressões IMMUTABLE em índices e
+-- date_trunc sobre timestamptz é STABLE (depende do timezone da sessão).
+--
+-- Soluções consideradas:
+--   1. Generated column STORED com (created_at AT TIME ZONE 'UTC')::date —
+--      rejeitado pq Postgres exige expressões IMMUTABLE também em generated.
+--   2. Função wrapper IMMUTABLE — seria mentira (a expressão é STABLE).
+--   3. Trigger BEFORE INSERT preenchendo created_date — funciona mas adiciona
+--      overhead pra um requisito de antifraude leve em MVP.
+--
+-- Escolha: índice composto regular (não-unique) pra acelerar a busca, e a
+-- checagem "mesmo telefone hoje" fica na aplicação (ProviderSignup faz select
+-- prévio antes do insert). Trade-off: race condition mínima permite no
+-- máximo 2 inserts simultâneos do mesmo telefone — aceitável pra inbox de
+-- candidatos (admin tria depois de qualquer jeito).
+create index if not exists provider_apps_phone_recent_idx
+  on pagora.provider_applications (phone, created_at desc);
 
 create index if not exists provider_apps_created_at_idx
   on pagora.provider_applications (created_at desc);

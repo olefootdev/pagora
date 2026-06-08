@@ -239,9 +239,27 @@ const ProviderSignup = ({ go }: ScreenProps) => {
         setErrorMsg('Rodoviário ainda não está aceito. Selecione frete, guincho ou caçamba.');
         return;
       }
+      // Dedup soft em 24h: o índice composto (phone, created_at desc) faz a
+      // query rápida. Race conditions extremas permitiriam 2 inserts paralelos
+      // do mesmo phone — aceitável pra inbox de candidatos (admin tria).
+      const phone = form.phone.trim();
+      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
+      const { count: recentCount } = await supabase
+        .from('provider_applications')
+        .select('id', { count: 'exact', head: true })
+        .eq('phone', phone)
+        .gte('created_at', since);
+      if ((recentCount ?? 0) > 0) {
+        setStatus('err');
+        setErrorMsg(
+          'Já recebemos um cadastro com esse telefone hoje. Aguarde nosso retorno no WhatsApp.',
+        );
+        return;
+      }
+
       const { error } = await supabase.from('provider_applications').insert({
         full_name: form.name.trim(),
-        phone: form.phone.trim(),
+        phone,
         services,
         vehicle: form.vehicle.trim() || null,
         regions: form.regions.trim(),
@@ -256,12 +274,7 @@ const ProviderSignup = ({ go }: ScreenProps) => {
       go('provider-confirm');
     } catch (err) {
       setStatus('err');
-      const msg = err instanceof Error ? err.message : 'Tente novamente';
-      setErrorMsg(
-        /duplicate|unique|provider_apps_phone_day/i.test(msg)
-          ? 'Já recebemos um cadastro com esse telefone hoje. Aguarde nosso retorno no WhatsApp.'
-          : msg,
-      );
+      setErrorMsg(err instanceof Error ? err.message : 'Tente novamente');
     }
   };
   return (
