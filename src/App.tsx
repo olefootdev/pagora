@@ -51,6 +51,7 @@ import { Compare } from './phase1';
 import { ServiceDone } from './phase3';
 import { ProvSignup } from './phase4';
 import { AdminDispute } from './phase6';
+import { PrivacyPolicy, Terms } from './legal';
 
 // =====================================================================
 // PAGORA — Router (HashRouter) + Zustand store
@@ -103,6 +104,8 @@ const ALL_SCREENS = [
   'accessibility',
   'locator',
   'service-done',
+  'privacidade',
+  'termos',
 ];
 
 type NavGroup = { t: string; screens: ReadonlyArray<readonly [string, string]> };
@@ -113,6 +116,8 @@ const groups: NavGroup[] = [
       ['landing', 'Landing'],
       ['how', 'Como funciona'],
       ['services', 'Selecionar serviço'],
+      ['privacidade', 'Privacidade (LGPD)'],
+      ['termos', 'Termos de uso'],
     ],
   },
   {
@@ -383,6 +388,10 @@ function AppShell() {
         return <Locator go={go} />;
       case 'service-done':
         return <ServiceDone go={go} />;
+      case 'privacidade':
+        return <PrivacyPolicy go={go} />;
+      case 'termos':
+        return <Terms go={go} />;
       default:
         return <Landing go={go} />;
     }

@@ -3,10 +3,103 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <title>PAGORA — Marketplace de Logística</title>
+    <meta name="theme-color" content="#070E1A" />
+
+    <title>PAGORA — Frete, guincho e caçamba com orçamento honesto</title>
+    <meta
+      name="description"
+      content="Marketplace que conecta clientes a prestadores de frete, guincho e caçamba em até 2h. Sem matching automático, sem preço-armadilha. Você compara propostas e fecha direto pelo WhatsApp."
+    />
+    <link rel="canonical" href="https://pagora.com.br/" />
+
+    <!-- Favicons -->
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+
+    <!-- Open Graph (Facebook / WhatsApp / LinkedIn) -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PAGORA" />
+    <meta property="og:locale" content="pt_BR" />
+    <meta property="og:url" content="https://pagora.com.br/" />
+    <meta
+      property="og:title"
+      content="PAGORA — Frete, guincho e caçamba com orçamento honesto"
+    />
+    <meta
+      property="og:description"
+      content="Você descreve, prestadores verificados respondem em até 2h pelo WhatsApp, você compara e escolhe. Sem taxa ao cliente."
+    />
+    <meta property="og:image" content="https://pagora.com.br/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PAGORA — Marketplace de logística pesada" />
+
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PAGORA — Frete, guincho e caçamba com orçamento honesto" />
+    <meta
+      name="twitter:description"
+      content="Você descreve, prestadores verificados respondem em até 2h pelo WhatsApp, você compara e escolhe."
+    />
+    <meta name="twitter:image" content="https://pagora.com.br/og-image.png" />
+
+    <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap" />
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Nunito:wght@600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap"
+    />
+
+    <!-- Google Analytics 4 — só carrega se VITE_GA4_ID estiver setado no build -->
+    <script>
+      (function () {
+        var id = '%VITE_GA4_ID%';
+        if (!id || id === 'undefined' || id.indexOf('%') === 0) return;
+        var s = document.createElement('script');
+        s.async = true;
+        s.src = 'https://www.googletagmanager.com/gtag/js?id=' + id;
+        document.head.appendChild(s);
+        window.dataLayer = window.dataLayer || [];
+        window.gtag = function () {
+          window.dataLayer.push(arguments);
+        };
+        window.gtag('js', new Date());
+        window.gtag('config', id, { anonymize_ip: true });
+      })();
+    </script>
+
+    <!-- Meta Pixel — só carrega se VITE_META_PIXEL_ID estiver setado no build -->
+    <script>
+      (function () {
+        var id = '%VITE_META_PIXEL_ID%';
+        if (!id || id === 'undefined' || id.indexOf('%') === 0) return;
+        !(function (f, b, e, v, n, t, s) {
+          if (f.fbq) return;
+          n = f.fbq = function () {
+            n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments);
+          };
+          if (!f._fbq) f._fbq = n;
+          n.push = n;
+          n.loaded = !0;
+          n.version = '2.0';
+          n.queue = [];
+          t = b.createElement(e);
+          t.async = !0;
+          t.src = v;
+          s = b.getElementsByTagName(e)[0];
+          s.parentNode.insertBefore(t, s);
+        })(
+          window,
+          document,
+          'script',
+          'https://connect.facebook.net/en_US/fbevents.js'
+        );
+        window.fbq('init', id);
+        window.fbq('track', 'PageView');
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

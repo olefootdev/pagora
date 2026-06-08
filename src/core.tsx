@@ -697,6 +697,38 @@ export const Landing = ({ go }: ScreenProps) => (
           <span>v1.0 · Brasil</span>
         </div>
         <div style={{ marginTop: 10 }}>© 2026 PAGORA. Pagamento direto com prestador.</div>
+        <div style={{ marginTop: 10, display: 'flex', gap: 16 }}>
+          <button
+            onClick={() => go('privacidade')}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: 12,
+              fontFamily: 'inherit',
+              textDecoration: 'underline',
+            }}
+          >
+            Privacidade
+          </button>
+          <button
+            onClick={() => go('termos')}
+            style={{
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              color: 'rgba(255,255,255,0.7)',
+              fontSize: 12,
+              fontFamily: 'inherit',
+              textDecoration: 'underline',
+            }}
+          >
+            Termos
+          </button>
+        </div>
       </div>
     </div>
   </div>

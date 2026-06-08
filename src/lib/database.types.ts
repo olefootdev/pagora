@@ -235,6 +235,41 @@ type DisputeInsert = Partial<DisputeRow> & {
 };
 type DisputeUpdate = Partial<DisputeRow>;
 
+type ProviderApplicationRow = {
+  id: string;
+  full_name: string;
+  phone: string;
+  email: string | null;
+  services: ServiceType[];
+  vehicle: string | null;
+  regions: string;
+  source: string;
+  utm_campaign: string | null;
+  utm_source: string | null;
+  utm_medium: string | null;
+  ip_hash: string | null;
+  user_agent: string | null;
+  reviewed_at: string | null;
+  reviewed_by: string | null;
+  decision: 'approved' | 'rejected' | null;
+  decision_notes: string | null;
+  created_at: string;
+};
+type ProviderApplicationInsert = {
+  full_name: string;
+  phone: string;
+  services: ServiceType[];
+  regions: string;
+  email?: string | null;
+  vehicle?: string | null;
+  source?: string;
+  utm_campaign?: string | null;
+  utm_source?: string | null;
+  utm_medium?: string | null;
+  user_agent?: string | null;
+};
+type ProviderApplicationUpdate = Partial<ProviderApplicationRow>;
+
 type WaitlistRow = {
   id: string;
   email: string | null;
@@ -292,6 +327,11 @@ export type Database = {
       } & Rel;
       disputes: { Row: DisputeRow; Insert: DisputeInsert; Update: DisputeUpdate } & Rel;
       waitlist: { Row: WaitlistRow; Insert: WaitlistInsert; Update: WaitlistUpdate } & Rel;
+      provider_applications: {
+        Row: ProviderApplicationRow;
+        Insert: ProviderApplicationInsert;
+        Update: ProviderApplicationUpdate;
+      } & Rel;
     };
     Views: Record<string, never>;
     Functions: {

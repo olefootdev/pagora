@@ -2,7 +2,13 @@ import { useState as useStateP } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar, Logo } from './core';
 import { track } from './lib/analytics';
+import { supabase } from './lib/supabase';
+import type { ServiceType } from './lib/database.types';
 import type { ScreenProps } from './types';
+
+const SERVICE_ENUM: readonly ServiceType[] = ['frete', 'guincho', 'cacamba'];
+const isServiceType = (id: string): id is ServiceType =>
+  (SERVICE_ENUM as readonly string[]).includes(id);
 
 // =====================================================================
 // PROVIDER LANDING
@@ -207,6 +213,8 @@ const ProviderSignup = ({ go }: ScreenProps) => {
     regions: '',
     vehicle: '',
   });
+  const [status, setStatus] = useStateP<'idle' | 'sending' | 'err'>('idle');
+  const [errorMsg, setErrorMsg] = useStateP('');
   const set = (p: Partial<ProviderForm>) => setForm((f) => ({ ...f, ...p }));
   const toggleService = (id: string) =>
     set({
@@ -215,6 +223,44 @@ const ProviderSignup = ({ go }: ScreenProps) => {
         : [...form.services, id],
     });
   const valid = form.name && form.phone.length >= 10 && form.services.length > 0 && form.regions;
+
+  const submit = async () => {
+    if (!valid || status === 'sending') return;
+    setStatus('sending');
+    setErrorMsg('');
+    try {
+      // Schema enum só aceita frete/guincho/cacamba — rodoviario fica de fora por ora
+      const services = form.services.filter(isServiceType);
+      if (services.length === 0) {
+        setStatus('err');
+        setErrorMsg('Rodoviário ainda não está aceito. Selecione frete, guincho ou caçamba.');
+        return;
+      }
+      const { error } = await supabase.from('provider_applications').insert({
+        full_name: form.name.trim(),
+        phone: form.phone.trim(),
+        services,
+        vehicle: form.vehicle.trim() || null,
+        regions: form.regions.trim(),
+        source: 'landing',
+        user_agent: typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 200) : null,
+      });
+      if (error) throw error;
+      track('prestador_cadastrado', {
+        tipo: services.join(','),
+        regiao: form.regions,
+      });
+      go('provider-confirm');
+    } catch (err) {
+      setStatus('err');
+      const msg = err instanceof Error ? err.message : 'Tente novamente';
+      setErrorMsg(
+        /duplicate|unique|provider_apps_phone_day/i.test(msg)
+          ? 'Já recebemos um cadastro com esse telefone hoje. Aguarde nosso retorno no WhatsApp.'
+          : msg,
+      );
+    }
+  };
   return (
     <div className="pg-screen" data-screen-label="P2 Prestador · Cadastro">
       <StatusBar />
@@ -326,23 +372,43 @@ const ProviderSignup = ({ go }: ScreenProps) => {
           >
             <input type="checkbox" defaultChecked style={{ marginTop: 4 }} />
             <span>
-              Concordo com os termos de uso e política de privacidade. Sei que aprovação é manual.
+              Concordo com os{' '}
+              <a href="#/termos" style={{ color: 'var(--green-700)', textDecoration: 'underline' }}>
+                termos de uso
+              </a>{' '}
+              e{' '}
+              <a
+                href="#/privacidade"
+                style={{ color: 'var(--green-700)', textDecoration: 'underline' }}
+              >
+                política de privacidade
+              </a>
+              . Sei que aprovação é manual.
             </span>
           </label>
         </div>
         <div className="pg-page-foot">
+          {status === 'err' && (
+            <div
+              style={{
+                fontSize: 12,
+                color: 'var(--orange-600)',
+                background: 'var(--orange-50)',
+                border: '1px solid rgba(255,122,26,0.3)',
+                borderRadius: 8,
+                padding: '8px 10px',
+                marginBottom: 10,
+              }}
+            >
+              {errorMsg}
+            </div>
+          )}
           <button
             className="pg-btn pg-btn--primary pg-btn--block"
-            disabled={!valid}
-            onClick={() => {
-              track('prestador_cadastrado', {
-                tipo: form.services.join(','),
-                regiao: form.regions,
-              });
-              go('provider-confirm');
-            }}
+            disabled={!valid || status === 'sending'}
+            onClick={submit}
           >
-            Enviar cadastro
+            {status === 'sending' ? 'Enviando…' : 'Enviar cadastro'}
           </button>
         </div>
       </div>
