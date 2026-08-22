@@ -12,9 +12,17 @@
     "format:check": "prettier --check \"src/**/*.{js,jsx,ts,tsx,css,json,md}\"",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
+    "test:unit": "vitest run src",
+    "test:db": "vitest run supabase/tests",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
-    "prepare": "husky"
+    "prepare": "husky",
+    "db:types": "supabase gen types typescript --project-id $PAGORA_SUPABASE_PROJECT_ID --schema pagora > src/lib/database.generated.ts",
+    "db:types:check": "npm run db:types && git diff --exit-code src/lib/database.generated.ts",
+    "db:push": "supabase db push",
+    "db:lint": "supabase db lint --schema pagora",
+    "fn:deploy": "supabase functions deploy create-payment asaas-webhook request-withdrawal create-provider-account advance-order",
+    "fn:serve": "supabase functions serve --env-file supabase/functions/.env.local"
   },
   "lint-staged": {
     "*.{js,jsx,ts,tsx}": [
@@ -26,19 +34,26 @@
     ]
   },
   "dependencies": {
+    "@hookform/resolvers": "^5.8.0",
     "@hugeicons/core-free-icons": "^4.2.0",
     "@hugeicons/react": "^1.1.6",
     "@supabase/supabase-js": "^2.106.2",
+    "@vis.gl/react-google-maps": "^1.9.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
+    "react-hook-form": "^7.85.0",
     "react-router-dom": "^7.16.0",
+    "zod": "^4.4.3",
     "zustand": "^5.0.14"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.5",
     "@eslint/js": "^10.0.1",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.2",
     "@testing-library/user-event": "^14.6.1",
+    "@types/google.maps": "^3.65.5",
+    "@types/node": "^26.2.0",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",

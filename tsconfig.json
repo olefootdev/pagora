@@ -14,13 +14,30 @@
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
     "resolveJsonModule": true,
+    // As Edge Functions rodam em Deno, onde o import precisa da extensão .ts.
+    // Sem esta flag, o teste que exercita `_shared/money.ts` a partir do src/
+    // não compila. `noEmit` já está ligado, então não há risco de o .ts vazar
+    // para um artefato de build.
+    "allowImportingTsExtensions": true,
     "isolatedModules": true,
     "skipLibCheck": true,
     "noEmit": true,
     "useDefineForClassFields": true,
     "verbatimModuleSyntax": false,
-    "types": ["vite/client", "vitest/globals", "@testing-library/jest-dom"]
+    "types": [
+      "vite/client",
+      "vitest/globals",
+      "@testing-library/jest-dom",
+      "node",
+      // Tipos do JS API do Google Maps. O SDK é carregado em runtime pelo
+      // APIProvider, então só o tipo entra no build.
+      "google.maps"
+    ]
   },
-  "include": ["src", "vitest.setup.ts", "vite.config.ts", "vitest.config.ts"],
+  // `supabase/tests` entra no typecheck (sobe Postgres via PGlite e usa node:fs).
+  // `supabase/functions` NÃO entra: roda em Deno, com globais que o tsc do
+  // browser não conhece. O único módulo compartilhado (`_shared/money.ts`) é
+  // TypeScript puro e já é checado por ser importado de um teste em src/.
+  "include": ["src", "supabase/tests", "vitest.setup.ts", "vite.config.ts", "vitest.config.ts"],
   "exclude": ["dist", "node_modules"]
 }
