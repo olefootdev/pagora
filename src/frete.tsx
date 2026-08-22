@@ -3,6 +3,8 @@ import { Icon } from './icons';
 import { StatusBar, TopBar } from './core';
 import { abrirWhatsApp, mensagemFrete } from './lib/whatsapp';
 import { track } from './lib/analytics';
+import { calcFreteCents, PricingInputError } from './domains/pricing/frete-pricing';
+import { PublishRequestButton } from './screens/publish-request';
 import type {
   PagoraState,
   PricingResult,
@@ -11,34 +13,34 @@ import type {
   ConfirmScreenProps,
 } from './types';
 
-// Pricing model (rough — for demo)
+// Pricing — adaptador da UI sobre o domínio canônico (`domains/pricing`).
+// A aritmética real vive em centavos; aqui só convertemos para os reais que as
+// telas de resumo já consomem. Nenhum número novo é inventado neste arquivo.
 export const calcFrete = (s: PagoraState): PricingResult => {
-  const km = s.distance || 15;
-  const baseKm = km * 12;
-  const VEHICLE_PRICE: Record<string, number> = { van: 0, bau: 50, grande: 130 };
-  // BUG: Vehicle 'van' returns 0, and `0 || 50` resolves to 50 — documentado em frete.test.ts.
-  const vehicle = VEHICLE_PRICE[s.vehicle ?? ''] || 50;
-  const helpers = (s.helpers || 0) * 50;
-  const access = (s.originAccess?.needHelp ? 30 : 0) + (s.destAccess?.needHelp ? 30 : 0);
-  const noElev =
-    (s.originAccess?.type === 'apt' && !s.originAccess?.elevator ? 25 : 0) +
-    (s.destAccess?.type === 'apt' && !s.destAccess?.elevator ? 25 : 0);
-  const baseFee = 30;
-  let total = baseKm + vehicle + helpers + access + noElev + baseFee;
-  if (s.urgency === 'today') total = Math.round(total * 1.3);
-  const low = Math.round(total);
-  const high = Math.round(total * 1.25);
+  const cents = calcFreteCents({
+    distanceKm: s.distance,
+    vehicle: s.vehicle,
+    helpers: s.helpers,
+    originAccess: s.originAccess,
+    destAccess: s.destAccess,
+    urgency: s.urgency,
+  });
+
+  const toReais = (v: number) => Math.round(v / 100);
+
   return {
-    low,
-    high,
+    low: toReais(cents.lowCents),
+    high: toReais(cents.highCents),
     breakdown: {
-      baseKm,
-      vehicle,
-      helpers,
-      access,
-      noElev,
-      baseFee,
-      urgency: s.urgency === 'today' ? '+30%' : '—',
+      baseKm: toReais(cents.breakdown.baseKmCents),
+      vehicle: toReais(cents.breakdown.vehicleCents),
+      helpers: toReais(cents.breakdown.helpersCents),
+      access: toReais(cents.breakdown.accessCents),
+      noElev: toReais(cents.breakdown.noElevatorCents),
+      baseFee: toReais(cents.breakdown.baseFeeCents),
+      // Urgência não altera o preço desde 19/08/2026. A linha continua no
+      // resumo para o cliente ver que pedir "hoje" não custou nada a mais.
+      urgency: 'sem custo',
     },
   };
 };
@@ -411,7 +413,7 @@ const Frete3 = ({ go, state, set }: FlowScreenProps) => {
 // =====================================================================
 const Frete4 = ({ go, state, set }: FlowScreenProps) => {
   const opts = [
-    { id: 'today', t: 'Hoje (urgente)', s: 'Acréscimo de 30%', icon: 'bolt' },
+    { id: 'today', t: 'Hoje (urgente)', s: 'Sem custo adicional', icon: 'bolt' },
     { id: 'tomorrow', t: 'Amanhã', s: 'Mais propostas disponíveis', icon: 'sun-on' },
     { id: 'week', t: 'Próximos 7 dias', s: 'Flexível, melhor preço', icon: 'calendar' },
     { id: 'scheduled', t: 'Agendar data específica', s: 'Escolha dia e hora', icon: 'calendar' },
@@ -425,7 +427,9 @@ const Frete4 = ({ go, state, set }: FlowScreenProps) => {
           <div>
             <div className="pg-h-eyebrow">PASSO 4 DE 4 · QUANDO</div>
             <h1 className="pg-h-title">Quando você precisa?</h1>
-            <p className="pg-h-sub">Quanto mais flexível, melhor o preço.</p>
+            <p className="pg-h-sub">
+              Urgência não custa mais caro. Prazo maior traz mais propostas.
+            </p>
           </div>
 
           <div className="pg-stack pg-stack--sm">
@@ -519,7 +523,43 @@ const Frete4 = ({ go, state, set }: FlowScreenProps) => {
 // SUMMARY — estimate + breakdown
 // =====================================================================
 const FreteSummary = ({ go, state }: SummaryScreenProps) => {
-  const price = useMemoF(() => calcFrete(state), [state]);
+  // Sem veículo escolhido não existe preço. O caminho normal já bloqueia o
+  // avanço (o botão do Frete3 fica disabled), mas o HashRouter deixa entrar
+  // direto em #/frete-summary com o state vazio — nesse caso voltamos ao passo
+  // do veículo em vez de estourar a tela.
+  const price = useMemoF(() => {
+    try {
+      return calcFrete(state);
+    } catch (e) {
+      if (e instanceof PricingInputError) return null;
+      throw e;
+    }
+  }, [state]);
+
+  // A publicação grava a estimativa em CENTAVOS, então recalculamos a partir
+  // do domínio em vez de multiplicar os reais arredondados por 100 — que
+  // perderia os centavos que o arredondamento da exibição já descartou.
+  const priceCents = useMemoF(() => {
+    try {
+      return calcFreteCents({
+        distanceKm: state.distance,
+        vehicle: state.vehicle,
+        helpers: state.helpers,
+        originAccess: state.originAccess,
+        destAccess: state.destAccess,
+        urgency: state.urgency,
+      });
+    } catch {
+      return null;
+    }
+  }, [state]);
+
+  useEffectF(() => {
+    if (!price) go('frete-3');
+  }, [price, go]);
+
+  if (!price || !priceCents) return null;
+
   const accessLabel = (a: PagoraState['originAccess']): string => {
     if (!a?.type) return '—';
     const map: Record<string, string> = {
@@ -738,8 +778,18 @@ const FreteSummary = ({ go, state }: SummaryScreenProps) => {
         </div>
 
         <div className="pg-page-foot">
+          {/* Ação principal: publica no app e abre para propostas. */}
+          <PublishRequestButton
+            go={go}
+            service="frete"
+            state={state}
+            estimate={{ lowCents: priceCents.lowCents, highCents: priceCents.highCents }}
+          />
+          {/* WhatsApp continua como caminho paralelo — é o canal que a operação
+              usa hoje, e não faz sentido desligá-lo antes de haver prestadores
+              respondendo dentro do app. */}
           <button
-            className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
+            className="pg-btn pg-btn--block"
             onClick={() => {
               track('pedido_enviado', {
                 tipo: 'frete',
@@ -751,7 +801,7 @@ const FreteSummary = ({ go, state }: SummaryScreenProps) => {
               go('frete-confirm');
             }}
           >
-            <Icon name="whatsapp" size={20} /> Enviar pedido pelo WhatsApp
+            <Icon name="whatsapp" size={20} /> Prefiro enviar pelo WhatsApp
           </button>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-mute)' }}>
             Sem cobrança agora · pagamento direto com prestador
