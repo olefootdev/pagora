@@ -1,6 +1,29 @@
 # PAGORA — Estado da sessão (handoff)
 
-> Última atualização: maio 2026. Próxima sessão começa com Google Maps API key.
+> Última atualização: **14/08/2026**. Núcleo transacional (Pix + ledger + saque)
+> implementado no código; **falta aplicar as migrations e configurar o Asaas**.
+
+---
+
+## 🔴 O QUE VOCÊ PRECISA FAZER ANTES DE QUALQUER COISA
+
+As migrations `0005`–`0008` e as quatro Edge Functions estão escritas mas
+**nunca foram executadas contra um Postgres** — não havia Docker nem acesso ao
+projeto remoto na sessão em que foram criadas. Trate-as como código não
+testado até rodar:
+
+```bash
+supabase link --project-ref kigmdcjpgmvsyiuqadct
+supabase db push          # aplica 0005 → 0008
+npm run db:types          # gera os tipos de verdade e compara com o manual
+```
+
+Depois, os secrets e o deploy das funções: ver `supabase/README.md`.
+
+⚠️ A `0006_rls_hardening.sql` **revoga privilégios de escrita** de todas as
+tabelas do schema. Se alguma tela quebrar com "permission denied", é isso —
+e é intencional. A coluna que faltou precisa entrar num `grant ... (coluna)`
+explícito, nunca num `grant all`.
 
 ---
 
@@ -39,6 +62,78 @@
 - Fonts: Inter+JetBrains → **Plus Jakarta Sans + Nunito + JetBrains Mono**
 - 162 → 23 hex hardcoded migrados para `var(--*)` (perl com lookbehind protegendo SVG attrs)
 - Os 23 restantes são SVG `fill=`/`stroke=`/`color=` em paths/circles — só morrem quando Locator/ProvidersMap virarem GoogleMaps real (FASE 3)
+
+---
+
+### FASE 5 — Núcleo transacional (agosto/2026)
+
+- **Bug de preço corrigido**: `van` custa R$ 0 de sobretaxa, não R$ 50. O
+  fallback silencioso saiu; veículo desconhecido agora estoura.
+- **Domínio extraído**: `src/domains/{money,pricing,orders,payments,wallets}`.
+  Dinheiro é inteiro em centavos, com a aritmética espelhada bit a bit em SQL.
+- **RLS endurecida** (`0006`): quatro brechas fechadas — cliente podia
+  reescrever o preço da proposta e o status do pedido; prestador podia resolver
+  a própria disputa. `orders` virou somente-leitura via PostgREST.
+- **Modelo financeiro** (`0007`): `payments`, `payment_events` (idempotência de
+  webhook), `withdrawals`, ledger append-only com buckets `pending`/`available`,
+  e a máquina de estados como tabela.
+- **Funções server-side** (`0008`): 22 funções, todas as que movem dinheiro
+  concedidas só a `service_role`.
+- **Edge Functions**: `create-payment`, `asaas-webhook`, `request-withdrawal`,
+  `create-provider-account`, `advance-order`.
+- **Telas transacionais reais** (`src/screens/`): `checkout` (Pix com QR,
+  copia-e-cola e confirmação por Realtime), `meus-pedidos`, `prov-financeiro`
+  (saldo, extrato, saque) e `admin-financeiro` (aprovação, trilha do dinheiro,
+  saúde do webhook).
+- **155 testes** (era 4), sendo 39 de integração contra Postgres real via
+  PGlite — as migrations rodam de verdade em `npm run test:db`.
+
+### FASE 6 — Acabamento (agosto/2026)
+
+> **Pagamento está PARADO por decisão de negócio** — retoma quando a conta
+> bancária da empresa abrir. As migrations `0005`–`0008` e as Edge Functions do
+> Asaas continuam escritas e testadas; não precisam ser aplicadas agora.
+
+- **Migration 0009**: rate limit nos formulários públicos (5/hora por IP,
+  3/hora por telefone) e `providers.rating_avg` finalmente calculado por
+  trigger — a coluna existia desde a 0001 e mostrava 0 para todo mundo.
+- **Validação brasileira** (`src/domains/validation/`): CPF e CNPJ com dígito
+  verificador real, celular, CEP, placa (antiga e Mercosul), chave Pix.
+  39 testes.
+- **Formulários que escrevem no banco** ganharam validação e máscara:
+  cadastro de prestador e login. O login exigia `phone.length >= 14`, que conta
+  caracteres da máscara — agora exige celular plausível antes de gastar SMS.
+- **Code splitting por módulo**: bundle de entrada 807 kB → **452 kB**
+  (gzip 212 → 130 kB).
+- **Google Maps** integrado com degradação: sem `VITE_GOOGLE_MAPS_API_KEY` as
+  telas caem na ilustração estática e nada quebra.
+- **210 testes.**
+
+---
+
+### FASE 7 — Fluxo de descoberta (agosto/2026)
+
+O loop agora fecha sem pagamento: **publicar → propor → aceitar**.
+
+- `PublishRequestButton` nas três telas de resumo grava `service_request` de
+  verdade. O WhatsApp virou botão secundário, não sumiu.
+- Tela **Oportunidades** (`/oportunidades`): prestador vê pedidos abertos e
+  envia proposta, com o líquido depois da comissão visível **antes** de enviar.
+- **Meus pedidos** passou a listar pedidos aguardando proposta, mostrar as
+  propostas recebidas com nota do prestador, e aceitar — o aceite cria a order
+  e leva ao checkout.
+
+Caminho completo hoje: pedido publicado → prestador propõe → cliente aceita →
+order nasce em `pending_payment` → checkout Pix. Só o último passo depende da
+conta bancária.
+
+---
+
+**As telas antigas continuam mock.** `proposals`, `compare`, `tracking`,
+`history-list`, `provider-dash` e `admin-dash` seguem com dados fixos no
+código. As telas novas são as únicas que falam com o banco; cada painel antigo
+ganhou um botão levando à versão real. Unificar as duas é o trabalho que resta
+depois de ligar o fluxo de descoberta (criar pedido → receber propostas).
 
 ---
 
@@ -162,18 +257,17 @@ npm run format      # prettier --write
 
 ---
 
-## 🐛 Bug conhecido (documentado, não corrigido)
+## ✅ Bug de preço — CORRIGIDO (agosto/2026)
 
-`src/frete.tsx` — `calcFrete`:
+O antigo `VEHICLE_PRICE[x] || 50` transformava `van: 0` em 50 e cobrava preço
+de baú de quem escolhia van. A regra agora vive em
+`src/domains/pricing/frete-pricing.ts`, sem fallback: veículo ausente ou
+desconhecido levanta `PricingInputError` em vez de virar o preço de outro.
 
-```js
-const VEHICLE_PRICE = { van: 0, bau: 50, grande: 130 };
-const vehicle = VEHICLE_PRICE[s.vehicle ?? ''] || 50;
-// BUG: van retorna 0, mas 0 || 50 === 50 → user paga preço de baú.
-// Fix exige autorização de produto (muda preço final pra usuários de van).
-```
-
-Teste em `src/frete.test.ts` documenta com `expect(van.low).toBe(bau.low)` — quando fixar, vira `.not.toBe()`.
+**Impacto comercial:** frete de van ficou R$ 50 mais barato. O teste em
+`src/frete.test.ts` virou regressão permanente (`bau.low - van.low === 50`).
+Se a intenção do produto era mesmo cobrar R$ 50 na van, o certo é mudar
+`VEHICLE_SURCHARGE_CENTS.van` para `5_000` — não reintroduzir o `||`.
 
 ---
 
