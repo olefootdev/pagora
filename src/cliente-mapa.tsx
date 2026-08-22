@@ -1946,6 +1946,17 @@ const HistoryList = ({ go }: ScreenProps) => {
         </div>
       </div>
       <div className="pg-viewport" style={{ paddingBottom: 80 }}>
+        {/* Os cards abaixo são maquete. Esta entrada leva aos pedidos reais do
+            banco, com pagamento e confirmação de conclusão de verdade. */}
+        <div style={{ padding: '14px 20px 0' }}>
+          <button
+            className="pg-btn pg-btn--accent"
+            style={{ width: '100%' }}
+            onClick={() => go('meus-pedidos')}
+          >
+            <Icon name="package" size={16} /> Pedidos e pagamentos
+          </button>
+        </div>
         <div style={{ padding: '16px 20px 20px' }}>
           {list.length === 0 ? (
             <div style={{ textAlign: 'center', padding: 60, color: 'var(--text-mute)' }}>

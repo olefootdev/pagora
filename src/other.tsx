@@ -3,6 +3,8 @@ import { Icon } from './icons';
 import { StatusBar, TopBar, Logo } from './core';
 import { track } from './lib/analytics';
 import { supabase } from './lib/supabase';
+import { isValidMobilePhone, maskPhone, toE164 } from './domains/validation/br';
+import { fullNameSchema } from './domains/validation/schemas';
 import type { ServiceType } from './lib/database.types';
 import type { ScreenProps } from './types';
 
@@ -218,36 +220,65 @@ const ProviderSignup = ({ go }: ScreenProps) => {
   });
   const [status, setStatus] = useStateP<'idle' | 'sending' | 'err'>('idle');
   const [errorMsg, setErrorMsg] = useStateP('');
+  // Erro por campo só aparece depois que o campo foi tocado: validar enquanto
+  // a pessoa ainda está digitando o nome produz "Inclua nome e sobrenome" na
+  // primeira letra, o que ensina a ignorar a mensagem.
+  const [touched, setTouched] = useStateP<Record<string, boolean>>({});
   const set = (p: Partial<ProviderForm>) => setForm((f) => ({ ...f, ...p }));
+  const touch = (field: string) => setTouched((t) => ({ ...t, [field]: true }));
   const toggleService = (id: string) =>
     set({
       services: form.services.includes(id)
         ? form.services.filter((x) => x !== id)
         : [...form.services, id],
     });
-  const valid = form.name && form.phone.length >= 10 && form.services.length > 0 && form.regions;
+
+  // A validação antiga era `phone.length >= 10`, que aceita fixo, aceita
+  // "(((((((((( " e aceita número inexistente. O prestador recebe pedidos por
+  // WhatsApp — telefone errado é cadastro perdido, não campo feio.
+  const fieldErrors = {
+    name: fullNameSchema.safeParse(form.name).success ? null : 'Informe nome e sobrenome',
+    phone: isValidMobilePhone(form.phone) ? null : 'Use um celular com DDD: (11) 99999-9999',
+    // Exige ao menos um serviço que o schema do banco aceita. Antes, marcar só
+    // "Rodoviário" habilitava o botão e o erro só aparecia depois do envio.
+    services: form.services.some(isServiceType)
+      ? null
+      : form.services.length > 0
+        ? 'Rodoviário ainda não está disponível — escolha frete, guincho ou caçamba'
+        : 'Escolha pelo menos um serviço',
+    regions: form.regions.trim().length >= 2 ? null : 'Informe as regiões que você atende',
+  };
+  const errorFor = (field: keyof typeof fieldErrors) =>
+    touched[field] ? fieldErrors[field] : null;
+  const valid = Object.values(fieldErrors).every((e) => e === null);
 
   const submit = async () => {
     if (!valid || status === 'sending') return;
     setStatus('sending');
     setErrorMsg('');
     try {
-      // Schema enum só aceita frete/guincho/cacamba — rodoviario fica de fora por ora
+      // Schema enum só aceita frete/guincho/cacamba — rodoviario fica de fora por ora.
+      // A checagem em `fieldErrors.services` já bloqueia o botão nesse caso;
+      // isto aqui é a rede de segurança para uma submissão por teclado.
       const services = form.services.filter(isServiceType);
       if (services.length === 0) {
         setStatus('err');
         setErrorMsg('Rodoviário ainda não está aceito. Selecione frete, guincho ou caçamba.');
         return;
       }
+
+      // Guarda E.164, não o texto com máscara. Sem isto a tabela acumula
+      // "(11) 99999-8888" e "11999998888" como se fossem telefones diferentes
+      // — e a dedup por telefone, aqui e no trigger da 0009, para de funcionar.
+      const phoneE164 = toE164(form.phone);
       // Dedup soft em 24h: o índice composto (phone, created_at desc) faz a
       // query rápida. Race conditions extremas permitiriam 2 inserts paralelos
       // do mesmo phone — aceitável pra inbox de candidatos (admin tria).
-      const phone = form.phone.trim();
       const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
       const { count: recentCount } = await supabase
         .from('provider_applications')
         .select('id', { count: 'exact', head: true })
-        .eq('phone', phone)
+        .eq('phone', phoneE164)
         .gte('created_at', since);
       if ((recentCount ?? 0) > 0) {
         setStatus('err');
@@ -259,7 +290,7 @@ const ProviderSignup = ({ go }: ScreenProps) => {
 
       const { error } = await supabase.from('provider_applications').insert({
         full_name: form.name.trim(),
-        phone,
+        phone: phoneE164,
         services,
         vehicle: form.vehicle.trim() || null,
         regions: form.regions.trim(),
@@ -294,11 +325,20 @@ const ProviderSignup = ({ go }: ScreenProps) => {
           <div className="pg-field">
             <span className="pg-label">Nome completo</span>
             <input
-              className="pg-input"
+              className={`pg-input${errorFor('name') ? ' is-error' : ''}`}
               placeholder="Como aparece nos documentos"
+              autoComplete="name"
               value={form.name}
               onChange={(e) => set({ name: e.target.value })}
+              onBlur={() => touch('name')}
+              aria-invalid={errorFor('name') ? true : undefined}
+              aria-describedby={errorFor('name') ? 'prov-name-error' : undefined}
             />
+            {errorFor('name') && (
+              <span id="prov-name-error" role="alert" className="pg-helper is-error">
+                {errorFor('name')}
+              </span>
+            )}
           </div>
 
           <div className="pg-field">
@@ -308,13 +348,28 @@ const ProviderSignup = ({ go }: ScreenProps) => {
                 <Icon name="whatsapp" size={18} />
               </span>
               <input
-                className="pg-input pg-input--with-icon"
+                className={`pg-input pg-input--with-icon${errorFor('phone') ? ' is-error' : ''}`}
                 placeholder="(11) 98765-4321"
+                // `tel` abre o teclado numérico no celular — o app é usado na
+                // rua, e teclado errado aqui custa cadastro.
+                inputMode="tel"
+                autoComplete="tel"
                 value={form.phone}
-                onChange={(e) => set({ phone: e.target.value.replace(/[^\d() -]/g, '') })}
+                onChange={(e) => set({ phone: maskPhone(e.target.value) })}
+                onBlur={() => touch('phone')}
+                aria-invalid={errorFor('phone') ? true : undefined}
+                aria-describedby={errorFor('phone') ? 'prov-phone-error' : 'prov-phone-hint'}
               />
             </div>
-            <span className="pg-helper">Você recebe pedidos por aqui.</span>
+            {errorFor('phone') ? (
+              <span id="prov-phone-error" role="alert" className="pg-helper is-error">
+                {errorFor('phone')}
+              </span>
+            ) : (
+              <span id="prov-phone-hint" className="pg-helper">
+                Você recebe pedidos por aqui.
+              </span>
+            )}
           </div>
 
           <div className="pg-field">
@@ -370,11 +425,19 @@ const ProviderSignup = ({ go }: ScreenProps) => {
           <div className="pg-field">
             <span className="pg-label">Regiões que atende</span>
             <textarea
-              className="pg-textarea"
+              className={`pg-textarea${errorFor('regions') ? ' is-error' : ''}`}
               placeholder="Ex.: São Paulo capital e Grande SP"
               value={form.regions}
               onChange={(e) => set({ regions: e.target.value })}
+              onBlur={() => touch('regions')}
+              aria-invalid={errorFor('regions') ? true : undefined}
+              aria-describedby={errorFor('regions') ? 'prov-regions-error' : undefined}
             />
+            {errorFor('regions') && (
+              <span id="prov-regions-error" role="alert" className="pg-helper is-error">
+                {errorFor('regions')}
+              </span>
+            )}
           </div>
 
           <label
@@ -646,6 +709,24 @@ const ProviderDash = ({ go }: ScreenProps) => {
       </div>
 
       <div className="pg-viewport">
+        {/* Entrada para o financeiro real. Os cards de pedido abaixo ainda são
+            mock — a carteira, o extrato e o saque não são. */}
+        <div style={{ padding: '14px 20px 0', display: 'grid', gap: 8 }}>
+          <button
+            className="pg-btn pg-btn--accent"
+            style={{ width: '100%' }}
+            onClick={() => go('oportunidades')}
+          >
+            <Icon name="spark" size={16} /> Oportunidades abertas
+          </button>
+          <button
+            className="pg-btn pg-btn--ghost"
+            style={{ width: '100%' }}
+            onClick={() => go('prov-financeiro')}
+          >
+            <Icon name="money" size={16} /> Meus ganhos e saques
+          </button>
+        </div>
         <div
           style={{ padding: '16px 20px 32px', display: 'flex', flexDirection: 'column', gap: 12 }}
         >
@@ -785,6 +866,18 @@ const AdminDash = ({ go }: ScreenProps) => {
         <div style={{ padding: '20px 20px 16px' }}>
           <div className="pg-h-eyebrow">HOJE · 27 ABRIL</div>
           <h1 className="pg-h-title">Painel de operações</h1>
+        </div>
+
+        {/* Os KPIs abaixo ainda são números fixos. Isto aqui não é: aprova
+            prestador de verdade e rastreia o dinheiro de um pedido real. */}
+        <div style={{ padding: '0 20px 16px' }}>
+          <button
+            className="pg-btn pg-btn--accent"
+            style={{ width: '100%' }}
+            onClick={() => go('admin-financeiro')}
+          >
+            <Icon name="money" size={16} /> Operação financeira
+          </button>
         </div>
 
         {/* KPIs */}

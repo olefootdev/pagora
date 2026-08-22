@@ -2,6 +2,7 @@ import { useState as useStateG, useMemo as useMemoG, useEffect as useEffectG } f
 import { Icon } from './icons';
 import { StatusBar, TopBar } from './core';
 import { abrirWhatsApp, mensagemGuincho, mensagemCacamba } from './lib/whatsapp';
+import { PublishRequestButton } from './screens/publish-request';
 import { track } from './lib/analytics';
 import type { PagoraState, PricingResult, FlowScreenProps, ScreenProps, ResetFn } from './types';
 
@@ -533,8 +534,16 @@ const Guincho4 = ({ go, state, set }: FlowScreenProps) => {
           </div>
         </div>
         <div className="pg-page-foot">
+          {state.urgency && (
+            <PublishRequestButton
+              go={go}
+              service="guincho"
+              state={state}
+              estimate={{ lowCents: price.low * 100, highCents: price.high * 100 }}
+            />
+          )}
           <button
-            className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
+            className="pg-btn pg-btn--block"
             disabled={!state.urgency}
             onClick={() => {
               track('pedido_enviado', {
@@ -548,7 +557,9 @@ const Guincho4 = ({ go, state, set }: FlowScreenProps) => {
             }}
           >
             <Icon name="whatsapp" size={20} />{' '}
-            {state.urgency === 'now' ? 'Solicitar guincho urgente' : 'Enviar pedido pelo WhatsApp'}
+            {state.urgency === 'now'
+              ? 'Guincho urgente pelo WhatsApp'
+              : 'Prefiro enviar pelo WhatsApp'}
           </button>
           <div style={{ textAlign: 'center', fontSize: 12, color: 'var(--text-mute)' }}>
             {state.urgency === 'now'
@@ -881,8 +892,16 @@ const Cacamba3 = ({ go, state, set }: FlowScreenProps) => {
           </div>
         </div>
         <div className="pg-page-foot">
+          {state.address && state.placement && (
+            <PublishRequestButton
+              go={go}
+              service="cacamba"
+              state={state}
+              estimate={{ lowCents: price.low * 100, highCents: price.high * 100 }}
+            />
+          )}
           <button
-            className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
+            className="pg-btn pg-btn--block"
             disabled={!state.address || !state.placement}
             onClick={() => {
               track('pedido_enviado', { tipo: 'cacamba', valor: price.low });
@@ -891,7 +910,7 @@ const Cacamba3 = ({ go, state, set }: FlowScreenProps) => {
               go('proposals');
             }}
           >
-            <Icon name="whatsapp" size={20} /> Enviar pedido pelo WhatsApp
+            <Icon name="whatsapp" size={20} /> Prefiro enviar pelo WhatsApp
           </button>
         </div>
       </div>

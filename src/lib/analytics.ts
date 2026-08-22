@@ -19,7 +19,16 @@ export type AnalyticsEvent =
   | 'pedido_enviado'
   | 'whatsapp_clicado'
   | 'email_capturado'
-  | 'prestador_cadastrado';
+  | 'prestador_cadastrado'
+  // Fluxo de descoberta dentro do app (não pelo WhatsApp). `pedido_publicado`
+  // e `pedido_enviado` medem coisas diferentes de propósito: o primeiro é
+  // pedido que virou linha no banco e pode receber proposta; o segundo é
+  // pedido que saiu por WhatsApp. Comparar os dois é como se mede a migração
+  // do canal.
+  | 'pedido_publicado'
+  | 'publicar_pedido_sem_login'
+  | 'proposta_enviada'
+  | 'proposta_aceita';
 
 export type AnalyticsProps = Record<string, string | number | boolean | null | undefined>;
 

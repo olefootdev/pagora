@@ -555,6 +555,21 @@ textarea {
   pointer-events: none;
 }
 
+/* Estado de erro do campo. O `.pg-helper.is-error` já existia, mas sem a
+   borda correspondente o único sinal de erro era um texto cinza-avermelhado
+   abaixo do campo — fácil de não ver num formulário de 6 linhas. */
+.pg-input.is-error,
+.pg-select.is-error,
+.pg-textarea.is-error {
+  border-color: var(--danger);
+}
+.pg-input.is-error:focus,
+.pg-select.is-error:focus,
+.pg-textarea.is-error:focus {
+  border-color: var(--danger);
+  box-shadow: 0 0 0 3px rgba(229, 72, 77, 0.18);
+}
+
 .pg-helper {
   font-size: 13px;
   color: var(--text-mute);

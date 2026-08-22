@@ -1,7 +1,14 @@
 import { useState as useStateL, useEffect as useEffectL } from 'react';
 import { Icon } from './icons';
+import { PagoraMap, type LatLng } from './screens/map-view';
 import { StatusBar, TopBar } from './core';
 import type { ScreenProps } from './types';
+
+// Coordenadas de demonstração enquanto o pedido real não carrega lat/lng.
+// Quando o fluxo de endereço gravar coordenadas em `service_requests`, estas
+// duas constantes viram props.
+const PROVIDER_POSITION: LatLng = { lat: -23.5558, lng: -46.6396 };
+const CLIENT_POSITION: LatLng = { lat: -23.5613, lng: -46.6565 };
 
 // =====================================================================
 // LOCATOR — localizador completo do prestador a caminho
@@ -51,7 +58,10 @@ const Locator = ({ go }: ScreenProps) => {
     >
       <StatusBar />
 
-      {/* MAP — full bleed */}
+      {/* MAP — full bleed.
+          Com VITE_GOOGLE_MAPS_API_KEY definida, renderiza o mapa real com a
+          rota e o marcador do prestador. Sem a chave, cai na ilustração
+          abaixo — que é o que o app sempre mostrou. */}
       <div
         style={{
           position: 'absolute',
@@ -60,148 +70,166 @@ const Locator = ({ go }: ScreenProps) => {
           zIndex: 0,
         }}
       >
-        <svg
-          width="100%"
+        <PagoraMap
           height="100%"
-          viewBox="0 0 390 600"
-          preserveAspectRatio="xMidYMid slice"
-          style={{ display: 'block' }}
-        >
-          <defs>
-            <pattern id="locgrid" width="34" height="34" patternUnits="userSpaceOnUse">
-              <path
-                d="M 34 0 L 0 0 0 34"
-                fill="none"
-                stroke="rgba(7,14,26,0.045)"
-                strokeWidth="1"
-              />
-            </pattern>
-            <linearGradient id="routegrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#22E3A3" />
-              <stop offset="1" stopColor="#0FA77A" />
-            </linearGradient>
-          </defs>
-          <rect width="390" height="600" fill="#E8EEF5" />
-          <rect width="390" height="600" fill="url(#locgrid)" />
-
-          {/* parks / blocks */}
-          <rect x="20" y="40" width="120" height="80" fill="#D4E1D2" rx="4" />
-          <rect x="160" y="30" width="80" height="70" fill="#D6DEE8" rx="4" />
-          <rect x="260" y="20" width="110" height="90" fill="#D6DEE8" rx="4" />
-          <rect x="20" y="140" width="90" height="70" fill="#D6DEE8" rx="4" />
-          <rect x="130" y="130" width="120" height="90" fill="#D4E1D2" rx="4" />
-          <rect x="270" y="130" width="100" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="20" y="240" width="100" height="100" fill="#D6DEE8" rx="4" />
-          <rect x="140" y="250" width="120" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="280" y="240" width="90" height="100" fill="#D6DEE8" rx="4" />
-          <rect x="30" y="370" width="100" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="150" y="360" width="100" height="90" fill="#D6DEE8" rx="4" />
-          <rect x="270" y="370" width="100" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="40" y="480" width="110" height="90" fill="#D6DEE8" rx="4" />
-          <rect x="170" y="470" width="100" height="100" fill="#D6DEE8" rx="4" />
-          <rect x="290" y="480" width="80" height="90" fill="#D6DEE8" rx="4" />
-
-          {/* major roads */}
-          <path d="M0 120 L390 120" stroke="#fff" strokeWidth="14" />
-          <path d="M0 230 L390 230" stroke="#fff" strokeWidth="10" />
-          <path d="M0 350 L390 350" stroke="#fff" strokeWidth="14" />
-          <path d="M0 460 L390 460" stroke="#fff" strokeWidth="10" />
-          <path d="M150 0 L150 600" stroke="#fff" strokeWidth="12" />
-          <path d="M260 0 L260 600" stroke="#fff" strokeWidth="14" />
-
-          {/* dashed road indicators */}
-          <path
-            d="M0 120 L390 120"
-            stroke="rgba(7,14,26,0.15)"
-            strokeWidth="1"
-            strokeDasharray="6 8"
-          />
-          <path
-            d="M0 350 L390 350"
-            stroke="rgba(7,14,26,0.15)"
-            strokeWidth="1"
-            strokeDasharray="6 8"
-          />
-          <path
-            d="M260 0 L260 600"
-            stroke="rgba(7,14,26,0.15)"
-            strokeWidth="1"
-            strokeDasharray="6 8"
-          />
-
-          {/* completed route (behind) */}
-          <path
-            d={pathD}
-            fill="none"
-            stroke="rgba(15,167,122,0.25)"
-            strokeWidth="6"
-            strokeLinecap="round"
-          />
-          {/* active route up to progress */}
-          <path
-            d={pathD}
-            fill="none"
-            stroke="url(#routegrad)"
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray="600"
-            strokeDashoffset={600 - 600 * progress}
-          />
-
-          {/* destination (cliente) */}
-          <g transform="translate(330 70)">
-            <circle r="20" fill="rgba(7,14,26,0.08)" />
-            <circle r="11" fill="var(--night-900)" stroke="#fff" strokeWidth="3" />
-            <text
-              y="-22"
-              textAnchor="middle"
-              fontFamily="JetBrains Mono"
-              fontSize="10"
-              fontWeight="700"
-              fill="#070E1A"
+          center={PROVIDER_POSITION}
+          zoom={14}
+          markers={[
+            { id: 'prestador', position: PROVIDER_POSITION, label: 'Prestador', highlighted: true },
+            { id: 'cliente', position: CLIENT_POSITION, label: 'Você' },
+          ]}
+          route={{ origin: PROVIDER_POSITION, destination: CLIENT_POSITION }}
+          fallback={
+            <svg
+              width="100%"
+              height="100%"
+              viewBox="0 0 390 600"
+              preserveAspectRatio="xMidYMid slice"
+              style={{ display: 'block' }}
             >
-              VOCÊ
-            </text>
-          </g>
+              <defs>
+                <pattern id="locgrid" width="34" height="34" patternUnits="userSpaceOnUse">
+                  <path
+                    d="M 34 0 L 0 0 0 34"
+                    fill="none"
+                    stroke="rgba(7,14,26,0.045)"
+                    strokeWidth="1"
+                  />
+                </pattern>
+                <linearGradient id="routegrad" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0" stopColor="#22E3A3" />
+                  <stop offset="1" stopColor="#0FA77A" />
+                </linearGradient>
+              </defs>
+              <rect width="390" height="600" fill="#E8EEF5" />
+              <rect width="390" height="600" fill="url(#locgrid)" />
 
-          {/* origin (prestador start) */}
-          <g transform="translate(60 380)">
-            <circle r="9" fill="#fff" stroke="#0FA77A" strokeWidth="3" />
-          </g>
+              {/* parks / blocks */}
+              <rect x="20" y="40" width="120" height="80" fill="#D4E1D2" rx="4" />
+              <rect x="160" y="30" width="80" height="70" fill="#D6DEE8" rx="4" />
+              <rect x="260" y="20" width="110" height="90" fill="#D6DEE8" rx="4" />
+              <rect x="20" y="140" width="90" height="70" fill="#D6DEE8" rx="4" />
+              <rect x="130" y="130" width="120" height="90" fill="#D4E1D2" rx="4" />
+              <rect x="270" y="130" width="100" height="80" fill="#D6DEE8" rx="4" />
+              <rect x="20" y="240" width="100" height="100" fill="#D6DEE8" rx="4" />
+              <rect x="140" y="250" width="120" height="80" fill="#D6DEE8" rx="4" />
+              <rect x="280" y="240" width="90" height="100" fill="#D6DEE8" rx="4" />
+              <rect x="30" y="370" width="100" height="80" fill="#D6DEE8" rx="4" />
+              <rect x="150" y="360" width="100" height="90" fill="#D6DEE8" rx="4" />
+              <rect x="270" y="370" width="100" height="80" fill="#D6DEE8" rx="4" />
+              <rect x="40" y="480" width="110" height="90" fill="#D6DEE8" rx="4" />
+              <rect x="170" y="470" width="100" height="100" fill="#D6DEE8" rx="4" />
+              <rect x="290" y="480" width="80" height="90" fill="#D6DEE8" rx="4" />
 
-          {/* moving prestador marker */}
-          <g transform={`translate(${px} ${py})`}>
-            <circle r="32" fill="rgba(34,227,163,0.12)">
-              <animate attributeName="r" from="22" to="42" dur="1.8s" repeatCount="indefinite" />
-              <animate
-                attributeName="opacity"
-                from="0.5"
-                to="0"
-                dur="1.8s"
-                repeatCount="indefinite"
-              />
-            </circle>
-            <circle r="18" fill="#fff" stroke="#0FA77A" strokeWidth="3" />
-            <g transform="translate(-9 -9)">
+              {/* major roads */}
+              <path d="M0 120 L390 120" stroke="#fff" strokeWidth="14" />
+              <path d="M0 230 L390 230" stroke="#fff" strokeWidth="10" />
+              <path d="M0 350 L390 350" stroke="#fff" strokeWidth="14" />
+              <path d="M0 460 L390 460" stroke="#fff" strokeWidth="10" />
+              <path d="M150 0 L150 600" stroke="#fff" strokeWidth="12" />
+              <path d="M260 0 L260 600" stroke="#fff" strokeWidth="14" />
+
+              {/* dashed road indicators */}
               <path
-                d="M2 13V5h11v8"
-                fill="none"
-                stroke="#070E1A"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
+                d="M0 120 L390 120"
+                stroke="rgba(7,14,26,0.15)"
+                strokeWidth="1"
+                strokeDasharray="6 8"
               />
               <path
-                d="M13 8h3l2 2v3h-5"
-                fill="none"
-                stroke="#070E1A"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
+                d="M0 350 L390 350"
+                stroke="rgba(7,14,26,0.15)"
+                strokeWidth="1"
+                strokeDasharray="6 8"
               />
-              <circle cx="6" cy="14" r="1.6" fill="#070E1A" />
-              <circle cx="15" cy="14" r="1.6" fill="#070E1A" />
-            </g>
-          </g>
-        </svg>
+              <path
+                d="M260 0 L260 600"
+                stroke="rgba(7,14,26,0.15)"
+                strokeWidth="1"
+                strokeDasharray="6 8"
+              />
+
+              {/* completed route (behind) */}
+              <path
+                d={pathD}
+                fill="none"
+                stroke="rgba(15,167,122,0.25)"
+                strokeWidth="6"
+                strokeLinecap="round"
+              />
+              {/* active route up to progress */}
+              <path
+                d={pathD}
+                fill="none"
+                stroke="url(#routegrad)"
+                strokeWidth="6"
+                strokeLinecap="round"
+                strokeDasharray="600"
+                strokeDashoffset={600 - 600 * progress}
+              />
+
+              {/* destination (cliente) */}
+              <g transform="translate(330 70)">
+                <circle r="20" fill="rgba(7,14,26,0.08)" />
+                <circle r="11" fill="var(--night-900)" stroke="#fff" strokeWidth="3" />
+                <text
+                  y="-22"
+                  textAnchor="middle"
+                  fontFamily="JetBrains Mono"
+                  fontSize="10"
+                  fontWeight="700"
+                  fill="#070E1A"
+                >
+                  VOCÊ
+                </text>
+              </g>
+
+              {/* origin (prestador start) */}
+              <g transform="translate(60 380)">
+                <circle r="9" fill="#fff" stroke="#0FA77A" strokeWidth="3" />
+              </g>
+
+              {/* moving prestador marker */}
+              <g transform={`translate(${px} ${py})`}>
+                <circle r="32" fill="rgba(34,227,163,0.12)">
+                  <animate
+                    attributeName="r"
+                    from="22"
+                    to="42"
+                    dur="1.8s"
+                    repeatCount="indefinite"
+                  />
+                  <animate
+                    attributeName="opacity"
+                    from="0.5"
+                    to="0"
+                    dur="1.8s"
+                    repeatCount="indefinite"
+                  />
+                </circle>
+                <circle r="18" fill="#fff" stroke="#0FA77A" strokeWidth="3" />
+                <g transform="translate(-9 -9)">
+                  <path
+                    d="M2 13V5h11v8"
+                    fill="none"
+                    stroke="#070E1A"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M13 8h3l2 2v3h-5"
+                    fill="none"
+                    stroke="#070E1A"
+                    strokeWidth="1.6"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="6" cy="14" r="1.6" fill="#070E1A" />
+                  <circle cx="15" cy="14" r="1.6" fill="#070E1A" />
+                </g>
+              </g>
+            </svg>
+          }
+        />
       </div>
 
       {/* TOP CHROME — minimal */}

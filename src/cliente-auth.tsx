@@ -2,6 +2,7 @@ import { useState as useStateA } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar, Logo } from './core';
 import type { ScreenProps } from './types';
+import { isValidMobilePhone, maskPhone } from './domains/validation/br';
 import { signInWithPhone, verifyOtp } from './lib/auth';
 
 // =====================================================================
@@ -72,12 +73,16 @@ const Login = ({ go }: ScreenProps) => {
   const [loading, setLoading] = useStateA(false);
   const [error, setError] = useStateA<string | null>(null);
 
-  const formatPhone = (raw: string) => {
-    const d = raw.replace(/\D/g, '').slice(0, 11);
-    if (d.length <= 2) return d.length ? `(${d}` : '';
-    if (d.length <= 7) return `(${d.slice(0, 2)}) ${d.slice(2)}`;
-    return `(${d.slice(0, 2)}) ${d.slice(2, 7)}-${d.slice(7)}`;
-  };
+  // A máscara local anterior sempre quebrava em 5 dígitos após o DDD, então um
+  // fixo virava "(11) 33334-444". Agora usa a do domínio, compartilhada com o
+  // cadastro de prestador, que trata 10 e 11 dígitos.
+  const formatPhone = maskPhone;
+
+  // Antes o botão liberava com `phone.length >= 14`, que conta CARACTERES da
+  // máscara — "(11) 11111-1111" passa. Agora exige celular plausível, o que
+  // evita queimar SMS (que tem custo) num número que não existe.
+  const phoneIsValid = isValidMobilePhone(phone);
+  const showPhoneError = phone.length > 0 && !phoneIsValid;
 
   const sendOtp = async () => {
     setLoading(true);
@@ -164,18 +169,33 @@ const Login = ({ go }: ScreenProps) => {
                     placeholder="(11) 98765-4321"
                     value={phone}
                     onChange={(e) => setPhone(formatPhone(e.target.value))}
+                    autoComplete="tel"
+                    aria-invalid={showPhoneError ? true : undefined}
+                    aria-describedby={showPhoneError ? 'login-phone-error' : undefined}
                     style={{
                       background: 'rgba(255,255,255,0.06)',
-                      borderColor: 'rgba(255,255,255,0.16)',
+                      borderColor: showPhoneError ? 'var(--danger)' : 'rgba(255,255,255,0.16)',
                       color: '#fff',
                       fontSize: 18,
                       fontFamily: 'var(--font-mono)',
                     }}
                   />
                 </div>
-                <span className="pg-helper" style={{ color: 'rgba(255,255,255,0.5)' }}>
-                  Não compartilhamos seu número com prestadores antes de você aceitar uma proposta.
-                </span>
+                {showPhoneError ? (
+                  <span
+                    id="login-phone-error"
+                    role="alert"
+                    className="pg-helper"
+                    style={{ color: 'var(--danger)' }}
+                  >
+                    Digite um celular com DDD — o código chega por SMS.
+                  </span>
+                ) : (
+                  <span className="pg-helper" style={{ color: 'rgba(255,255,255,0.5)' }}>
+                    Não compartilhamos seu número com prestadores antes de você aceitar uma
+                    proposta.
+                  </span>
+                )}
               </div>
             </>
           ) : (
@@ -271,7 +291,7 @@ const Login = ({ go }: ScreenProps) => {
         >
           <button
             className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
-            disabled={loading || (step === 'phone' ? phone.length < 14 : otp.join('').length < 6)}
+            disabled={loading || (step === 'phone' ? !phoneIsValid : otp.join('').length < 6)}
             onClick={onSubmit}
           >
             {loading ? 'Aguarde...' : step === 'phone' ? 'Continuar' : 'Verificar e entrar'}

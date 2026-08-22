@@ -14,9 +14,14 @@ export type RequestStatus = 'open' | 'quoting' | 'accepted' | 'cancelled' | 'exp
 export type QuoteStatus = 'pending' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'withdrawn';
 export type OrderStatus =
   | 'pending_payment'
+  | 'paid'
+  | 'en_route'
   | 'in_progress'
   | 'completed'
+  | 'settled'
   | 'cancelled'
+  | 'expired'
+  | 'refunded'
   | 'disputed';
 export type DisputeStatus =
   | 'open'
@@ -30,7 +35,21 @@ export type WalletTxKind =
   | 'withdrawal'
   | 'dispute_refund'
   | 'bonus'
-  | 'adjustment';
+  | 'adjustment'
+  | 'order_hold'
+  | 'order_release'
+  | 'withdrawal_reversal'
+  | 'chargeback';
+
+// Enums financeiros (migration 0005_financial_enums.sql)
+export type PaymentStatus = 'pending' | 'paid' | 'failed' | 'expired' | 'refunded' | 'chargeback';
+export type PaymentMethod = 'pix' | 'credit_card' | 'boleto';
+export type PaymentGateway = 'asaas';
+export type WithdrawalStatus = 'requested' | 'processing' | 'paid' | 'failed' | 'cancelled';
+export type LedgerDirection = 'credit' | 'debit';
+
+/** Em qual bolso do prestador o lançamento mexe (migration 0007). */
+export type LedgerBucket = 'available' | 'pending';
 
 // ---------------------------------------------------------------------------
 // Row / Insert / Update por tabela
@@ -145,6 +164,12 @@ type OrderRow = {
   status: OrderStatus;
   price_cents: number;
   platform_fee_cents: number;
+  provider_amount_cents: number;
+  gateway_fee_cents: number;
+  paid_at: string | null;
+  settled_at: string | null;
+  refunded_at: string | null;
+  client_confirmed_at: string | null;
   pickup_at: string | null;
   delivered_at: string | null;
   cancelled_at: string | null;
@@ -182,9 +207,18 @@ type ReviewUpdate = Partial<ReviewRow>;
 
 type WalletRow = {
   provider_id: string;
+  /** Saldo LIBERADO — o que pode virar saque. */
   balance_cents: number;
+  /** Recebido do cliente e ainda retido até o serviço ser confirmado. */
   pending_cents: number;
   withdrawn_total_cents: number;
+  gateway: PaymentGateway;
+  gateway_wallet_id: string | null;
+  gateway_account_id: string | null;
+  total_received_cents: number;
+  currency: string;
+  status: 'active' | 'blocked' | 'closed';
+  created_at: string;
   updated_at: string;
 };
 type WalletInsert = Partial<WalletRow> & { provider_id: string };
@@ -194,13 +228,96 @@ type WalletTransactionRow = {
   id: string;
   provider_id: string;
   kind: WalletTxKind;
+  bucket: LedgerBucket;
+  direction: LedgerDirection;
   amount_cents: number;
+  balance_before_cents: number;
   balance_after_cents: number;
   order_id: string | null;
+  payment_id: string | null;
+  withdrawal_id: string | null;
+  gateway_reference: string | null;
   description: string | null;
   metadata: Json | null;
   created_at: string;
 };
+
+// --- Financeiro (migration 0007_financial_schema.sql) -----------------------
+type PaymentRow = {
+  id: string;
+  order_id: string;
+  client_id: string;
+  provider_id: string;
+  gateway: PaymentGateway;
+  gateway_payment_id: string | null;
+  gateway_customer_id: string | null;
+  amount_cents: number;
+  platform_fee_cents: number;
+  gateway_fee_cents: number;
+  provider_amount_cents: number;
+  status: PaymentStatus;
+  payment_method: PaymentMethod;
+  pix_payload: string | null;
+  pix_qr_code: string | null;
+  invoice_url: string | null;
+  expires_at: string | null;
+  paid_at: string | null;
+  failed_at: string | null;
+  refunded_at: string | null;
+  failure_reason: string | null;
+  created_at: string;
+  updated_at: string;
+};
+
+type WithdrawalRow = {
+  id: string;
+  provider_id: string;
+  amount_cents: number;
+  gateway: PaymentGateway;
+  gateway_transfer_id: string | null;
+  status: WithdrawalStatus;
+  pix_key: string | null;
+  requested_at: string;
+  processed_at: string | null;
+  failed_at: string | null;
+  failure_reason: string | null;
+  idempotency_key: string;
+  created_at: string;
+  updated_at: string;
+};
+
+type PaymentEventRow = {
+  id: string;
+  payment_id: string | null;
+  withdrawal_id: string | null;
+  gateway: PaymentGateway;
+  gateway_event_id: string;
+  event_type: string;
+  payload: Json;
+  processed_at: string | null;
+  process_error: string | null;
+  created_at: string;
+};
+
+type OrderStatusTransitionRow = {
+  from_status: OrderStatus;
+  to_status: OrderStatus;
+  note: string | null;
+};
+
+type ProviderReviewPublicRow = {
+  id: string;
+  provider_id: string;
+  stars: number;
+  comment: string | null;
+  tags: string[] | null;
+  created_at: string;
+};
+
+// `payments`, `withdrawals` e `order_status_transitions` são somente-leitura
+// pelo browser: a RLS da 0007 não tem policy de escrita e não existe GRANT.
+// `never` deixa isso visível no compilador, não só em runtime.
+type ReadOnlyWrite = never;
 type WalletTransactionInsert = Partial<WalletTransactionRow> & {
   provider_id: string;
   kind: WalletTxKind;
@@ -332,8 +449,19 @@ export type Database = {
         Insert: ProviderApplicationInsert;
         Update: ProviderApplicationUpdate;
       } & Rel;
+      payments: { Row: PaymentRow; Insert: ReadOnlyWrite; Update: ReadOnlyWrite } & Rel;
+      withdrawals: { Row: WithdrawalRow; Insert: ReadOnlyWrite; Update: ReadOnlyWrite } & Rel;
+      // Leitura restrita a admin pela policy `payment_events_admin_only`.
+      payment_events: { Row: PaymentEventRow; Insert: ReadOnlyWrite; Update: ReadOnlyWrite } & Rel;
+      order_status_transitions: {
+        Row: OrderStatusTransitionRow;
+        Insert: ReadOnlyWrite;
+        Update: ReadOnlyWrite;
+      } & Rel;
     };
-    Views: Record<string, never>;
+    Views: {
+      provider_reviews_public: { Row: ProviderReviewPublicRow } & Rel;
+    };
     Functions: {
       ensure_profile: { Args: Record<string, never>; Returns: ProfileRow };
       become_provider: {
@@ -349,6 +477,45 @@ export type Database = {
       current_user_role: { Args: Record<string, never>; Returns: UserRole };
       is_admin: { Args: Record<string, never>; Returns: boolean };
       is_provider: { Args: Record<string, never>; Returns: boolean };
+      // As funções abaixo são as ÚNICAS expostas ao browser entre as da 0008.
+      // Todas as que movem dinheiro (prepare_payment, confirm_payment,
+      // post_ledger_entry, request_withdrawal, settle_order, refund_order…)
+      // são `grant execute ... to service_role` e por isso não aparecem aqui:
+      // se alguém tentar chamá-las do frontend, o TypeScript recusa antes de o
+      // Postgres recusar.
+      respond_dispute: {
+        Args: { p_dispute_id: string; p_response: string; p_evidence?: string[] };
+        Returns: DisputeRow;
+      };
+      compute_amounts: {
+        Args: { p_gross_cents: number };
+        Returns: { platform_fee_cents: number; provider_amount_cents: number }[];
+      };
+      order_financial_trail: { Args: { p_order_id: string }; Returns: Json };
+      // Ações administrativas — protegidas por pagora.is_admin() dentro da
+      // própria função, não por policy (a 0006 removeu as policies amplas).
+      approve_provider: {
+        Args: { p_provider_id: string; p_approve: boolean; p_reason?: string | null };
+        Returns: ProviderRow;
+      };
+      set_profile_blocked: {
+        Args: { p_profile_id: string; p_blocked: boolean };
+        Returns: ProfileRow;
+      };
+      resolve_dispute: {
+        Args: { p_dispute_id: string; p_resolution: DisputeStatus; p_notes?: string | null };
+        Returns: DisputeRow;
+      };
+      audit_wallet_integrity: {
+        Args: Record<string, never>;
+        Returns: {
+          provider_id: string;
+          bucket: LedgerBucket;
+          wallet_cents: number;
+          ledger_cents: number;
+        }[];
+      };
+      platform_fee_bps: { Args: Record<string, never>; Returns: number };
     };
     Enums: {
       user_role: UserRole;
@@ -358,6 +525,11 @@ export type Database = {
       order_status: OrderStatus;
       dispute_status: DisputeStatus;
       wallet_tx_kind: WalletTxKind;
+      payment_status: PaymentStatus;
+      payment_method: PaymentMethod;
+      payment_gateway: PaymentGateway;
+      withdrawal_status: WithdrawalStatus;
+      ledger_direction: LedgerDirection;
     };
   };
 };
