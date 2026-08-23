@@ -2,11 +2,17 @@ import { useState as useStateL, useEffect as useEffectL } from 'react';
 import { Icon } from './icons';
 import { PagoraMap, type LatLng } from './screens/map-view';
 import { StatusBar, TopBar } from './core';
+import { buildShareUrl, shareOrCopy, copyText } from './lib/share';
+import { useShare } from './hooks/useShare';
 import type { ScreenProps } from './types';
 
 // Coordenadas de demonstração enquanto o pedido real não carrega lat/lng.
 // Quando o fluxo de endereço gravar coordenadas em `service_requests`, estas
 // duas constantes viram props.
+// Enquanto o locator não recebe o pedido por prop, o id vive aqui — é o mesmo
+// que as outras telas maquete usam, para o link compartilhado bater com a tela.
+const ORDER_ID = 'PG-1247';
+
 const PROVIDER_POSITION: LatLng = { lat: -23.5558, lng: -46.6396 };
 const CLIENT_POSITION: LatLng = { lat: -23.5613, lng: -46.6565 };
 
@@ -17,6 +23,10 @@ const Locator = ({ go }: ScreenProps) => {
   const [eta, setEta] = useStateL(8);
   const [distance, setDistance] = useStateL(2.4);
   const [showShare, setShowShare] = useStateL(false);
+  const { feedback: shareFeedbackMsg, run: runShare } = useShare();
+  // Link real, montado pelo mesmo utilitário do resto do app. Era um texto
+  // decorativo ("pagora.app/r/PG-1247-x9k") que não levava a lugar nenhum.
+  const trackingUrl = buildShareUrl('locator', { id: ORDER_ID });
   const [progress, setProgress] = useStateL(0.32); // 0..1 path progress
 
   useEffectL(() => {
@@ -700,23 +710,48 @@ const Locator = ({ go }: ScreenProps) => {
                   textOverflow: 'ellipsis',
                 }}
               >
-                pagora.app/r/PG-1247-x9k
+                {trackingUrl.replace(/^https?:\/\//, '')}
               </span>
               <button
                 className="pg-btn pg-btn--ghost pg-btn--sm"
                 style={{ height: 32, padding: '0 10px' }}
+                onClick={() => void runShare(() => copyText(trackingUrl))}
               >
                 <Icon name="copy" size={13} /> Copiar
               </button>
             </div>
 
+            {/* Um botão só, abrindo a bandeja do sistema. Eram dois — um fixo
+                no WhatsApp e outro para "outros aplicativos" —, e nenhum dos
+                dois fazia nada. A bandeja nativa já lista WhatsApp, e-mail,
+                SMS e o que mais a pessoa tiver, sem o app escolher por ela.
+                Onde não há bandeja (desktop), cai em copiar o link. */}
             <div className="pg-stack pg-stack--sm">
-              <button className="pg-btn pg-btn--primary pg-btn--block">
-                <Icon name="whatsapp" size={16} /> Compartilhar no WhatsApp
+              <button
+                className="pg-btn pg-btn--primary pg-btn--block"
+                onClick={() =>
+                  void runShare(() =>
+                    shareOrCopy({
+                      title: 'PAGORA — acompanhe a chegada',
+                      text: `Acompanhe a chegada do prestador no pedido #${ORDER_ID}.`,
+                      url: trackingUrl,
+                    }),
+                  )
+                }
+              >
+                <Icon name="share" size={16} /> Compartilhar link
               </button>
-              <button className="pg-btn pg-btn--ghost pg-btn--block">
-                <Icon name="share" size={16} /> Outros aplicativos
-              </button>
+              <div
+                aria-live="polite"
+                style={{
+                  minHeight: 18,
+                  textAlign: 'center',
+                  fontSize: 12,
+                  color: 'var(--green-700)',
+                }}
+              >
+                {shareFeedbackMsg}
+              </div>
             </div>
 
             <div

@@ -1,6 +1,8 @@
 import { useState as useStateB, useMemo as useMemoB } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar } from './core';
+import { buildShareUrl, shareOrCopy, copyText } from './lib/share';
+import { useShare } from './hooks/useShare';
 import type { ScreenProps } from './types';
 
 // =====================================================================
@@ -1193,7 +1195,15 @@ const Addresses = ({ go }: ScreenProps) => {
 // =====================================================================
 // REFER — programa de indicação
 // =====================================================================
+const REFERRAL_CODE = 'MARINA30';
+
 const Refer = ({ go }: ScreenProps) => {
+  const { feedback: shareMsg, run: runShare } = useShare();
+  // O parâmetro `ref` viaja no link mas ainda NÃO é lido por ninguém: a
+  // atribuição de indicação faz parte do módulo de divulgador (pontos 19/20),
+  // que ficou para a v1.1. O link já sai no formato final para os que forem
+  // compartilhados agora não virarem lixo quando o módulo entrar.
+  const inviteUrl = buildShareUrl('landing', { ref: REFERRAL_CODE });
   const friends = [
     { name: 'Pedro Henrique', status: 'completed', reward: 30 },
     { name: 'Ana Beatriz', status: 'pending', reward: 30 },
@@ -1267,19 +1277,46 @@ const Refer = ({ go }: ScreenProps) => {
                 className="pg-mono"
                 style={{ fontSize: 22, fontWeight: 700, letterSpacing: '0.08em' }}
               >
-                MARINA30
+                {REFERRAL_CODE}
               </span>
-              <button className="pg-btn pg-btn--ghost pg-btn--sm">
+              <button
+                className="pg-btn pg-btn--ghost pg-btn--sm"
+                onClick={() => void runShare(() => copyText(REFERRAL_CODE))}
+              >
                 <Icon name="copy" size={14} /> Copiar
               </button>
             </div>
+            {/* Um botão de compartilhar, não dois. O fixo de WhatsApp saiu:
+                a bandeja do sistema já oferece WhatsApp junto com todo o
+                resto, e escolher o canal é da pessoa, não do app. */}
             <div className="pg-row" style={{ gap: 8, marginTop: 12 }}>
-              <button className="pg-btn pg-btn--primary pg-btn--sm" style={{ flex: 1 }}>
-                <Icon name="whatsapp" size={16} /> WhatsApp
+              <button
+                className="pg-btn pg-btn--primary pg-btn--sm"
+                style={{ flex: 1 }}
+                onClick={() =>
+                  void runShare(() =>
+                    shareOrCopy({
+                      title: 'PAGORA',
+                      text: `Use meu código ${REFERRAL_CODE} na PAGORA e ganhe R$ 30 no primeiro pedido.`,
+                      url: inviteUrl,
+                    }),
+                  )
+                }
+              >
+                <Icon name="share" size={16} /> Compartilhar convite
               </button>
-              <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ flex: 1 }}>
-                <Icon name="share" size={16} /> Compartilhar
-              </button>
+            </div>
+            <div
+              aria-live="polite"
+              style={{
+                minHeight: 18,
+                marginTop: 8,
+                fontSize: 12,
+                color: 'var(--green-700)',
+                textAlign: 'center',
+              }}
+            >
+              {shareMsg}
             </div>
           </div>
 
