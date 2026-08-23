@@ -2008,16 +2008,18 @@ const Tracking = ({ go }: ScreenProps) => {
                 <Icon name="heart" />
               </button>
             </div>
-            <div className="pg-row" style={{ marginTop: 14, gap: 8 }}>
+            {/* Contato com o prestador acontece dentro do app. O botão de ligar
+                saiu em 22/08/2026 (ponto 7 do relatório): telefone tira a conversa
+                da plataforma e não deixa registro para arbitrar disputa. O ícone
+                era o do WhatsApp mesmo abrindo o chat interno — trocado por
+                'message', que é para onde o botão de fato leva. */}
+            <div className="pg-row" style={{ marginTop: 14 }}>
               <button
                 className="pg-btn pg-btn--primary pg-btn--sm"
                 style={{ flex: 1 }}
                 onClick={() => go('chat')}
               >
-                <Icon name="whatsapp" size={16} /> Mensagem
-              </button>
-              <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ flex: 1 }}>
-                <Icon name="phone" size={16} /> Ligar
+                <Icon name="message" size={16} /> Mensagem
               </button>
             </div>
           </div>
@@ -2165,9 +2167,6 @@ const Chat = ({ go }: ScreenProps) => {
             Online · pedido #PG-1247
           </div>
         </div>
-        <button className="pg-iconbtn" aria-label="Ligar">
-          <Icon name="phone" />
-        </button>
       </div>
 
       <div

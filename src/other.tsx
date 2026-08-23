@@ -821,10 +821,8 @@ const ProviderDash = ({ go }: ScreenProps) => {
                       {o.price}
                     </div>
                   </div>
-                  <div className="pg-row" style={{ marginTop: 12, gap: 8 }}>
-                    <button className="pg-btn pg-btn--ghost pg-btn--sm" style={{ flex: 1 }}>
-                      <Icon name="phone" size={16} /> Ligar
-                    </button>
+                  {/* Sem botão de ligar — ponto 7, 22/08/2026. */}
+                  <div className="pg-row" style={{ marginTop: 12 }}>
                     <button className="pg-btn pg-btn--primary pg-btn--sm" style={{ flex: 1 }}>
                       <Icon name="navigation" size={16} /> Navegar
                     </button>

@@ -588,15 +588,8 @@ const Locator = ({ go }: ScreenProps) => {
               onClick={() => go('chat')}
               style={{ flex: 2 }}
             >
-              <Icon name="whatsapp" size={15} />
+              <Icon name="message" size={15} />
               <span>Mensagem</span>
-            </button>
-            <button
-              className="pg-btn pg-btn--ghost pg-btn--sm"
-              aria-label="Ligar"
-              style={{ flex: 1 }}
-            >
-              <Icon name="phone" size={15} />
             </button>
             <button
               className="pg-btn pg-btn--ghost pg-btn--sm"
