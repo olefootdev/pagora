@@ -290,6 +290,15 @@ textarea {
   border-radius: 4px;
 }
 
+/* Faixa de banners da home (ponto 17). A barra horizontal é ruído: quem
+   navega no mobile arrasta, e no desktop o snap já indica que desliza. */
+.ha-banners {
+  scrollbar-width: none;
+}
+.ha-banners::-webkit-scrollbar {
+  display: none;
+}
+
 /* iOS-ish status bar inside the phone */
 .pg-status {
   height: 44px;

@@ -891,7 +891,120 @@ const HShortcutCard = ({
   </button>
 );
 
+// =====================================================================
+// BANNERS DA HOME (ponto 17)
+// =====================================================================
+// Espaço editorial de verdade, com gabarito visível enquanto a arte não
+// existe. O pedido era "tirar a cara de feito com IA": app real tem lugar
+// reservado para campanha, e esse lugar aparece mesmo vazio — é o que
+// diferencia um produto com time de marketing de uma tela gerada.
+//
+// Para publicar um banner: preencha `image` com o caminho do arquivo em
+// `public/` e `href` com o destino. O gabarito some sozinho e o <img> entra
+// no lugar, sem tocar em layout.
+type HBanner = {
+  id: string;
+  /** Arte final. Enquanto for undefined, o slot renderiza o gabarito. */
+  image?: string;
+  /** Texto alternativo — obrigatório quando houver arte. */
+  alt: string;
+  /** Aparece só no gabarito, para orientar quem produzir a peça. */
+  pauta: string;
+  onClick?: () => void;
+};
+
+const BANNER_SPEC = '1120 × 420 px';
+
+const HBannerSlot = ({ b }: { b: HBanner }) => {
+  const conteudo = b.image ? (
+    <img
+      src={b.image}
+      alt={b.alt}
+      loading="lazy"
+      style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+    />
+  ) : (
+    <div
+      style={{
+        width: '100%',
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 6,
+        padding: 20,
+        textAlign: 'center',
+        border: `1px dashed ${HOME_HAIR}`,
+        borderRadius: 18,
+        background: HOME_BG_RAISED,
+      }}
+    >
+      <Icon name="camera" size={22} />
+      <div style={{ fontSize: 13, fontWeight: 600, color: HOME_INK_MUTE }}>{b.pauta}</div>
+      <div style={{ fontFamily: HOME_MONO, fontSize: 11, color: HOME_INK_DIM }}>{BANNER_SPEC}</div>
+    </div>
+  );
+
+  const estilo: React.CSSProperties = {
+    // Um pedaço do próximo banner fica à mostra no mobile — é o que avisa
+    // que a faixa desliza. Sem isso ninguém descobre que há mais de um.
+    flex: '0 0 min(560px, 86%)',
+    aspectRatio: '8 / 3',
+    borderRadius: 18,
+    overflow: 'hidden',
+    scrollSnapAlign: 'start',
+    padding: 0,
+    border: 'none',
+    background: 'transparent',
+    cursor: b.onClick ? 'pointer' : 'default',
+  };
+
+  return b.onClick ? (
+    <button type="button" onClick={b.onClick} style={estilo} aria-label={b.alt}>
+      {conteudo}
+    </button>
+  ) : (
+    <div style={estilo} role="group" aria-label={b.alt}>
+      {conteudo}
+    </div>
+  );
+};
+
+const HBannerStrip = ({ banners }: { banners: HBanner[] }) => (
+  <section aria-label="Destaques">
+    <div
+      className="ha-banners"
+      style={{
+        display: 'flex',
+        gap: 14,
+        overflowX: 'auto',
+        scrollSnapType: 'x mandatory',
+        // Sem isto, o swipe horizontal no fim da faixa vira "voltar" no
+        // navegador e o usuário perde a tela sem entender por quê.
+        overscrollBehaviorX: 'contain',
+      }}
+    >
+      {banners.map((b) => (
+        <HBannerSlot key={b.id} b={b} />
+      ))}
+    </div>
+  </section>
+);
+
 const HomeAuth = ({ go }: ScreenProps) => {
+  // Três slots é o mínimo para a faixa parecer uma faixa. Trocar por arte
+  // real = preencher `image`; remover uma campanha = tirar o item da lista.
+  const banners: HBanner[] = [
+    { id: 'b1', alt: 'Campanha em destaque', pauta: 'Campanha principal' },
+    { id: 'b2', alt: 'Segundo destaque', pauta: 'Parceria ou sazonal' },
+    {
+      id: 'b3',
+      alt: 'Indique e ganhe R$ 30',
+      pauta: 'Indique e ganhe',
+      onClick: () => go('refer'),
+    },
+  ];
   const pins: ReadonlyArray<readonly [string, string, number, number, string]> = [
     ['p1', 'CM', 110, 165, '#0FA77A'],
     ['p2', 'JM', 280, 100, '#0FA77A'],
@@ -1456,6 +1569,9 @@ const HomeAuth = ({ go }: ScreenProps) => {
             </div>
           </button>
         </section>
+
+        {/* BANNERS — espaço editorial (ponto 17) */}
+        <HBannerStrip banners={banners} />
 
         {/* STAT ROW */}
         <section
