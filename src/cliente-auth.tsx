@@ -1,7 +1,10 @@
-import { useState as useStateA } from 'react';
+import { useState as useStateA, useEffect as useEffectA, useRef as useRefA } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar, Logo } from './core';
-import type { ScreenProps } from './types';
+import { useProfile } from './hooks/useProfile';
+import { useChat } from './hooks/useChat';
+import { MAX_BODY } from './domains/chat/message.service';
+import type { ScreenProps, GoFn } from './types';
 import { isValidMobilePhone, maskPhone } from './domains/validation/br';
 import { signInWithPhone, verifyOtp } from './lib/auth';
 
@@ -2216,35 +2219,49 @@ const Tracking = ({ go }: ScreenProps) => {
 // =====================================================================
 // CHAT
 // =====================================================================
-const Chat = ({ go }: ScreenProps) => {
-  const [msg, setMsg] = useStateA('');
-  const [messages, setMessages] = useStateA([
-    { from: 'p', t: 'Oi Marina! Tô a caminho. Estimo 12 min.', time: '10:23' },
-    { from: 'u', t: 'Tranquilo, Carlos! O elevador é pelo subsolo.', time: '10:24' },
-    { from: 'p', t: 'Show, anotado. Algum item especial pra eu já preparar?', time: '10:25' },
-    {
-      from: 'u',
-      t: 'Tem uma geladeira grande. Vc consegue lidar sozinho ou precisa de ajudante?',
-      time: '10:25',
-    },
-    { from: 'p', t: 'Tranquilo, levo carrinho hidráulico. Ela tá vazia?', time: '10:26' },
-  ]);
+type ChatProps = { go: GoFn; orderId?: string | undefined };
 
-  const send = () => {
-    if (!msg.trim()) return;
-    const time = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
-    setMessages([...messages, { from: 'u', t: msg, time }]);
-    setMsg('');
-    setTimeout(() => {
-      setMessages((m) => [...m, { from: 'p', t: 'Boa, mandou bem!', time }]);
-    }, 1100);
+const horaCurta = (iso: string) =>
+  new Date(iso).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' });
+
+const diaLegivel = (iso: string) => {
+  const d = new Date(iso);
+  const hoje = new Date();
+  const mesmoDia = d.toDateString() === hoje.toDateString();
+  if (mesmoDia) return 'HOJE';
+  return d.toLocaleDateString('pt-BR', { day: '2-digit', month: 'short' }).toUpperCase();
+};
+
+const Chat = ({ go, orderId }: ChatProps) => {
+  const [msg, setMsg] = useStateA('');
+  const { profile } = useProfile();
+  const { messages, loading, error, block, sending, send, dismissBlock } = useChat(
+    orderId,
+    profile?.id,
+  );
+  const fimDaLista = useRefA<HTMLDivElement | null>(null);
+
+  // Rolar para o fim quando chega mensagem. `behavior: 'auto'` na primeira
+  // carga e suave depois seria melhor, mas exige distinguir carga de chegada —
+  // e uma conversa que "pula" na abertura é o comportamento esperado.
+  useEffectA(() => {
+    fimDaLista.current?.scrollIntoView({ block: 'end' });
+  }, [messages.length]);
+
+  const enviar = async () => {
+    if (!msg.trim() || sending) return;
+    const ok = await send(msg);
+    // Só limpa o campo se foi. Mensagem barrada continua ali para a pessoa
+    // editar o trecho em vez de digitar tudo de novo.
+    if (ok) setMsg('');
   };
+
+  const semPedido = !orderId;
 
   return (
     <div className="pg-screen" data-screen-label="A5 Chat com prestador">
       <StatusBar />
 
-      {/* Custom header */}
       <div
         style={{
           padding: '8px 12px',
@@ -2258,29 +2275,10 @@ const Chat = ({ go }: ScreenProps) => {
         <button className="pg-iconbtn" onClick={() => go('tracking')} aria-label="Voltar">
           <Icon name="arrow-left" />
         </button>
-        <div
-          style={{
-            width: 40,
-            height: 40,
-            borderRadius: '50%',
-            background: 'var(--night-900)',
-            color: 'var(--green-500)',
-            display: 'grid',
-            placeItems: 'center',
-            fontWeight: 700,
-            fontFamily: 'var(--font-mono)',
-            fontSize: 14,
-          }}
-        >
-          CM
-        </div>
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={{ fontSize: 15, fontWeight: 700 }}>Carlos Mudanças</div>
-          <div className="pg-row" style={{ fontSize: 11, color: 'var(--green-700)', gap: 4 }}>
-            <span
-              style={{ width: 6, height: 6, borderRadius: '50%', background: 'var(--green-600)' }}
-            />
-            Online · pedido #PG-1247
+          <div style={{ fontSize: 15, fontWeight: 700 }}>Conversa do pedido</div>
+          <div className="pg-row" style={{ fontSize: 11, color: 'var(--text-mute)', gap: 4 }}>
+            {orderId ? `#${orderId.slice(0, 8)}` : 'sem pedido'}
           </div>
         </div>
       </div>
@@ -2289,27 +2287,8 @@ const Chat = ({ go }: ScreenProps) => {
         className="pg-viewport"
         style={{ background: 'var(--ink-50)', padding: '16px 14px 8px' }}
       >
-        {/* date sep */}
-        <div style={{ textAlign: 'center', margin: '0 0 16px' }}>
-          <span
-            style={{
-              display: 'inline-block',
-              padding: '4px 10px',
-              borderRadius: 100,
-              background: 'var(--paper)',
-              border: '1px solid var(--border)',
-              fontSize: 11,
-              color: 'var(--text-mute)',
-              fontFamily: 'var(--font-mono)',
-            }}
-          >
-            HOJE · 27 ABR
-          </span>
-        </div>
-
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-          {/* system msg */}
-          <div style={{ alignSelf: 'center', textAlign: 'center', maxWidth: 280 }}>
+          <div style={{ alignSelf: 'center', textAlign: 'center', maxWidth: 300 }}>
             <div
               style={{
                 background: 'rgba(34,227,163,0.1)',
@@ -2318,53 +2297,153 @@ const Chat = ({ go }: ScreenProps) => {
                 padding: '8px 12px',
                 borderRadius: 12,
                 fontSize: 12,
+                lineHeight: 1.45,
               }}
             >
-              <Icon name="shield" size={12} /> Conversa protegida pela PAGORA. Não compartilhe dados
-              de pagamento aqui.
+              <Icon name="shield" size={12} /> Conversa registrada pela PAGORA. Telefone, e-mail e
+              link não passam por aqui — é o registro que vale se houver divergência.
             </div>
           </div>
 
-          {messages.map((m, i) => {
-            const mine = m.from === 'u';
-            return (
-              <div
-                key={i}
-                style={{ display: 'flex', justifyContent: mine ? 'flex-end' : 'flex-start' }}
+          {semPedido && (
+            <div
+              style={{
+                alignSelf: 'center',
+                textAlign: 'center',
+                maxWidth: 300,
+                marginTop: 24,
+                color: 'var(--text-mute)',
+                fontSize: 13,
+                lineHeight: 1.5,
+              }}
+            >
+              A conversa acontece dentro de um pedido. Abra pelo pedido em andamento.
+              <button
+                className="pg-btn pg-btn--ghost pg-btn--sm"
+                style={{ marginTop: 12 }}
+                onClick={() => go('meus-pedidos')}
               >
-                <div
-                  style={{
-                    maxWidth: '78%',
-                    background: mine ? 'var(--night-900)' : 'var(--paper)',
-                    color: mine ? '#fff' : 'var(--text)',
-                    padding: '10px 14px',
-                    borderRadius: mine ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
-                    border: mine ? 'none' : '1px solid var(--border)',
-                    fontSize: 14,
-                    lineHeight: 1.4,
-                    boxShadow: mine ? '0 1px 2px rgba(7,14,26,0.06)' : 'none',
-                  }}
-                >
-                  {m.t}
+                Ver meus pedidos
+              </button>
+            </div>
+          )}
+
+          {loading && !semPedido && (
+            <div
+              style={{
+                alignSelf: 'center',
+                color: 'var(--text-mute)',
+                fontSize: 13,
+                marginTop: 20,
+              }}
+            >
+              Carregando conversa…
+            </div>
+          )}
+
+          {error && (
+            <div
+              role="alert"
+              style={{
+                alignSelf: 'center',
+                textAlign: 'center',
+                maxWidth: 300,
+                background: 'var(--red-50, #fee)',
+                color: 'var(--red-700, #a11)',
+                border: '1px solid rgba(170,17,17,0.2)',
+                padding: '8px 12px',
+                borderRadius: 12,
+                fontSize: 12,
+              }}
+            >
+              {error}
+            </div>
+          )}
+
+          {messages.map((m, i) => {
+            const minha = m.sender_id === profile?.id;
+            const anterior = messages[i - 1];
+            const trocouODia =
+              !anterior || diaLegivel(anterior.created_at) !== diaLegivel(m.created_at);
+            return (
+              <div key={m.id}>
+                {trocouODia && (
+                  <div style={{ textAlign: 'center', margin: '8px 0 16px' }}>
+                    <span
+                      style={{
+                        display: 'inline-block',
+                        padding: '4px 10px',
+                        borderRadius: 100,
+                        background: 'var(--paper)',
+                        border: '1px solid var(--border)',
+                        fontSize: 11,
+                        color: 'var(--text-mute)',
+                        fontFamily: 'var(--font-mono)',
+                      }}
+                    >
+                      {diaLegivel(m.created_at)}
+                    </span>
+                  </div>
+                )}
+                <div style={{ display: 'flex', justifyContent: minha ? 'flex-end' : 'flex-start' }}>
                   <div
                     style={{
-                      fontSize: 10,
-                      opacity: 0.6,
-                      marginTop: 4,
-                      fontFamily: 'var(--font-mono)',
-                      textAlign: 'right',
+                      maxWidth: '78%',
+                      background: minha ? 'var(--night-900)' : 'var(--paper)',
+                      color: minha ? '#fff' : 'var(--text)',
+                      padding: '10px 14px',
+                      borderRadius: minha ? '16px 16px 4px 16px' : '16px 16px 16px 4px',
+                      border: minha ? 'none' : '1px solid var(--border)',
+                      fontSize: 14,
+                      lineHeight: 1.4,
+                      whiteSpace: 'pre-wrap',
+                      wordBreak: 'break-word',
                     }}
                   >
-                    {m.time} {mine && <Icon name="check" size={10} strokeWidth={3} />}
+                    {m.body}
+                    <div
+                      style={{
+                        fontSize: 10,
+                        opacity: 0.6,
+                        marginTop: 4,
+                        fontFamily: 'var(--font-mono)',
+                        textAlign: 'right',
+                      }}
+                    >
+                      {horaCurta(m.created_at)}{' '}
+                      {minha && m.read_at && <Icon name="check" size={10} strokeWidth={3} />}
+                    </div>
                   </div>
                 </div>
               </div>
             );
           })}
+          <div ref={fimDaLista} />
         </div>
       </div>
 
-      {/* Input */}
+      {/* Bloqueio de contato. Fica acima do campo, onde a pessoa está olhando,
+          e o texto que ela escreveu continua no input para ser corrigido. */}
+      {block && (
+        <div
+          role="alert"
+          style={{
+            padding: '10px 14px',
+            background: 'rgba(255,176,32,0.12)',
+            borderTop: '1px solid rgba(255,176,32,0.35)',
+            display: 'flex',
+            gap: 10,
+            alignItems: 'flex-start',
+          }}
+        >
+          <Icon name="shield" size={16} />
+          <div style={{ flex: 1, fontSize: 12, lineHeight: 1.45 }}>{block.reason}</div>
+          <button className="pg-iconbtn" aria-label="Fechar aviso" onClick={dismissBlock}>
+            <Icon name="close" size={16} />
+          </button>
+        </div>
+      )}
+
       <div
         style={{
           padding: 10,
@@ -2375,24 +2454,26 @@ const Chat = ({ go }: ScreenProps) => {
           alignItems: 'center',
         }}
       >
-        <button className="pg-iconbtn" aria-label="Anexar">
-          <Icon name="plus" />
-        </button>
         <input
           className="pg-input"
-          placeholder="Mensagem"
+          placeholder={semPedido ? 'Abra um pedido para conversar' : 'Mensagem'}
           value={msg}
+          disabled={semPedido || sending}
+          maxLength={MAX_BODY}
           onChange={(e) => setMsg(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && send()}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') void enviar();
+          }}
           style={{ background: 'var(--ink-50)', border: 'none', flex: 1 }}
         />
         <button
           className="pg-iconbtn"
-          onClick={send}
+          onClick={() => void enviar()}
+          disabled={semPedido || sending || !msg.trim()}
           aria-label="Enviar"
           style={{
-            background: msg.trim() ? 'var(--night-900)' : 'var(--ink-100)',
-            color: msg.trim() ? '#fff' : 'var(--text-mute)',
+            background: msg.trim() && !sending ? 'var(--night-900)' : 'var(--ink-100)',
+            color: msg.trim() && !sending ? '#fff' : 'var(--text-mute)',
           }}
         >
           <Icon name="navigation" size={18} />

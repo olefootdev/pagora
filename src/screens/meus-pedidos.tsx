@@ -197,6 +197,15 @@ function OrderCard({
         </button>
       )}
 
+      {/* Entrada real do chat. As telas maquete (tracking, locator) chamam
+          go('chat') sem pedido e caem no estado vazio; é daqui que a conversa
+          abre com order_id de verdade, que é o que a RLS da 0010 exige. */}
+      {!isTerminal(order.status) && (
+        <button className="pg-btn pg-btn--ghost" onClick={() => go('chat', { orderId: order.id })}>
+          <Icon name="message" size={16} /> Conversar
+        </button>
+      )}
+
       {!isTerminal(order.status) && !awaitingPayment && (
         <OrderActions
           orderId={order.id}

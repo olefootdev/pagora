@@ -187,6 +187,24 @@ type OrderInsert = Partial<OrderRow> & {
 };
 type OrderUpdate = Partial<OrderRow>;
 
+type MessageRow = {
+  id: string;
+  order_id: string;
+  sender_id: string;
+  body: string;
+  /** Preenchido pelo DESTINATÁRIO. O autor não consegue marcar a própria. */
+  read_at: string | null;
+  created_at: string;
+};
+/** `read_at` é a única coluna com `grant update` — ver 0010. */
+type MessageUpdate = { read_at?: string | null };
+type MessageInsert = {
+  order_id: string;
+  /** Amarrado a auth.uid() pelo with check da policy; mandar outro id falha. */
+  sender_id: string;
+  body: string;
+};
+
 type ReviewRow = {
   id: string;
   order_id: string;
@@ -436,6 +454,9 @@ export type Database = {
       quotes: { Row: QuoteRow; Insert: QuoteInsert; Update: QuoteUpdate } & Rel;
       orders: { Row: OrderRow; Insert: OrderInsert; Update: OrderUpdate } & Rel;
       reviews: { Row: ReviewRow; Insert: ReviewInsert; Update: ReviewUpdate } & Rel;
+      messages: { Row: MessageRow; Insert: MessageInsert; Update: MessageUpdate } & Rel;
+      // `message_blocks` é material de moderação: a 0010 revoga select de
+      // authenticated, então o cliente não a enxerga e ela não entra aqui.
       wallets: { Row: WalletRow; Insert: WalletInsert; Update: WalletUpdate } & Rel;
       wallet_transactions: {
         Row: WalletTransactionRow;

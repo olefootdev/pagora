@@ -362,7 +362,9 @@ function AppShell() {
       case 'tracking':
         return <Tracking go={go} />;
       case 'chat':
-        return <Chat go={go} />;
+        // O chat pertence a um pedido. Sem `orderId` a tela abre em estado
+        // vazio explicando isso, em vez de mostrar conversa de ninguém.
+        return <Chat go={go} orderId={params.orderId as string | undefined} />;
       case 'rate':
         return <Rate go={go} />;
       case 'receipt':

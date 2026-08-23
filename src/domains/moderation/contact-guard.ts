@@ -251,9 +251,14 @@ const EXPLICACAO =
 /**
  * Analisa uma mensagem antes de ela ser gravada.
  *
- * Puro e síncrono de propósito: roda no cliente para dar retorno imediato
- * enquanto a pessoa digita, e a MESMA função roda no servidor antes do insert.
- * Validação só no cliente é decorativa — qualquer um chama o PostgREST direto.
+ * Puro e síncrono de propósito, para poder rodar nos dois lados.
+ *
+ * HOJE SÓ RODA NO CLIENTE, em `chat/message.service`. Isso barra o usuário do
+ * app, que é por onde passa quase todo mundo, e NÃO barra quem chama o
+ * PostgREST direto com o próprio token: a 0010 valida autoria e participação,
+ * não conteúdo. Fechar exige a Edge Function `send-message` chamando esta
+ * mesma função antes do insert. Enquanto ela não existe, esta é uma barreira
+ * de produto, não de segurança — e é assim que deve ser descrita.
  */
 export function guardMessage(text: string): GuardVerdict {
   const normalizado = normalizeDigits(text);
