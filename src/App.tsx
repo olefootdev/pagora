@@ -271,10 +271,14 @@ function AppShell() {
 
   const go: GoFn = (next, p = {}) => {
     navigate('/' + next, { state: p });
-    // Reset scroll do viewport interno (não da página)
+    // Reset de scroll dos containers internos (não da página). Precisa citar
+    // os DOIS: `.pg-screen-scroll` é o scroller de todas as telas desde o
+    // ponto 6, e `.pg-viewport` continua sendo o de dentro nas telas que têm
+    // uma área rolável própria (chat, mapa). Mirar só um deixa a tela nova
+    // abrindo no meio, na altura em que a anterior tinha parado.
     setTimeout(() => {
       document
-        .querySelectorAll('.pg-viewport')
+        .querySelectorAll('.pg-screen-scroll, .pg-viewport')
         .forEach((v) => v.scrollTo({ top: 0, behavior: 'instant' }));
     }, 0);
   };
@@ -407,15 +411,10 @@ function AppShell() {
       <div className="pg-stage">
         <div className="pg-phone-wrap">
           <div className="pg-phone">
-            <div
-              style={{
-                flex: 1,
-                overflow: 'hidden',
-                minHeight: 0,
-                display: 'flex',
-                flexDirection: 'column',
-              }}
-            >
+            {/* O estilo saiu do inline para `.pg-screen-scroll` no CSS. Era
+                `overflow: hidden` e recortava o rodapé em janelas baixas —
+                ponto 6. Agora rola. */}
+            <div className="pg-screen-scroll">
               {/* Um Suspense por tela: a chave força o fallback a reaparecer
                   ao trocar de rota para um módulo ainda não baixado, em vez de
                   segurar a tela anterior congelada. */}
