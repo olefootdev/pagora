@@ -312,30 +312,30 @@ const Login = ({ go }: ScreenProps) => {
 // =====================================================================
 const Onboarding = ({ go }: ScreenProps) => {
   const [step, setStep] = useStateA(0);
+  // Eram três telas antes de 22/08/2026 (ponto 13). Duas saíram e uma nasceu
+  // da fusão: "prestadores avaliam" e "você compara e escolhe" contavam o
+  // mesmo fato — eles propõem, você decide — e custavam um toque a mais entre
+  // o login e a primeira ação útil.
+  //
+  // O slide 2 antigo prometia que os orçamentos chegavam "pelo WhatsApp".
+  // Prometer um canal que vai sair (ponto 10) é dívida de produto: sai agora,
+  // enquanto ninguém depende da frase.
   const slides = [
     {
-      eyebrow: '1 / 3',
       t: 'Você descreve.',
-      s: 'Conte o que precisa em até 4 passos. Frete, guincho ou caçamba.',
+      s: 'Frete, guincho ou caçamba. Em até 4 passos.',
       icon: 'edit',
       color: 'var(--green-500)',
     },
     {
-      eyebrow: '2 / 3',
-      t: 'Prestadores avaliam.',
-      s: 'Caminhoneiros e pequenas empresas locais enviam orçamentos pelo WhatsApp.',
-      icon: 'users',
-      color: 'var(--orange-500)',
-    },
-    {
-      eyebrow: '3 / 3',
-      t: 'Você compara e escolhe.',
-      s: 'Sem matching automático, sem preço-armadilha. Pagamento direto com quem você escolher.',
+      t: 'Eles propõem. Você escolhe.',
+      s: 'Prestadores da sua região mandam orçamento. Sem matching automático, sem preço-armadilha.',
       icon: 'check-circle',
       color: 'var(--green-500)',
     },
   ];
   const s = slides[step]!;
+  const isLast = step === slides.length - 1;
   return (
     <div className="pg-screen is-dark" data-screen-label={`A2 Onboarding ${step + 1}`}>
       <StatusBar dark />
@@ -393,7 +393,7 @@ const Onboarding = ({ go }: ScreenProps) => {
             <Icon name={s.icon} size={42} />
           </span>
           <div className="pg-h-eyebrow" style={{ color: 'var(--green-500)', margin: 0 }}>
-            {s.eyebrow}
+            {step + 1} / {slides.length}
           </div>
           <h2
             style={{
@@ -424,9 +424,9 @@ const Onboarding = ({ go }: ScreenProps) => {
         >
           <button
             className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
-            onClick={() => (step < 2 ? setStep(step + 1) : go('home'))}
+            onClick={() => (isLast ? go('home') : setStep(step + 1))}
           >
-            {step < 2 ? 'Próximo' : 'Começar'} <Icon name="arrow-right" size={18} />
+            {isLast ? 'Começar' : 'Próximo'} <Icon name="arrow-right" size={18} />
           </button>
         </div>
       </div>
