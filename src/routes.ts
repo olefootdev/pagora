@@ -33,6 +33,7 @@ export const ALL_SCREENS = [
   'acompanhar',
   'comprovante',
   'avaliar',
+  'disputa',
   'pedidos',
   'avisos',
   'conta',
@@ -119,6 +120,7 @@ export const SEGMENT_ROUTES = new Set<string>([
   'acompanhar',
   'comprovante',
   'avaliar',
+  'disputa',
 ]);
 
 export type ResolvedRoute = {

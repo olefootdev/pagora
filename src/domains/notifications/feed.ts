@@ -159,9 +159,8 @@ const PROVIDER_NOTABLE: Partial<
   settled: { actionable: false, icon: 'check-circle', route: 'parceiro-ganhos' },
   // Não há o que ver de um pedido que caiu — há o que pegar no lugar dele.
   cancelled: { actionable: false, icon: 'close', route: 'parceiro' },
-  // Ainda não existe tela de disputa do lado do prestador. Ganhos é onde ele
-  // vê que o valor continua retido, que é o efeito prático para ele.
-  disputed: { actionable: true, icon: 'alert', route: 'parceiro-ganhos' },
+  // A tela de disputa dele precisa do id do pedido — resolvido abaixo.
+  disputed: { actionable: true, icon: 'alert', route: 'disputa' },
 };
 
 export function buildProviderFeed(input: BuildProviderFeedInput): Notice[] {
@@ -198,7 +197,8 @@ export function buildProviderFeed(input: BuildProviderFeedInput): Notice[] {
           : ORDER_STATUS_LABELS[order.status],
       body: `Pedido ${orderCode(order.id)}`,
       at: order.updated_at,
-      route: meta.route,
+      // `disputa` é por pedido; as outras são abas e não levam segmento.
+      route: meta.route === 'disputa' ? `disputa/${order.id}` : meta.route,
       icon: meta.icon,
       actionable: meta.actionable,
     });

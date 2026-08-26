@@ -58,6 +58,7 @@ const Conversa = lazyFrom(() => import('./flows/conversa'), 'Conversa');
 const MinhaRede = lazyFrom(() => import('./flows/minha-rede'), 'MinhaRede');
 const Comprovante = lazyFrom(() => import('./flows/comprovante'), 'Comprovante');
 const Avaliar = lazyFrom(() => import('./flows/avaliar'), 'Avaliar');
+const Disputa = lazyFrom(() => import('./flows/disputa'), 'Disputa');
 const CadastroTransportador = lazyFrom(
   () => import('./flows/cadastro-transportador'),
   'CadastroTransportador',
@@ -106,6 +107,7 @@ const NEW_PROVIDER_SCREENS = new Set([
   'parceiro-avisos',
   'parceiro-ganhos',
   'parceiro-conta',
+  'disputa',
 ]);
 
 /**
@@ -200,6 +202,8 @@ function AppShell() {
         return <Comprovante go={go} orderId={slug} />;
       case 'avaliar':
         return <Avaliar go={go} orderId={slug} />;
+      case 'disputa':
+        return <Disputa go={go} orderId={slug} />;
       case 'avisos':
         return <Avisos go={go} />;
       case 'perto':

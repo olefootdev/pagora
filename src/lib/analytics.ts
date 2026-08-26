@@ -36,6 +36,9 @@ export type AnalyticsEvent =
   | 'pedido_repetido'
   // Avaliação: sem ela não existe a nota que vende o marketplace.
   | 'servico_avaliado'
+  // Disputa: a taxa de resposta do prestador dentro do prazo diz se o SLA de
+  // 24 h é real ou se o admin está decidindo com um lado só da história.
+  | 'disputa_respondida'
   | 'proposta_enviada'
   | 'proposta_aceita'
   // Jornada refatorada. `pedido_iniciado` mede a entrada pelo campo de

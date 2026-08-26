@@ -226,7 +226,10 @@ describe('buildProviderFeed', () => {
     });
     const rotas = feed.map((n) => n.route);
     expect(rotas).not.toContain('parceiro-viagem');
-    expect(rotas).toEqual(['parceiro-ganhos', 'parceiro', 'parceiro-ganhos']);
+    // Cada um vai para onde o dado dele mora: o dinheiro liberado em Ganhos,
+    // o pedido que caiu de volta para a lista de pedidos abertos, e a disputa
+    // para a tela dela — que é por pedido, e por isso leva o id.
+    expect(rotas).toEqual(['parceiro-ganhos', 'parceiro', 'disputa/o3']);
   });
 
   it('estado que não é dele não vira aviso', () => {
