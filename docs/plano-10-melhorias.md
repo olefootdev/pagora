@@ -90,6 +90,48 @@ cliente, que já era assim antes desta sessão. O app é de telefone e a barra d
 telefone tem o selo; ligar o selo no desktop obrigaria a consultar avisos em
 toda rota, inclusive nas públicas.
 
+### 4 · Execução dos próximos passos — 26/08/2026
+
+**537 testes**, `tsc` limpo, ESLint 0 problemas, build limpo. Quatro commits
+sobre o `6bcbf74`, que era onde dois dias de trabalho estavam parados.
+
+**O bloqueio real, achado na verificação:** o projeto Supabase
+`kigmdcjpgmvsyiuqadct` está **pausado**. `supabase link` responde
+`project is paused` e o `/rest/v1/` não responde (HTTP 000). O CLI está
+logado e enxerga o projeto — não é credencial. Só o painel despausa, e é
+por isso que as migrations nunca entraram. Enquanto isso durar, nenhuma tela
+fala com o banco.
+
+O tamanho do que espera por isso: chat → `messages` (0010); Ganhos, extrato
+e saque → `payments`, `wallet_transactions`, `withdrawals` (0007); painel
+admin → `approve_provider` e `audit_wallet_integrity` (0008); disputa →
+`respond_dispute` (0008). E a brecha de `orders_update_party`
+(`0002_rls_policies.sql:177`) segue aberta até a 0006 entrar.
+
+**Código morto removido: 529 linhas.** A varredura de export sem consumidor
+— a mesma que teria pego o `buildProviderFeed` dois dias antes — achou
+`lib/whatsapp.ts` inteiro, `screens/order-actions.tsx`, a seção CARGA de
+`ui/art.tsx` com o registro `CARGO_ART` (os ícones reprovados por lerem como
+vitrine de loja de móveis), `CheckboxGroup` e `Tile`.
+
+**Tela de disputa do prestador** (`disputa/:orderId`), a lacuna que os avisos
+tinham exposto. Responde, na ordem em que a pessoa pergunta: quanto do
+dinheiro dela está retido, do que estão acusando (na íntegra) e até quando dá
+para responder. Escreve por `respond_dispute()`, não por UPDATE direto.
+
+**Três alvos abaixo de 44px na área logada**, que a auditoria de modo luva
+não tinha pego porque só rodou no que abre sem sessão:
+
+| Alvo                          | Antes | Por que importa                                                                     |
+| ----------------------------- | ----- | ----------------------------------------------------------------------------------- |
+| Liga/desliga do transportador | 27px  | é o controle que decide se a pessoa recebe trabalho                                 |
+| Campo principal da home       | 27px  | o input não esticava: só a altura do texto era tocável, dentro de uma linha de 62px |
+| Botão de voz da home          | 38px  | —                                                                                   |
+
+O campo subiu para 16px, que além da régua evita o zoom automático do iOS ao
+focar. Varredura final nas 11 telas logadas: nenhum alvo abaixo de 44px,
+zero erro de console.
+
 ## Os 3 princípios que regem tudo abaixo
 
 1. **Menos digitação, mais toque.** Quem está de luva, no sol, digita mal e
