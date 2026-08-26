@@ -103,3 +103,19 @@ export function formatCents(cents: number): string {
   assertIntegerCents(cents);
   return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(cents / 100);
 }
+
+/**
+ * "R$ 180" em vez de "R$ 180,00" — para preço de PARTIDA, onde os centavos
+ * são sempre zero e só ocupam espaço. Um valor com centavos de verdade
+ * continua inteiro: "R$ 218,40" nunca vira "R$ 218".
+ */
+export function formatCentsCompact(cents: number): string {
+  assertIntegerCents(cents);
+  const wholeReais = cents % 100 === 0;
+  return new Intl.NumberFormat('pt-BR', {
+    style: 'currency',
+    currency: 'BRL',
+    minimumFractionDigits: wholeReais ? 0 : 2,
+    maximumFractionDigits: wholeReais ? 0 : 2,
+  }).format(cents / 100);
+}

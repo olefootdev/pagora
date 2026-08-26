@@ -1,4 +1,4 @@
-import { StatusBar, TopBar } from './core';
+import { IconButton, Screen } from './ui/kit';
 import type { ScreenProps } from './types';
 
 // =====================================================================
@@ -11,18 +11,24 @@ type LegalPageProps = ScreenProps & {
 };
 
 const LegalPage = ({ go, title, lastUpdate, children }: LegalPageProps) => (
-  <div className="pg-screen" data-screen-label={`Legal · ${title}`}>
-    <StatusBar />
-    <TopBar onBack={() => go('landing')} title={title} />
-    <div className="pg-page">
-      <div className="pg-page-body" style={{ fontSize: 14, lineHeight: 1.6, color: 'var(--text)' }}>
-        <div className="pg-h-eyebrow">DOCUMENTO LEGAL</div>
-        <h1 className="pg-h-title">{title}</h1>
-        <p className="pg-h-sub">Última atualização: {lastUpdate}</p>
-        {children}
+  <Screen label={`Legal · ${title}`}>
+    <header className="px-head px-head--sticky">
+      <IconButton icon="arrow-left" label="Voltar" onClick={() => go('inicio')} />
+      <div className="px-head-title">{title}</div>
+    </header>
+    <div className="px-body" style={{ fontSize: 14, lineHeight: 1.6 }}>
+      <div>
+        <div className="px-eyebrow">Documento legal</div>
+        <h1 className="px-title" style={{ marginTop: 8 }}>
+          {title}
+        </h1>
+        <p className="px-opt-s" style={{ marginTop: 6 }}>
+          Última atualização: {lastUpdate}
+        </p>
       </div>
+      {children}
     </div>
-  </div>
+  </Screen>
 );
 
 // =====================================================================

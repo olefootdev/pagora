@@ -89,3 +89,27 @@ export const ORDER_STATUS_LABELS: Readonly<Record<OrderStatus, string>> = {
   refunded: 'Estornado',
   disputed: 'Em disputa',
 };
+
+// ---------------------------------------------------------------------
+// Régua grossa — os quatro marcos que cabem num relance
+// ---------------------------------------------------------------------
+
+/**
+ * A régua de QUATRO marcos usada nos heros (home e acompanhar).
+ *
+ * Quatro, não oito: a timeline completa vive na tela de acompanhamento; a
+ * régua é um relance, e oito pontos em 340px viram rótulo ilegível.
+ */
+export const COARSE_TRACK: ReadonlyArray<{ lbl: string; states: OrderStatus[] }> = [
+  { lbl: 'Aceito', states: ['pending_payment', 'paid'] },
+  { lbl: 'A caminho', states: ['en_route'] },
+  { lbl: 'Carregando', states: ['in_progress'] },
+  { lbl: 'Entregue', states: ['completed', 'settled'] },
+];
+
+export function coarseTrackIndex(status: OrderStatus): number {
+  const i = COARSE_TRACK.findIndex((s) => s.states.includes(status));
+  // Cancelado, expirado, em disputa: nenhum marco aceso. A régua não mente
+  // dizendo "a caminho" sobre um pedido que morreu.
+  return i;
+}

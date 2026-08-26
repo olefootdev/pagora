@@ -133,3 +133,29 @@ export async function listMyOrders(role: 'client' | 'provider', userId: string) 
   if (error) throw error;
   return data ?? [];
 }
+
+/**
+ * O líquido do prestador para um pedido, em centavos.
+ *
+ * `orders.provider_amount_cents` nasce na migration 0007. Enquanto ela não
+ * estiver aplicada, a coluna simplesmente não vem no `select *` — e a tela do
+ * prestador mostraria "R$ 0,00" para um serviço que vale R$ 255.
+ *
+ * A saída NÃO é inventar zero nem esconder o número: é derivá-lo das duas
+ * colunas que existem desde a 0001. `price_cents - platform_fee_cents` é
+ * exatamente a conta que a própria 0007 usa no backfill, então derivar aqui
+ * dá o mesmo valor que a coluna daria — não é aproximação.
+ *
+ * A ordem importa: a coluna vence quando existe. Se um dia o líquido deixar de
+ * ser bruto menos comissão (um desconto, uma retenção), quem sabe disso é o
+ * servidor, e a derivação não pode passar por cima dele.
+ */
+export function providerNetCents(order: {
+  price_cents: number;
+  platform_fee_cents: number;
+  provider_amount_cents?: number | null;
+}): number {
+  const stored = order.provider_amount_cents;
+  if (stored != null && stored > 0) return stored;
+  return Math.max(0, order.price_cents - order.platform_fee_cents);
+}

@@ -400,7 +400,7 @@ export const Landing = ({ go }: ScreenProps) => (
             height: 36,
             fontWeight: 700,
           }}
-          onClick={() => go('home')}
+          onClick={() => go('inicio')}
         >
           Entrar
         </button>
@@ -463,7 +463,7 @@ export const Landing = ({ go }: ScreenProps) => (
         <div style={{ marginTop: 22, display: 'flex', flexDirection: 'column', gap: 10 }}>
           <button
             className="pg-btn pg-btn--accent pg-btn--block pg-btn--lg"
-            onClick={() => go('services')}
+            onClick={() => go('inicio')}
           >
             Solicitar orçamentos
             <Icon name="arrow-right" size={18} />
@@ -748,121 +748,3 @@ export const Landing = ({ go }: ScreenProps) => (
 // =====================================================================
 // SERVICE PICKER
 // =====================================================================
-export const SERVICES = [
-  {
-    id: 'frete',
-    icon: 'truck',
-    t: 'Frete / Mudança',
-    s: 'Móveis, caixas, cargas em geral',
-    available: true,
-  },
-  {
-    id: 'guincho',
-    icon: 'tow',
-    t: 'Guincho',
-    s: 'Pane, acidente, falta de combustível',
-    available: true,
-  },
-  {
-    id: 'cacamba',
-    icon: 'dumpster',
-    t: 'Caçamba / Entulho',
-    s: 'Construção, demolição, jardim',
-    available: true,
-  },
-  {
-    id: 'rodoviario',
-    icon: 'package',
-    t: 'Transporte rodoviário',
-    s: 'Cargas entre cidades',
-    available: false,
-  },
-];
-
-export const ServicePicker = ({ go, preselect }: ScreenProps & { preselect?: string }) => {
-  const [sel, setSel] = useState(preselect || null);
-  return (
-    <div className="pg-screen" data-screen-label="02 Selecionar serviço">
-      <StatusBar />
-      <TopBar onBack={() => go('landing')} title="" />
-      <div className="pg-page">
-        <div className="pg-page-body">
-          <div>
-            <div className="pg-h-eyebrow">PASSO 1 DE 5</div>
-            <h1 className="pg-h-title">Que serviço você precisa?</h1>
-            <p className="pg-h-sub">
-              Cada serviço tem perguntas específicas para um orçamento mais preciso.
-            </p>
-          </div>
-
-          <div className="pg-stack">
-            {SERVICES.map((s) => (
-              <button
-                key={s.id}
-                disabled={!s.available}
-                onClick={() => setSel(s.id)}
-                className={`pg-tile${sel === s.id ? ' is-active' : ''}`}
-                style={{ opacity: s.available ? 1 : 0.5 }}
-              >
-                <div className="pg-row pg-row--between" style={{ alignItems: 'flex-start' }}>
-                  <div className="pg-tile-icon">
-                    <Icon name={s.icon} size={22} />
-                  </div>
-                  {!s.available && <span className="pg-tag pg-tag--outline">Em breve</span>}
-                  {sel === s.id && (
-                    <span
-                      style={{
-                        width: 24,
-                        height: 24,
-                        borderRadius: '50%',
-                        background: 'var(--green-500)',
-                        display: 'grid',
-                        placeItems: 'center',
-                        color: 'var(--night-900)',
-                      }}
-                    >
-                      <Icon name="check" size={14} strokeWidth={3} />
-                    </span>
-                  )}
-                </div>
-                <div>
-                  <div className="pg-tile-title">{s.t}</div>
-                  <div className="pg-tile-sub">{s.s}</div>
-                </div>
-              </button>
-            ))}
-          </div>
-
-          <div
-            className="pg-card pg-card--soft"
-            style={{ display: 'flex', gap: 12, alignItems: 'flex-start' }}
-          >
-            <span style={{ color: 'var(--text-soft)', marginTop: 2 }}>
-              <Icon name="info" size={18} />
-            </span>
-            <div style={{ fontSize: 13, color: 'var(--text-soft)', lineHeight: 1.5 }}>
-              <strong style={{ color: 'var(--text)' }}>Não é Uber.</strong> Cada serviço pesado tem
-              variáveis (acesso, volume, equipamento). Fazemos as perguntas certas para o prestador
-              chegar preparado.
-            </div>
-          </div>
-        </div>
-
-        <div className="pg-page-foot">
-          <button
-            className="pg-btn pg-btn--primary pg-btn--block"
-            disabled={!sel}
-            onClick={() => {
-              if (sel === 'frete') go('frete-1');
-              else if (sel === 'guincho') go('guincho-1');
-              else if (sel === 'cacamba') go('cacamba-1');
-            }}
-          >
-            Continuar
-            <Icon name="arrow-right" size={18} />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};

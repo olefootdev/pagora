@@ -65,7 +65,6 @@ import {
   // finance
   CreditCardIcon,
   Money01Icon,
-  Wallet01Icon,
   TradeUpIcon,
   Ticket01Icon,
   DiamondIcon,

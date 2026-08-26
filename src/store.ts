@@ -1,29 +1,20 @@
 import { create } from 'zustand';
 import type { PagoraState } from './types';
 
-// Estado inicial do fluxo de cotação (frete / guincho / caçamba).
-// As telas atuais ainda consomem isso via prop `state`/`set` passada pelo App,
-// mas qualquer tela pode passar a usar `usePagoraStore` diretamente sem churn.
-const initialState: PagoraState = {
-  cargo: null,
-  origin: 'Av. Paulista, 1000, São Paulo',
-  dest: 'Rua Augusta, 500, São Paulo',
-  distance: 15,
-  originAccess: { type: 'apt', floor: '3', elevator: true, needHelp: true },
-  destAccess: { type: 'house', needHelp: false },
-  vehicle: 'bau',
-  helpers: 1,
-  urgency: 'scheduled',
-  scheduledDate: '2026-04-29',
-  scheduledTime: '09:00',
-  notes: '',
-};
+// =====================================================================
+// Estado do fluxo de pedido.
+//
+// Sobreviveu à aposentadoria dos wizards antigos porque o fluxo NOVO
+// (`flows/pedido.tsx`) também é multi-passo e também precisa de um estado
+// que atravesse os passos — e que o `acompanhar` leia depois via payload.
+// O que morreu foi o estado DEMO que vinha pré-preenchido: o fluxo novo
+// nasce em branco, como um pedido de verdade nasce.
+// =====================================================================
 
 const blankState: PagoraState = {
   cargo: null,
   origin: '',
   dest: '',
-  distance: 15,
   originAccess: {},
   destAccess: {},
   vehicle: null,
@@ -40,7 +31,7 @@ type StoreActions = {
 export type PagoraStore = PagoraState & StoreActions;
 
 export const usePagoraStore = create<PagoraStore>((set) => ({
-  ...initialState,
+  ...blankState,
   patchState: (patch) => set((s) => ({ ...s, ...patch })),
   resetState: () => set(blankState),
 }));

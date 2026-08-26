@@ -124,3 +124,10 @@ export type WaitlistForm = z.infer<typeof waitlistSchema>;
 export function firstError(error: z.ZodError): string {
   return error.issues[0]?.message ?? 'Confira os dados informados';
 }
+
+/** Os serviços que o enum do banco aceita. `rodoviario` fica de fora por ora. */
+export const SERVICE_TYPES = ['frete', 'guincho', 'cacamba'] as const;
+
+export function isServiceType(id: string): id is (typeof SERVICE_TYPES)[number] {
+  return (SERVICE_TYPES as readonly string[]).includes(id);
+}

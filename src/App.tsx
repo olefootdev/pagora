@@ -1,13 +1,15 @@
 import { HashRouter, useNavigate, useLocation } from 'react-router-dom';
-import { Suspense, lazy, type ComponentType } from 'react';
+import { Suspense, lazy, useEffect, type ComponentType } from 'react';
 
-import { usePagoraStore } from './store';
+import { resolveRoute } from './routes';
+import { parseReferral, rememberReferral } from './domains/referral/referral';
 import type { GoFn } from './types';
 
 // `core` fica ESTÁTICO: a landing é a primeira pintura e o Logo é usado pelo
 // cabeçalho em todas as rotas. Carregá-lo sob demanda só adiaria o que sempre
 // é necessário.
-import { Landing, ServicePicker, Logo } from './core';
+import { Landing, Logo } from './core';
+import { isNeedKind } from './domains/intent/intent';
 
 // =====================================================================
 // Code splitting POR ARQUIVO DE DOMÍNIO, não por tela.
@@ -29,64 +31,45 @@ function lazyFrom<M, K extends keyof M>(loader: () => Promise<M>, key: K): M[K] 
   ) as unknown as M[K];
 }
 
-const freteModule = () => import('./frete');
-const Frete1 = lazyFrom(freteModule, 'Frete1');
-const Frete2 = lazyFrom(freteModule, 'Frete2');
-const Frete3 = lazyFrom(freteModule, 'Frete3');
-const Frete4 = lazyFrom(freteModule, 'Frete4');
-const FreteSummary = lazyFrom(freteModule, 'FreteSummary');
-const FreteConfirm = lazyFrom(freteModule, 'FreteConfirm');
-
-const extraModule = () => import('./extra');
-const Guincho1 = lazyFrom(extraModule, 'Guincho1');
-const Guincho2 = lazyFrom(extraModule, 'Guincho2');
-const Guincho3 = lazyFrom(extraModule, 'Guincho3');
-const Guincho4 = lazyFrom(extraModule, 'Guincho4');
-const Cacamba1 = lazyFrom(extraModule, 'Cacamba1');
-const Cacamba2 = lazyFrom(extraModule, 'Cacamba2');
-const Cacamba3 = lazyFrom(extraModule, 'Cacamba3');
-const Proposals = lazyFrom(extraModule, 'Proposals');
-
 const otherModule = () => import('./other');
 const ProviderLanding = lazyFrom(otherModule, 'ProviderLanding');
-const ProviderSignup = lazyFrom(otherModule, 'ProviderSignup');
-const ProviderConfirm = lazyFrom(otherModule, 'ProviderConfirm');
-const ProviderDash = lazyFrom(otherModule, 'ProviderDash');
-const AdminDash = lazyFrom(otherModule, 'AdminDash');
 const HowItWorks = lazyFrom(otherModule, 'HowItWorks');
 
-const authModule = () => import('./cliente-auth');
-const BottomNav = lazyFrom(authModule, 'BottomNav');
-const Login = lazyFrom(authModule, 'Login');
-const Onboarding = lazyFrom(authModule, 'Onboarding');
-const HomeAuth = lazyFrom(authModule, 'HomeAuth');
-const Tracking = lazyFrom(authModule, 'Tracking');
-const Chat = lazyFrom(authModule, 'Chat');
-const Rate = lazyFrom(authModule, 'Rate');
-const Receipt = lazyFrom(authModule, 'Receipt');
-
-const mapaModule = () => import('./cliente-mapa');
-const ProvidersMap = lazyFrom(mapaModule, 'ProvidersMap');
-const Notifications = lazyFrom(mapaModule, 'Notifications');
-const Favorites = lazyFrom(mapaModule, 'Favorites');
-const Addresses = lazyFrom(mapaModule, 'Addresses');
-const Refer = lazyFrom(mapaModule, 'Refer');
-const Profile = lazyFrom(mapaModule, 'Profile');
-const Wallet = lazyFrom(mapaModule, 'Wallet');
-const HistoryList = lazyFrom(mapaModule, 'HistoryList');
-const Recurring = lazyFrom(mapaModule, 'Recurring');
-const Joint = lazyFrom(mapaModule, 'Joint');
-const Accessibility = lazyFrom(mapaModule, 'Accessibility');
-
-const Locator = lazyFrom(() => import('./locator'), 'Locator');
-const Compare = lazyFrom(() => import('./phase1'), 'Compare');
-const ServiceDone = lazyFrom(() => import('./phase3'), 'ServiceDone');
-const ProvSignup = lazyFrom(() => import('./phase4'), 'ProvSignup');
 const AdminDispute = lazyFrom(() => import('./phase6'), 'AdminDispute');
 
 const legalModule = () => import('./legal');
 const PrivacyPolicy = lazyFrom(legalModule, 'PrivacyPolicy');
 const Terms = lazyFrom(legalModule, 'Terms');
+
+// =====================================================================
+// Jornada refatorada (2026). Convive com as rotas antigas: nenhuma delas é
+// removida antes de a substituta existir e falar com o banco. Ver a auditoria
+// e o ledger "preservar / refatorar / aposentar".
+// =====================================================================
+const Inicio = lazyFrom(() => import('./flows/inicio'), 'Inicio');
+const Pedido = lazyFrom(() => import('./flows/pedido'), 'Pedido');
+const Escolher = lazyFrom(() => import('./flows/escolher'), 'Escolher');
+const Acompanhar = lazyFrom(() => import('./flows/acompanhar'), 'Acompanhar');
+const PedidosCliente = lazyFrom(() => import('./flows/pedidos'), 'Pedidos');
+const Conta = lazyFrom(() => import('./flows/conta'), 'Conta');
+const Avisos = lazyFrom(() => import('./flows/avisos'), 'Avisos');
+const Entrar = lazyFrom(() => import('./flows/entrar'), 'Entrar');
+const Conversa = lazyFrom(() => import('./flows/conversa'), 'Conversa');
+const MinhaRede = lazyFrom(() => import('./flows/minha-rede'), 'MinhaRede');
+const Comprovante = lazyFrom(() => import('./flows/comprovante'), 'Comprovante');
+const Avaliar = lazyFrom(() => import('./flows/avaliar'), 'Avaliar');
+const CadastroTransportador = lazyFrom(
+  () => import('./flows/cadastro-transportador'),
+  'CadastroTransportador',
+);
+const Perto = lazyFrom(() => import('./flows/perto'), 'Perto');
+
+const parceiroModule = () => import('./flows/parceiro');
+const ParceiroOportunidades = lazyFrom(parceiroModule, 'ParceiroOportunidades');
+const ParceiroViagem = lazyFrom(parceiroModule, 'ParceiroViagem');
+const ParceiroAvisos = lazyFrom(parceiroModule, 'ParceiroAvisos');
+const ParceiroGanhos = lazyFrom(parceiroModule, 'ParceiroGanhos');
+const ParceiroConta = lazyFrom(parceiroModule, 'ParceiroConta');
 
 const Checkout = lazyFrom(() => import('./screens/checkout'), 'Checkout');
 const ProviderFinanceiro = lazyFrom(
@@ -94,149 +77,36 @@ const ProviderFinanceiro = lazyFrom(
   'ProviderFinanceiro',
 );
 const AdminFinanceiro = lazyFrom(() => import('./screens/admin-financeiro'), 'AdminFinanceiro');
-const MeusPedidos = lazyFrom(() => import('./screens/meus-pedidos'), 'MeusPedidos');
-const Oportunidades = lazyFrom(() => import('./screens/oportunidades'), 'Oportunidades');
 
 // =====================================================================
-// PAGORA — Router (HashRouter) + Zustand store
-// FASE 1b: hash routing real, estado em store, screens continuam recebendo `go` como prop
+// PAGORA — Router (HashRouter)
 // =====================================================================
 
-const ALL_SCREENS = [
-  'landing',
-  'how',
-  'services',
-  'frete-1',
-  'frete-2',
-  'frete-3',
-  'frete-4',
-  'frete-summary',
-  'frete-confirm',
-  'guincho-1',
-  'guincho-2',
-  'guincho-3',
-  'guincho-4',
-  'cacamba-1',
-  'cacamba-2',
-  'cacamba-3',
-  'proposals',
-  'compare',
-  'provider-landing',
-  'provider-signup',
-  'provider-confirm',
-  'provider-dash',
-  'prov-signup',
-  'admin-dash',
-  'admin-dispute',
-  'login',
-  'onboarding',
-  'home',
-  'tracking',
-  'chat',
-  'rate',
-  'receipt',
-  'map',
-  'notifications',
-  'favorites',
-  'addresses',
-  'refer',
-  'profile',
-  'wallet',
-  'history-list',
-  'recurring',
-  'joint',
-  'accessibility',
-  'locator',
-  'service-done',
-  'privacidade',
-  'termos',
-  // Núcleo transacional
-  'checkout',
-  'prov-financeiro',
-  'admin-financeiro',
-  'meus-pedidos',
-  'oportunidades',
-];
-
-const CONSUMER_SCREENS = new Set([
-  'home',
-  'tracking',
-  'chat',
-  'rate',
-  'receipt',
-  'map',
-  'notifications',
-  'favorites',
-  'addresses',
-  'refer',
-  'profile',
-  'wallet',
-  'history-list',
-  'recurring',
-  'joint',
-  'accessibility',
-  'locator',
-  'compare',
-  'service-done',
-  'services',
-  'how',
-  'frete-1',
-  'frete-2',
-  'frete-3',
-  'frete-4',
-  'frete-summary',
-  'frete-confirm',
-  'guincho-1',
-  'guincho-2',
-  'guincho-3',
-  'guincho-4',
-  'cacamba-1',
-  'cacamba-2',
-  'cacamba-3',
-  'proposals',
-  'checkout',
-  'meus-pedidos',
+/**
+ * Telas de cliente e de transportador. Cada uma traz a própria barra
+ * (`AreaNav`); estes conjuntos servem só ao cabeçalho de desktop, que
+ * precisa saber qual navegação mostrar.
+ */
+const NEW_CLIENT_SCREENS = new Set([
+  'inicio',
+  'minha-rede',
+  'comprovante',
+  'avaliar',
+  'pedido',
+  'escolher',
+  'acompanhar',
+  'pedidos',
+  'avisos',
+  'conta',
+  'perto',
 ]);
-
-const NAV_TAB: Record<string, string> = {
-  home: 'home',
-  tracking: 'home',
-  chat: 'home',
-  rate: 'home',
-  locator: 'home',
-  compare: 'home',
-  services: 'home',
-  how: 'home',
-  'frete-1': 'home',
-  'frete-2': 'home',
-  'frete-3': 'home',
-  'frete-4': 'home',
-  'frete-summary': 'home',
-  'frete-confirm': 'home',
-  'guincho-1': 'home',
-  'guincho-2': 'home',
-  'guincho-3': 'home',
-  'guincho-4': 'home',
-  'cacamba-1': 'home',
-  'cacamba-2': 'home',
-  'cacamba-3': 'home',
-  proposals: 'home',
-  map: 'map',
-  'history-list': 'history-list',
-  'meus-pedidos': 'history-list',
-  checkout: 'history-list',
-  receipt: 'history-list',
-  'service-done': 'history-list',
-  recurring: 'history-list',
-  joint: 'history-list',
-  notifications: 'notifications',
-  profile: 'profile',
-  wallet: 'profile',
-  refer: 'profile',
-  addresses: 'profile',
-  favorites: 'profile',
-  accessibility: 'profile',
-};
+const NEW_PROVIDER_SCREENS = new Set([
+  'parceiro',
+  'parceiro-viagem',
+  'parceiro-avisos',
+  'parceiro-ganhos',
+  'parceiro-conta',
+]);
 
 /**
  * Placeholder enquanto o módulo da tela é baixado. Ocupa o mesmo espaço da
@@ -259,14 +129,16 @@ function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Zustand store — substitui o useState gigante do passado
-  const state = usePagoraStore();
-  const setS = usePagoraStore((s) => s.patchState);
-  const reset = usePagoraStore((s) => s.resetState);
+  // Indicação: o link da Minha Rede chega como `#/inicio?ref=abc12345`.
+  // Guardar na chegada é o que impede que todo compartilhamento feito antes
+  // do módulo do divulgador se perca — a atribuição não é recuperável depois.
+  useEffect(() => {
+    const ref = parseReferral(location.search);
+    if (ref) rememberReferral(ref);
+  }, [location.search]);
 
   // Rota derivada do path. Em HashRouter o pathname já vem sem o '#'.
-  const path = location.pathname.replace(/^\//, '');
-  const route = (ALL_SCREENS as readonly string[]).includes(path) ? path : 'landing';
+  const { route, slug } = resolveRoute(location.pathname);
   const params = (location.state as Record<string, unknown> | null) || {};
 
   const go: GoFn = (next, p = {}) => {
@@ -290,57 +162,58 @@ function AppShell() {
         return <Landing go={go} />;
       case 'how':
         return <HowItWorks go={go} />;
-      case 'services':
-        return <ServicePicker go={go} preselect={params.preselect as string | undefined} />;
-      // Frete
-      case 'frete-1':
-        return <Frete1 go={go} state={state} set={setS} />;
-      case 'frete-2':
-        return <Frete2 go={go} state={state} set={setS} />;
-      case 'frete-3':
-        return <Frete3 go={go} state={state} set={setS} />;
-      case 'frete-4':
-        return <Frete4 go={go} state={state} set={setS} />;
-      case 'frete-summary':
-        return <FreteSummary go={go} state={state} />;
-      case 'frete-confirm':
-        return <FreteConfirm go={go} state={state} reset={reset} />;
-      // Guincho / Caçamba
-      case 'guincho-1':
-        return <Guincho1 go={go} state={state} set={setS} />;
-      case 'guincho-2':
-        return <Guincho2 go={go} state={state} set={setS} />;
-      case 'guincho-3':
-        return <Guincho3 go={go} state={state} set={setS} />;
-      case 'guincho-4':
-        return <Guincho4 go={go} state={state} set={setS} />;
-      case 'cacamba-1':
-        return <Cacamba1 go={go} state={state} set={setS} />;
-      case 'cacamba-2':
-        return <Cacamba2 go={go} state={state} set={setS} />;
-      case 'cacamba-3':
-        return <Cacamba3 go={go} state={state} set={setS} />;
-      // Propostas + comparador
-      case 'proposals':
-        return <Proposals go={go} reset={reset} />;
-      case 'compare':
-        return <Compare go={go} />;
       // Prestador
       case 'provider-landing':
         return <ProviderLanding go={go} />;
       case 'provider-signup':
-        return <ProviderSignup go={go} />;
-      case 'prov-signup':
-        return <ProvSignup go={go} />;
-      case 'provider-confirm':
-        return <ProviderConfirm go={go} />;
-      case 'provider-dash':
-        return <ProviderDash go={go} />;
-      // Admin
-      case 'admin-dash':
-        return <AdminDash go={go} />;
+        return <CadastroTransportador go={go} />;
       case 'admin-dispute':
         return <AdminDispute go={go} />;
+      // ---- Jornada refatorada -------------------------------------
+      case 'inicio':
+        return <Inicio go={go} />;
+      case 'pedido': {
+        // Sem necessidade no path o fluxo não sabe o que perguntar. Voltar
+        // para o início é melhor que abrir um formulário genérico.
+        if (!isNeedKind(slug)) return <Inicio go={go} />;
+        return (
+          <Pedido
+            go={go}
+            need={slug}
+            intentText={params.intentText as string | undefined}
+            hints={params.hints as never}
+            repeatFrom={params.repeatFrom as never}
+          />
+        );
+      }
+      case 'escolher':
+        return <Escolher go={go} requestId={slug} />;
+      case 'acompanhar':
+        return <Acompanhar go={go} orderId={slug} />;
+      case 'pedidos':
+        return <PedidosCliente go={go} />;
+      case 'conta':
+        return <Conta go={go} />;
+      case 'minha-rede':
+        return <MinhaRede go={go} />;
+      case 'comprovante':
+        return <Comprovante go={go} orderId={slug} />;
+      case 'avaliar':
+        return <Avaliar go={go} orderId={slug} />;
+      case 'avisos':
+        return <Avisos go={go} />;
+      case 'perto':
+        return <Perto go={go} />;
+      case 'parceiro':
+        return <ParceiroOportunidades go={go} />;
+      case 'parceiro-avisos':
+        return <ParceiroAvisos go={go} />;
+      case 'parceiro-viagem':
+        return <ParceiroViagem go={go} />;
+      case 'parceiro-ganhos':
+        return <ParceiroGanhos go={go} />;
+      case 'parceiro-conta':
+        return <ParceiroConta go={go} />;
       // Núcleo transacional
       case 'checkout':
         return <Checkout go={go} orderId={params.orderId as string | undefined} />;
@@ -348,53 +221,13 @@ function AppShell() {
         return <ProviderFinanceiro go={go} />;
       case 'admin-financeiro':
         return <AdminFinanceiro go={go} />;
-      case 'meus-pedidos':
-        return <MeusPedidos go={go} />;
-      case 'oportunidades':
-        return <Oportunidades go={go} />;
       // Cliente autenticado
       case 'login':
-        return <Login go={go} />;
-      case 'onboarding':
-        return <Onboarding go={go} />;
-      case 'home':
-        return <HomeAuth go={go} />;
-      case 'tracking':
-        return <Tracking go={go} />;
+        return <Entrar go={go} />;
       case 'chat':
         // O chat pertence a um pedido. Sem `orderId` a tela abre em estado
         // vazio explicando isso, em vez de mostrar conversa de ninguém.
-        return <Chat go={go} orderId={params.orderId as string | undefined} />;
-      case 'rate':
-        return <Rate go={go} />;
-      case 'receipt':
-        return <Receipt go={go} />;
-      case 'map':
-        return <ProvidersMap go={go} />;
-      case 'notifications':
-        return <Notifications go={go} />;
-      case 'favorites':
-        return <Favorites go={go} />;
-      case 'addresses':
-        return <Addresses go={go} />;
-      case 'refer':
-        return <Refer go={go} />;
-      case 'profile':
-        return <Profile go={go} />;
-      case 'wallet':
-        return <Wallet go={go} />;
-      case 'history-list':
-        return <HistoryList go={go} />;
-      case 'recurring':
-        return <Recurring go={go} />;
-      case 'joint':
-        return <Joint go={go} />;
-      case 'accessibility':
-        return <Accessibility go={go} />;
-      case 'locator':
-        return <Locator go={go} />;
-      case 'service-done':
-        return <ServiceDone go={go} />;
+        return <Conversa go={go} orderId={params.orderId as string | undefined} />;
       case 'privacidade':
         return <PrivacyPolicy go={go} />;
       case 'termos':
@@ -404,12 +237,12 @@ function AppShell() {
     }
   };
 
-  const isConsumer = CONSUMER_SCREENS.has(route);
-  const activeTab = NAV_TAB[route] || 'home';
+  // O cabeçalho de desktop precisa saber qual navegação mostrar.
+  const isConsumer = NEW_CLIENT_SCREENS.has(route) || route === 'chat' || route === 'checkout';
 
   return (
     <div className="pg-app">
-      <DesktopHeader route={route} isConsumer={isConsumer} activeTab={activeTab} go={go} />
+      <DesktopHeader route={route} isConsumer={isConsumer} go={go} />
       <div className="pg-stage">
         <div className="pg-phone-wrap">
           <div className="pg-phone">
@@ -424,14 +257,6 @@ function AppShell() {
                 {renderScreen()}
               </Suspense>
             </div>
-            {/* O BottomNav mora em cliente-auth (2.7k LOC). Carregá-lo com
-                fallback nulo evita que a barra puxe o módulo inteiro na
-                landing, onde ela nem aparece. */}
-            {isConsumer && (
-              <Suspense fallback={null}>
-                <BottomNav active={activeTab} go={go} />
-              </Suspense>
-            )}
           </div>
         </div>
       </div>
@@ -450,41 +275,43 @@ const PUBLIC_NAV: ReadonlyArray<readonly [string, string]> = [
   ['provider-landing', 'Sou prestador'],
 ];
 const CONSUMER_NAV: ReadonlyArray<readonly [string, string]> = [
-  ['home', 'Início'],
-  ['history-list', 'Pedidos'],
-  ['map', 'Mapa'],
-  ['notifications', 'Avisos'],
-  ['profile', 'Perfil'],
+  ['inicio', 'Início'],
+  ['pedidos', 'Pedidos'],
+  ['avisos', 'Avisos'],
+  ['perto', 'Perto'],
+  ['parceiro', 'Sou transportador'],
 ];
 
 function DesktopHeader({
   route,
   isConsumer,
-  activeTab,
   go,
 }: {
   route: string;
   isConsumer: boolean;
-  activeTab: string;
   go: GoFn;
 }) {
-  const isProvider = route.startsWith('provider') || route === 'prov-signup';
+  // Conjunto explícito em vez de `startsWith('parceiro')`: o prefixo pegaria
+  // qualquer rota futura que comece com a mesma palavra e a jogaria na
+  // navegação de prestador sem ninguém decidir isso.
+  const isProvider = route.startsWith('provider') || NEW_PROVIDER_SCREENS.has(route);
   const isAdmin = route.startsWith('admin');
 
   let nav: ReadonlyArray<readonly [string, string]>;
-  let activeId = route;
+  const activeId = route;
   if (isConsumer) {
     nav = CONSUMER_NAV;
-    activeId = activeTab;
   } else if (isProvider) {
     nav = [
-      ['provider-landing', 'Sobre prestador'],
-      ['provider-signup', 'Cadastro'],
-      ['provider-dash', 'Painel'],
+      ['parceiro', 'Oportunidades'],
+      ['parceiro-viagem', 'Viagem'],
+      ['parceiro-avisos', 'Avisos'],
+      ['parceiro-ganhos', 'Ganhos'],
+      ['parceiro-conta', 'Conta'],
     ];
   } else if (isAdmin) {
     nav = [
-      ['admin-dash', 'Operações'],
+      ['admin-financeiro', 'Financeiro'],
       ['admin-dispute', 'Disputa'],
     ];
   } else {

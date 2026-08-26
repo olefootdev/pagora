@@ -4,6 +4,7 @@ import {
   PLATFORM_FEE_PERCENT,
   centsToReais,
   formatCents,
+  formatCentsCompact,
   percentOfCents,
   platformFeeCents,
   reaisToCents,
@@ -123,5 +124,15 @@ describe('money — conversões', () => {
   it('rejeita entrada não finita', () => {
     expect(() => reaisToCents(Number.NaN)).toThrow(/inválido/);
     expect(() => reaisToCents(Number.POSITIVE_INFINITY)).toThrow(/inválido/);
+  });
+});
+
+describe('formatCentsCompact', () => {
+  it('some com os centavos quando são zero — preço de partida sem ruído', () => {
+    expect(formatCentsCompact(18_000).replace(/\u00a0/g, ' ')).toBe('R$ 180');
+  });
+
+  it('preserva centavos de verdade — nunca arredonda dinheiro', () => {
+    expect(formatCentsCompact(21_840).replace(/\u00a0/g, ' ')).toBe('R$ 218,40');
   });
 });

@@ -17,7 +17,14 @@
 // restrição de domínio, não o segredo.
 // =====================================================================
 import { useEffect, useMemo, type ReactNode } from 'react';
-import { APIProvider, Map, AdvancedMarker, Pin, useMap } from '@vis.gl/react-google-maps';
+import {
+  APIProvider,
+  ColorScheme,
+  Map,
+  AdvancedMarker,
+  Pin,
+  useMap,
+} from '@vis.gl/react-google-maps';
 
 export type LatLng = { lat: number; lng: number };
 
@@ -49,6 +56,13 @@ export type PagoraMapProps = {
   onMarkerClick?: (id: string) => void;
   /** Renderizado quando não há chave. Normalmente a ilustração já existente. */
   fallback: ReactNode;
+  /**
+   * Tema do mapa. `dark` para as telas do sistema novo — o mapa claro do
+   * Google sobre o fundo `#0B0D0F` é um retângulo branco no meio da tela.
+   */
+  scheme?: 'light' | 'dark';
+  /** Ajusta o enquadramento para caber todos os marcadores e a rota. */
+  fitToContent?: boolean;
 };
 
 export const PagoraMap = ({
@@ -59,6 +73,8 @@ export const PagoraMap = ({
   height = 380,
   onMarkerClick,
   fallback,
+  scheme = 'light',
+  fitToContent = false,
 }: PagoraMapProps) => {
   if (!mapsEnabled()) return <>{fallback}</>;
 
@@ -69,6 +85,7 @@ export const PagoraMap = ({
           defaultCenter={center}
           defaultZoom={zoom}
           mapId="pagora"
+          colorScheme={scheme === 'dark' ? ColorScheme.DARK : ColorScheme.LIGHT}
           disableDefaultUI
           zoomControl
           gestureHandling="greedy"
@@ -89,11 +106,60 @@ export const PagoraMap = ({
             </AdvancedMarker>
           ))}
           {route && <RouteOverlay origin={route.origin} destination={route.destination} />}
+          {fitToContent && <FitBounds markers={markers} route={route} />}
         </Map>
       </APIProvider>
     </div>
   );
 };
+
+/**
+ * Enquadra o mapa para caber tudo que está desenhado.
+ *
+ * Sem isto, um trajeto de 40 km abre centrado em São Paulo com zoom 13 e o
+ * usuário vê uma rua qualquer — a rota inteira fica fora da tela.
+ */
+function FitBounds({
+  markers,
+  route,
+}: {
+  markers: MapMarker[];
+  route?: { origin: LatLng; destination: LatLng } | undefined;
+}) {
+  const map = useMap();
+
+  const key = useMemo(
+    () =>
+      JSON.stringify([
+        markers.map((m) => [m.position.lat, m.position.lng]),
+        route ? [route.origin, route.destination] : null,
+      ]),
+    [markers, route],
+  );
+
+  useEffect(() => {
+    if (!map || !window.google?.maps) return;
+    const points: LatLng[] = [
+      ...markers.map((m) => m.position),
+      ...(route ? [route.origin, route.destination] : []),
+    ];
+    if (points.length === 0) return;
+
+    if (points.length === 1 && points[0]) {
+      map.setCenter(points[0]);
+      map.setZoom(15);
+      return;
+    }
+
+    const bounds = new google.maps.LatLngBounds();
+    for (const p of points) bounds.extend(p);
+    // Margem para os marcadores não colarem na borda nem sumirem embaixo do
+    // card flutuante do acompanhamento.
+    map.fitBounds(bounds, { top: 56, bottom: 96, left: 40, right: 40 });
+  }, [map, key, markers, route]);
+
+  return null;
+}
 
 /**
  * Traça a rota entre dois pontos com o DirectionsService.

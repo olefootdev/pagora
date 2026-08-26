@@ -27,8 +27,24 @@ export type AnalyticsEvent =
   // do canal.
   | 'pedido_publicado'
   | 'publicar_pedido_sem_login'
+  // Porta do app (tela Entrar): enviar o SMS custa dinheiro — medir o funil
+  // telefone → código → sessão é o que diz se o custo está virando conta.
+  | 'otp_enviado'
+  | 'login_ok'
+  // Recompra: a taxa de repetição é a métrica que diz se o marketplace
+  // fideliza ou se cada pedido é um cliente novo.
+  | 'pedido_repetido'
+  // Avaliação: sem ela não existe a nota que vende o marketplace.
+  | 'servico_avaliado'
   | 'proposta_enviada'
-  | 'proposta_aceita';
+  | 'proposta_aceita'
+  // Jornada refatorada. `pedido_iniciado` mede a entrada pelo campo de
+  // intenção contra a entrada pelos atalhos — é o número que diz se o texto
+  // livre está puxando gente ou se é enfeite caro.
+  | 'pedido_iniciado'
+  | 'viagem_avancada'
+  | 'entrega_confirmada'
+  | 'acompanhamento_compartilhado';
 
 export type AnalyticsProps = Record<string, string | number | boolean | null | undefined>;
 

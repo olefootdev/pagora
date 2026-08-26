@@ -1,0 +1,2559 @@
+/* ==========================================================================
+   PAGORA — Sistema visual da refatoração (2026)
+   ==========================================================================
+   Por que um arquivo novo em vez de reescrever `pagora.css`:
+
+   As 51 rotas antigas continuam no ar enquanto as novas são construídas
+   (decisão de "convivência"). Se os tokens novos entrassem no `:root`, cada
+   tela antiga herdaria fundo escuro sem ter sido desenhada para isso — o app
+   quebraria inteiro no primeiro commit. Aqui os tokens vivem em `.pgx`, que
+   é a raiz de toda tela nova. Nada vaza para fora dela.
+
+   Quando a última rota antiga for aposentada, este arquivo sobe para `:root`
+   e o `pagora.css` morre.
+
+   PRINCÍPIOS
+   1. Escuro é o padrão, não uma classe aplicada à mão.
+   2. Uma cor de ação (verde). Laranja é urgência. O resto é cinza.
+   3. O número é o maior elemento de toda tela onde há decisão.
+   4. Nada indica estado só por cor — sempre há texto ou forma junto.
+   5. Alvo de toque nunca abaixo de 44px.
+   ========================================================================== */
+
+.pgx {
+  /* ---- Superfícies -------------------------------------------------- */
+  --x-ground: #0b0d0f; /* fundo da tela */
+  --x-surface: #15191d; /* card, campo, barra */
+  --x-surface-2: #1d2228; /* card sobre card, estado hover */
+  --x-surface-3: #262c33; /* pressionado */
+  --x-line: #242a31; /* borda padrão */
+  --x-line-strong: #343c45; /* borda de item selecionado */
+
+  /* ---- Texto -------------------------------------------------------- */
+  --x-ink: #ffffff;
+  --x-ink-soft: #a7b1bc; /* texto auxiliar — 7.2:1 sobre o ground */
+  --x-ink-dim: #78838f; /* rótulo, meta — 4.8:1 sobre o ground */
+
+  /* ---- Ação (verde) -------------------------------------------------- */
+  --x-action: #22e3a3;
+  --x-action-press: #17c48a;
+  --x-action-ghost: rgba(34, 227, 163, 0.12);
+  --x-action-line: rgba(34, 227, 163, 0.32);
+  --x-on-action: #052117; /* texto sobre o verde cheio */
+
+  /* ---- Semântica ----------------------------------------------------- */
+  --x-urgent: #ff8a33; /* urgência, pendência, atenção */
+  --x-urgent-ghost: rgba(255, 138, 51, 0.13);
+  --x-danger: #ff6161;
+  --x-danger-ghost: rgba(255, 97, 97, 0.13);
+  --x-info: #7aa5ff;
+  --x-info-ghost: rgba(122, 165, 255, 0.13);
+
+  /* ---- Tipografia ---------------------------------------------------- */
+  /* Display: grotesca de traço reto e peso alto. Substitui a Nunito, que é
+     arredondada e lê como app de delivery — o oposto de caminhão e caçamba. */
+  --x-display: 'Archivo', 'Helvetica Neue', Arial, sans-serif;
+  --x-body: 'IBM Plex Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --x-mono: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+
+  /* ---- Raio ---------------------------------------------------------- */
+  --x-r-sm: 10px;
+  --x-r: 14px;
+  --x-r-lg: 18px;
+  --x-r-xl: 24px;
+
+  /* ---- Sombra — discreta de propósito -------------------------------- */
+  --x-shadow: 0 12px 28px -18px rgba(0, 0, 0, 0.9);
+  --x-shadow-up: 0 -12px 28px -20px rgba(0, 0, 0, 0.9);
+
+  /* ---- Hero ----------------------------------------------------------- */
+  /* O gradiente aprovado no canvas de 25/08: mergulha do verde vivo ao
+     quase-preto. Texto do hero é sempre branco — nos DOIS temas, porque o
+     hero é identidade de marca, não superfície que acompanha o tema. */
+  --x-hero-grad: linear-gradient(168deg, #0ca877 0%, #076b4e 40%, #04412f 72%, #022119 100%);
+  --x-hero-ink: #ffffff;
+  --x-hero-ink-soft: rgba(255, 255, 255, 0.72);
+  --x-hero-ink-dim: rgba(255, 255, 255, 0.65);
+  --x-hero-deep: #022119;
+  --x-hero-bright: #3ff0b7;
+
+  /* ---- Movimento ----------------------------------------------------- */
+  --x-t: 160ms cubic-bezier(0.2, 0.75, 0.25, 1);
+  --x-t-slow: 320ms cubic-bezier(0.2, 0.75, 0.25, 1);
+
+  /* ---- Métricas ------------------------------------------------------ */
+  --x-pad: 20px;
+  --x-nav-h: 68px;
+  --x-safe-b: env(safe-area-inset-bottom, 0px);
+  /* O topo faltava. O hero sangra até a borda superior e passa por baixo do
+     recorte da câmera — sem esta reserva, a saudação some atrás do notch.
+     Faltando, `calc(14px + var(--x-safe-t))` invalidava o `padding`
+     ABREVIADO inteiro, e a laje perdia também o recuo lateral. */
+  --x-safe-t: env(safe-area-inset-top, 0px);
+}
+
+/* ==========================================================================
+   RAIZ DA TELA
+   ========================================================================== */
+.pgx {
+  flex: 1;
+  min-height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--x-ground);
+  color: var(--x-ink);
+  font-family: var(--x-body);
+  font-size: 15px;
+  line-height: 1.5;
+  letter-spacing: -0.006em;
+}
+
+.pgx *,
+.pgx *::before,
+.pgx *::after {
+  box-sizing: border-box;
+}
+
+.pgx button {
+  font-family: inherit;
+}
+
+/* ATENÇÃO À ESPECIFICIDADE.
+   `.pgx button` vale (0,1,1) — uma classe mais um tipo — e portanto vence
+   QUALQUER regra de uma classe só, incluindo `.px-btn--primary`. Um
+   `color: inherit` aqui fazia o botão primário herdar a cor do pai: dentro
+   de `.px-empty`, que pinta o texto de cinza, o rótulo verde-sobre-verde
+   virava cinza-sobre-verde e sumia.
+
+   Por isso a herança de cor foi para as classes dos botões que de fato a
+   querem — os que não têm cor própria por serem "casca" de conteúdo. */
+.px-opt,
+.px-tile,
+.px-route-leg {
+  color: var(--x-ink);
+}
+
+.pgx :focus-visible {
+  outline: 2px solid var(--x-action);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Só o `:focus` do teclado desenha anel — o toque no celular não deve deixar
+   contorno pendurado depois que o dedo sai. */
+.pgx :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* ==========================================================================
+   ESTRUTURA — cabeça / corpo / doca
+   ==========================================================================
+   Toda tela nova tem no máximo três regiões. A doca é fixa embaixo porque a
+   ação principal precisa estar sob o polegar, não no fim de uma rolagem.
+   ========================================================================== */
+.px-head {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px var(--x-pad);
+  min-height: 60px;
+  background: var(--x-ground);
+}
+
+.px-head--sticky {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  border-bottom: 1px solid var(--x-line);
+}
+
+.px-head-title {
+  font-family: var(--x-display);
+  font-weight: 600;
+  font-size: 16px;
+  letter-spacing: -0.015em;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.px-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 4px var(--x-pad) 28px;
+  min-width: 0;
+}
+
+.px-body--flush {
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.px-dock {
+  position: sticky;
+  bottom: 0;
+  z-index: 25;
+  flex-shrink: 0;
+  padding: 14px var(--x-pad) calc(16px + var(--x-safe-b));
+  /* Sólido, não gradiente. Com fade, o conteúdo que rola por baixo continua
+     perfeitamente legível atrás do botão principal — parece defeito, não
+     profundidade. O esfumado fica num filete acima da doca, via ::before. */
+  background: var(--x-ground);
+  display: grid;
+  gap: 10px;
+}
+
+.px-dock::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 100%;
+  height: 24px;
+  background: linear-gradient(180deg, transparent, var(--x-ground));
+  pointer-events: none;
+}
+
+/* Sem isto o último elemento do corpo nasce debaixo da doca e nunca sai de lá
+   por rolagem: a doca gruda no fim do scroller. */
+.px-body:has(+ .px-dock) {
+  padding-bottom: 8px;
+}
+
+/* Progresso do fluxo: fio de 2px, não contador. O "PASSO 1 DE 5" anunciava
+   quanto ainda faltava antes de o usuário ler o que era pedido. */
+.px-rail {
+  flex-shrink: 0;
+  height: 2px;
+  background: var(--x-line);
+  overflow: hidden;
+}
+
+.px-rail-fill {
+  height: 100%;
+  background: var(--x-action);
+  border-radius: 2px;
+  transition: width var(--x-t-slow);
+}
+
+/* ==========================================================================
+   TIPOGRAFIA
+   ========================================================================== */
+.px-eyebrow {
+  font-family: var(--x-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--x-ink-dim);
+}
+
+.px-title {
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: clamp(26px, 7.4vw, 32px);
+  line-height: 1.08;
+  letter-spacing: -0.032em;
+  text-wrap: balance;
+  margin: 0;
+}
+
+.px-title--sm {
+  font-size: clamp(20px, 5.4vw, 23px);
+  letter-spacing: -0.025em;
+}
+
+.px-sub {
+  color: var(--x-ink-soft);
+  font-size: 14.5px;
+  line-height: 1.5;
+  margin: 0;
+  max-width: 40ch;
+}
+
+.px-sectitle {
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.015em;
+  margin: 0;
+}
+
+/* O número. Maior elemento da tela onde há decisão — preço, ETA, saldo. */
+.px-num {
+  font-family: var(--x-display);
+  font-weight: 800;
+  font-size: clamp(38px, 11vw, 50px);
+  line-height: 0.92;
+  letter-spacing: -0.045em;
+  font-variant-numeric: tabular-nums;
+  display: block;
+}
+
+.px-num--md {
+  font-size: clamp(26px, 7vw, 32px);
+  letter-spacing: -0.035em;
+  font-weight: 700;
+}
+
+.px-num--sm {
+  font-size: 19px;
+  letter-spacing: -0.025em;
+  font-weight: 700;
+  line-height: 1.1;
+}
+
+.px-num-unit {
+  display: block;
+  font-family: var(--x-body);
+  font-size: 13px;
+  font-weight: 400;
+  letter-spacing: 0;
+  color: var(--x-ink-soft);
+  margin-top: 6px;
+}
+
+.px-data {
+  font-family: var(--x-mono);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+.px-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.px-stack--tight {
+  gap: 7px;
+}
+
+.px-stack--loose {
+  gap: 18px;
+}
+
+.px-heading-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+/* ==========================================================================
+   BOTÕES
+   ==========================================================================
+   Alto, largo e com rótulo que diz o que acontece. O primário nunca fica
+   desabilitado esperando escolha: onde a escolha é a ação, o toque na opção
+   já avança (ver .px-opt).
+   ========================================================================== */
+.px-btn {
+  appearance: none;
+  border: 1px solid transparent;
+  background: var(--x-surface-2);
+  color: var(--x-ink);
+  border-radius: var(--x-r);
+  /* Modo luva: 52px de altura e 16px de texto. Botão é ação, e ação lida
+     no sol, de relance, com o telefone longe do rosto — 15,5px passava
+     abaixo da régua que o próprio sistema estabeleceu. */
+  min-height: 52px;
+  padding: 0 20px;
+  font-family: var(--x-display);
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  cursor: pointer;
+  transition:
+    transform var(--x-t),
+    background var(--x-t),
+    border-color var(--x-t),
+    opacity var(--x-t);
+  text-align: center;
+}
+
+.px-btn:active {
+  transform: scale(0.985);
+}
+
+.px-btn:disabled {
+  cursor: not-allowed;
+  transform: none;
+  /* Perde a cor de ação, não só opacidade. Verde a 42% continua lendo como
+     verde — e como "pode tocar". */
+  background: var(--x-surface-2);
+  color: var(--x-ink-dim);
+  border-color: transparent;
+}
+
+.px-btn--primary {
+  background: var(--x-action);
+  color: var(--x-on-action);
+  font-weight: 700;
+}
+
+.px-btn--primary:hover:not(:disabled) {
+  background: var(--x-action-press);
+}
+
+.px-btn--outline {
+  background: transparent;
+  border-color: var(--x-line-strong);
+  color: var(--x-ink);
+}
+
+.px-btn--outline:hover:not(:disabled) {
+  background: var(--x-surface);
+}
+
+.px-btn--quiet {
+  background: transparent;
+  color: var(--x-ink-soft);
+  min-height: 44px;
+}
+
+.px-btn--quiet:hover:not(:disabled) {
+  color: var(--x-ink);
+}
+
+.px-btn--urgent {
+  background: var(--x-urgent);
+  color: #26130a;
+  font-weight: 700;
+}
+
+.px-btn--block {
+  width: 100%;
+}
+
+.px-btn--lg {
+  min-height: 58px;
+  font-size: 16.5px;
+  border-radius: var(--x-r-lg);
+}
+
+.px-btn--sm {
+  /* 44px é o piso de alvo do sistema, e vale também para o botão pequeno:
+     "Ver todos" e "Alterar valor" são tocados com o polegar como qualquer
+     outro. Era 40px. */
+  min-height: 44px;
+  font-size: 14px;
+  padding: 0 14px;
+  border-radius: var(--x-r-sm);
+}
+
+/* Botão só de ícone. 44px é o piso de alvo de toque. */
+.px-iconbtn {
+  appearance: none;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  border: 1px solid var(--x-line);
+  background: var(--x-surface);
+  color: var(--x-ink);
+  display: inline-grid;
+  place-items: center;
+  cursor: pointer;
+  transition:
+    background var(--x-t),
+    transform var(--x-t);
+}
+
+.px-iconbtn:hover {
+  background: var(--x-surface-2);
+}
+
+.px-iconbtn:active {
+  transform: scale(0.93);
+}
+
+.px-iconbtn--ghost {
+  border-color: transparent;
+  background: transparent;
+}
+
+/* ==========================================================================
+   CARDS
+   ========================================================================== */
+.px-card {
+  background: var(--x-surface);
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-r-lg);
+  padding: 16px;
+}
+
+.px-card--flat {
+  background: transparent;
+}
+
+.px-card--action {
+  border-color: var(--x-action-line);
+  background: linear-gradient(180deg, var(--x-action-ghost), transparent 70%), var(--x-surface);
+}
+
+.px-card--urgent {
+  border-color: rgba(255, 138, 51, 0.3);
+  background: linear-gradient(180deg, var(--x-urgent-ghost), transparent 70%), var(--x-surface);
+}
+
+/* ==========================================================================
+   OPÇÃO QUE AVANÇA
+   ==========================================================================
+   O padrão que substitui "rádio + Continuar desabilitado". Cada passo aceita
+   uma resposta só, então o toque na opção já contém a intenção de avançar.
+   ========================================================================== */
+.px-opt {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+  padding: 13px 14px;
+  background: var(--x-surface);
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-r);
+  cursor: pointer;
+  transition:
+    background var(--x-t),
+    border-color var(--x-t),
+    transform var(--x-t);
+}
+
+.px-opt:hover {
+  background: var(--x-surface-2);
+}
+
+.px-opt:active {
+  transform: scale(0.99);
+}
+
+.px-opt.is-on {
+  border-color: var(--x-action);
+  background: linear-gradient(90deg, var(--x-action-ghost), transparent 60%), var(--x-surface-2);
+}
+
+.px-opt-art {
+  flex-shrink: 0;
+  width: 52px;
+  height: 52px;
+  border-radius: 12px;
+  background: var(--x-surface-2);
+  display: grid;
+  place-items: center;
+  color: var(--x-ink-soft);
+  overflow: hidden;
+}
+
+.px-opt.is-on .px-opt-art {
+  background: var(--x-action-ghost);
+  color: var(--x-action);
+}
+
+.px-opt-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.px-opt-t {
+  /* `block` não é cosmético: estes são <span> dentro de <button>, e um
+     <button> não pode conter <div>. Sem isto, título e subtítulo saem
+     colados na mesma linha. */
+  display: block;
+  font-family: var(--x-display);
+  font-weight: 600;
+  font-size: 15.5px;
+  letter-spacing: -0.015em;
+  line-height: 1.2;
+}
+
+.px-opt-s {
+  display: block;
+  font-size: 12.5px;
+  color: var(--x-ink-dim);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+.px-opt-end {
+  flex-shrink: 0;
+  color: var(--x-ink-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11.5px;
+}
+
+.px-opt.is-on .px-opt-end {
+  color: var(--x-action);
+}
+
+/* Grade de atalhos da home — 2 ou 3 colunas conforme a largura. */
+.px-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.px-grid--3 {
+  /* Duas colunas no telefone estreito. Em 375px, três colunas dão 100px por
+     card — não cabe "Material · Obra e construção" sem quebrar em quatro
+     linhas. A terceira coluna entra quando há largura para ela. */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 9px;
+}
+
+@media (min-width: 420px) {
+  .px-grid--3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.px-tile {
+  appearance: none;
+  cursor: pointer;
+  background: var(--x-surface);
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-r);
+  padding: 14px 12px 13px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+  min-height: 108px;
+  text-align: left;
+  transition:
+    background var(--x-t),
+    border-color var(--x-t),
+    transform var(--x-t);
+}
+
+.px-tile:hover {
+  background: var(--x-surface-2);
+  border-color: var(--x-line-strong);
+}
+
+.px-tile:active {
+  transform: scale(0.98);
+}
+
+.px-tile > span:last-child {
+  min-width: 0;
+  width: 100%;
+}
+
+.px-tile-art {
+  width: 40px;
+  height: 40px;
+  border-radius: 11px;
+  background: var(--x-surface-2);
+  color: var(--x-action);
+  display: grid;
+  place-items: center;
+  flex-shrink: 0;
+}
+
+.px-tile-t {
+  display: block;
+  font-family: var(--x-display);
+  font-weight: 600;
+  font-size: 14.5px;
+  letter-spacing: -0.015em;
+  line-height: 1.15;
+}
+
+.px-tile-s {
+  display: block;
+  font-size: 11.5px;
+  color: var(--x-ink-dim);
+  line-height: 1.3;
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   CAMPOS
+   ========================================================================== */
+.px-fieldset {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.px-label {
+  font-family: var(--x-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--x-ink-dim);
+}
+
+.px-input,
+.px-textarea {
+  width: 100%;
+  /* Faz o navegador desenhar o seletor nativo de data e hora em tema escuro.
+     Sem isto o ícone do calendário sai preto sobre o campo escuro e some. */
+  color-scheme: dark;
+  background: var(--x-surface);
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-r);
+  color: var(--x-ink);
+  font-family: var(--x-body);
+  /* 16px impede o zoom automático do iOS ao focar um campo. */
+  font-size: 16px;
+  padding: 15px 16px;
+  min-height: 54px;
+  transition:
+    border-color var(--x-t),
+    background var(--x-t);
+}
+
+.px-textarea {
+  min-height: 100px;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+.px-input::placeholder,
+.px-textarea::placeholder {
+  color: var(--x-ink-dim);
+}
+
+.px-input:focus,
+.px-textarea:focus {
+  border-color: var(--x-action);
+  background: var(--x-surface-2);
+  outline: none;
+}
+
+.px-input.is-bad,
+.px-textarea.is-bad {
+  border-color: var(--x-danger);
+}
+
+.px-err {
+  font-size: 12.5px;
+  color: var(--x-danger);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Campo com ícone à esquerda — usado na busca por intenção da home. */
+.px-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.px-search > svg,
+.px-search > .px-search-icon {
+  position: absolute;
+  left: 16px;
+  color: var(--x-ink-dim);
+  pointer-events: none;
+  display: flex;
+}
+
+.px-search .px-input {
+  padding-left: 48px;
+}
+
+/* ==========================================================================
+   SUGESTÕES DE ENDEREÇO
+   ==========================================================================
+   Flutua sobre o conteúdo seguinte em vez de empurrá-lo: uma lista que
+   reposiciona o formulário a cada tecla faz o dedo errar o alvo.
+   ========================================================================== */
+.px-suggest {
+  position: absolute;
+  z-index: 30;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  margin: 0;
+  padding: 5px;
+  list-style: none;
+  background: var(--x-surface-2);
+  border: 1px solid var(--x-line-strong);
+  border-radius: var(--x-r);
+  box-shadow: var(--x-shadow);
+  max-height: 264px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  animation: px-rise var(--x-t) both;
+}
+
+.px-suggest-item {
+  appearance: none;
+  width: 100%;
+  background: none;
+  border: none;
+  border-radius: var(--x-r-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  padding: 11px 12px;
+  text-align: left;
+  color: var(--x-ink);
+  /* 44px de alvo de toque também aqui: é lista tocada com o polegar. */
+  min-height: 44px;
+  transition: background var(--x-t);
+}
+
+.px-suggest-item:hover,
+.px-suggest-item:focus-visible {
+  background: var(--x-surface-3);
+}
+
+.px-suggest-item > svg {
+  flex-shrink: 0;
+  margin-top: 2px;
+  color: var(--x-ink-dim);
+}
+
+.px-suggest-main {
+  display: block;
+  font-size: 14.5px;
+  line-height: 1.3;
+}
+
+.px-suggest-sub {
+  display: block;
+  font-size: 12.5px;
+  color: var(--x-ink-dim);
+  margin-top: 2px;
+  line-height: 1.3;
+}
+
+/* ==========================================================================
+   CHIPS E ESTADO
+   ==========================================================================
+   Todo chip carrega texto. Nenhum estado é comunicado só por cor — regra de
+   acessibilidade que também salva quem está no sol vendo a tela lavada.
+   ========================================================================== */
+.px-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-family: var(--x-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  padding: 5px 10px;
+  border-radius: 999px;
+  border: 1px solid var(--x-line);
+  background: var(--x-surface);
+  color: var(--x-ink-soft);
+  white-space: nowrap;
+}
+
+.px-chip::before {
+  content: '';
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+  flex-shrink: 0;
+}
+
+.px-chip--bare::before {
+  display: none;
+}
+
+.px-chip--on {
+  color: var(--x-action);
+  border-color: var(--x-action-line);
+  background: var(--x-action-ghost);
+}
+
+.px-chip--urgent {
+  color: var(--x-urgent);
+  border-color: rgba(255, 138, 51, 0.3);
+  background: var(--x-urgent-ghost);
+}
+
+.px-chip--info {
+  color: var(--x-info);
+  border-color: rgba(122, 165, 255, 0.3);
+  background: var(--x-info-ghost);
+}
+
+.px-chip--danger {
+  color: var(--x-danger);
+  border-color: rgba(255, 97, 97, 0.3);
+  background: var(--x-danger-ghost);
+}
+
+/* Ponto pulsante de "ao vivo". Some com prefers-reduced-motion. */
+.px-live {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--x-action);
+  flex-shrink: 0;
+  animation: px-pulse 2s ease-in-out infinite;
+}
+
+@keyframes px-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 var(--x-action-ghost);
+    opacity: 1;
+  }
+  50% {
+    box-shadow: 0 0 0 6px transparent;
+    opacity: 0.55;
+  }
+}
+
+/* ==========================================================================
+   LINHAS DE DADO
+   ========================================================================== */
+.px-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.px-row--between {
+  justify-content: space-between;
+}
+
+.px-row--top {
+  align-items: flex-start;
+}
+
+/* Campos lado a lado (data + hora) dividem a linha em partes iguais. Sem isto
+   o segundo encolhe até o tamanho do conteúdo. */
+.px-row > .px-fieldset {
+  flex: 1;
+  min-width: 0;
+}
+
+.px-spread {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.px-kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--x-line);
+  font-size: 13.5px;
+}
+
+.px-kv:last-child {
+  border-bottom: none;
+}
+
+.px-kv dt,
+.px-kv .k {
+  color: var(--x-ink-dim);
+}
+
+.px-kv dd,
+.px-kv .v {
+  margin: 0;
+  color: var(--x-ink);
+  font-weight: 500;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.px-divider {
+  height: 1px;
+  background: var(--x-line);
+  border: none;
+  margin: 0;
+}
+
+/* Detalhe expansível — "Como chegamos nesse número". Sem marcador nenhum o
+   texto parece legenda morta; com o triângulo padrão do navegador, parece
+   formulário de 2003. Uma seta que gira resolve os dois. */
+.pgx details > summary {
+  list-style: none;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+}
+
+.pgx details > summary::-webkit-details-marker {
+  display: none;
+}
+
+.pgx details > summary::after {
+  content: '';
+  width: 6px;
+  height: 6px;
+  border-right: 1.6px solid currentColor;
+  border-bottom: 1.6px solid currentColor;
+  transform: rotate(45deg) translate(-1px, -1px);
+  transition: transform var(--x-t);
+}
+
+.pgx details[open] > summary::after {
+  transform: rotate(-135deg) translate(-1px, -1px);
+}
+
+/* ==========================================================================
+   AVATAR
+   ========================================================================== */
+.px-avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--x-surface-2);
+  color: var(--x-action);
+  display: grid;
+  place-items: center;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.01em;
+  border: 1px solid var(--x-line);
+  overflow: hidden;
+}
+
+.px-avatar--lg {
+  width: 56px;
+  height: 56px;
+  font-size: 17px;
+}
+
+/* ==========================================================================
+   TRAJETO — origem → destino
+   ==========================================================================
+   O fio vertical entre os dois pontos é o que faz a dupla ler como um
+   trajeto e não como dois campos soltos.
+   ========================================================================== */
+.px-route {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  gap: 0 12px;
+}
+
+.px-route-marks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 0;
+}
+
+.px-route-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  border: 2px solid var(--x-action);
+  flex-shrink: 0;
+}
+
+.px-route-dot--end {
+  border-radius: 2px;
+  border-color: var(--x-ink);
+  background: var(--x-ink);
+}
+
+.px-route-wire {
+  flex: 1;
+  width: 2px;
+  min-height: 26px;
+  background: repeating-linear-gradient(180deg, var(--x-line-strong) 0 4px, transparent 4px 8px);
+  margin: 4px 0;
+}
+
+.px-route-legs {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  min-width: 0;
+}
+
+.px-route-leg {
+  min-width: 0;
+}
+
+.px-route-leg .lbl {
+  font-family: var(--x-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--x-ink-dim);
+}
+
+.px-route-leg .addr {
+  font-size: 14.5px;
+  margin-top: 3px;
+  line-height: 1.35;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.px-route-leg .addr.is-empty {
+  color: var(--x-ink-dim);
+}
+
+/* ==========================================================================
+   TIMELINE DE STATUS
+   ========================================================================== */
+.px-tl {
+  display: grid;
+  gap: 0;
+}
+
+.px-tl-step {
+  display: grid;
+  grid-template-columns: 18px 1fr;
+  gap: 0 12px;
+  min-height: 42px;
+}
+
+.px-tl-marks {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.px-tl-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--x-line-strong);
+  background: var(--x-ground);
+  flex-shrink: 0;
+  margin-top: 4px;
+  transition: all var(--x-t);
+}
+
+.px-tl-step.is-done .px-tl-dot {
+  border-color: var(--x-action);
+  background: var(--x-action);
+}
+
+.px-tl-step.is-now .px-tl-dot {
+  border-color: var(--x-action);
+  background: var(--x-ground);
+  box-shadow: 0 0 0 4px var(--x-action-ghost);
+}
+
+.px-tl-wire {
+  flex: 1;
+  width: 2px;
+  background: var(--x-line);
+  margin: 3px 0;
+}
+
+.px-tl-step.is-done .px-tl-wire {
+  background: var(--x-action);
+}
+
+.px-tl-step:last-child .px-tl-wire {
+  display: none;
+}
+
+.px-tl-body {
+  padding-bottom: 14px;
+  min-width: 0;
+}
+
+.px-tl-t {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--x-ink-dim);
+  line-height: 1.25;
+}
+
+.px-tl-step.is-done .px-tl-t {
+  color: var(--x-ink-soft);
+}
+
+.px-tl-step.is-now .px-tl-t {
+  color: var(--x-ink);
+  font-family: var(--x-display);
+  font-weight: 600;
+  font-size: 15px;
+}
+
+.px-tl-s {
+  font-family: var(--x-mono);
+  font-size: 11px;
+  color: var(--x-ink-dim);
+  margin-top: 3px;
+}
+
+/* ==========================================================================
+   BARRA DE ÁREA (cliente / prestador)
+   ==========================================================================
+   Uma barra por área, não uma barra para 37 rotas. Some durante o fluxo de
+   pedido: fluxo com começo e fim precisa de saída consciente.
+   ========================================================================== */
+.px-nav {
+  flex-shrink: 0;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  background: var(--x-surface);
+  border-top: 1px solid var(--x-line);
+  padding-bottom: var(--x-safe-b);
+  /* `sticky`, não `fixed`: a tela nova vive DENTRO do `.pg-screen-scroll` do
+     shell antigo. Fixa, a barra escaparia da moldura de desktop; solta, ela
+     rolaria junto com o conteúdo. Grudada no fim do scroller ela fica no
+     lugar certo nos dois casos, e ainda ocupa espaço no layout — por isso
+     nenhuma tela precisa de padding extra embaixo. */
+  position: sticky;
+  bottom: 0;
+  margin-top: auto;
+  z-index: 40;
+}
+
+.px-nav-item {
+  appearance: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  min-height: var(--x-nav-h);
+  padding: 10px 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: var(--x-ink-dim);
+  transition: color var(--x-t);
+  position: relative;
+  min-width: 0;
+}
+
+.px-nav-item span {
+  font-size: 11.5px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.px-nav-item:hover {
+  color: var(--x-ink-soft);
+}
+
+.px-nav-item.is-on {
+  color: var(--x-action);
+}
+
+/* A marca do item ativo é forma + cor, nunca cor sozinha. */
+.px-nav-item.is-on::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 26px;
+  height: 2px;
+  background: var(--x-action);
+  border-radius: 0 0 2px 2px;
+}
+
+.px-nav-badge {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  margin-left: 5px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: 999px;
+  background: var(--x-urgent);
+  color: #26130a;
+  font-family: var(--x-mono);
+  font-size: 9.5px;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+  border: 2px solid var(--x-surface);
+}
+
+/* ==========================================================================
+   FOLHA INFERIOR (sheet)
+   ========================================================================== */
+.px-sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: rgba(5, 7, 9, 0.66);
+  z-index: 60;
+  display: flex;
+  align-items: flex-end;
+  animation: px-fade var(--x-t) both;
+}
+
+.px-sheet {
+  width: 100%;
+  max-height: 88%;
+  background: var(--x-surface);
+  border-top: 1px solid var(--x-line);
+  border-radius: var(--x-r-xl) var(--x-r-xl) 0 0;
+  padding: 10px var(--x-pad) calc(20px + var(--x-safe-b));
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  overflow-y: auto;
+  animation: px-rise var(--x-t-slow) both;
+  box-shadow: var(--x-shadow-up);
+}
+
+.px-sheet-grip {
+  width: 38px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--x-line-strong);
+  margin: 0 auto 4px;
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   ESTADO VAZIO / CARGA
+   ========================================================================== */
+.px-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 12px;
+  padding: 44px 20px;
+  color: var(--x-ink-dim);
+}
+
+.px-empty-art {
+  width: 56px;
+  height: 56px;
+  border-radius: 16px;
+  background: var(--x-surface);
+  border: 1px solid var(--x-line);
+  display: grid;
+  place-items: center;
+  color: var(--x-ink-dim);
+}
+
+.px-empty-t {
+  font-family: var(--x-display);
+  font-weight: 600;
+  font-size: 16px;
+  color: var(--x-ink);
+  letter-spacing: -0.015em;
+}
+
+.px-empty-s {
+  font-size: 13.5px;
+  max-width: 32ch;
+  line-height: 1.45;
+}
+
+.px-skel {
+  background: linear-gradient(
+    90deg,
+    var(--x-surface) 0%,
+    var(--x-surface-2) 50%,
+    var(--x-surface) 100%
+  );
+  background-size: 200% 100%;
+  animation: px-shimmer 1.4s linear infinite;
+  border-radius: var(--x-r);
+}
+
+/* ==========================================================================
+   MICROINTERAÇÕES
+   ==========================================================================
+   Só as que informam: entrada de conteúdo, busca em andamento, mudança de
+   estado. Nada decorativo.
+   ========================================================================== */
+@keyframes px-fade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes px-rise {
+  from {
+    transform: translateY(18px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes px-shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}
+
+@keyframes px-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(100%);
+  }
+}
+
+.px-in {
+  animation: px-rise var(--x-t-slow) both;
+}
+
+/* Escada de entrada: cada filho entra 40ms depois do anterior. Passa a
+   sensação de conteúdo chegando em vez de aparecer de bloco. */
+.px-in-1 {
+  animation-delay: 40ms;
+}
+.px-in-2 {
+  animation-delay: 80ms;
+}
+.px-in-3 {
+  animation-delay: 120ms;
+}
+.px-in-4 {
+  animation-delay: 160ms;
+}
+
+/* Faixa varrendo o card enquanto o sistema procura transportador. */
+.px-scan {
+  position: relative;
+  overflow: hidden;
+}
+
+.px-scan::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(90deg, transparent, var(--x-action-ghost), transparent);
+  animation: px-sweep 1.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pgx *,
+  .pgx *::before,
+  .pgx *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .px-scan::after {
+    display: none;
+  }
+}
+
+/* ==========================================================================
+   ACESSIBILIDADE
+   ========================================================================== */
+.px-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ==========================================================================
+   LARGURA MAIOR
+   ==========================================================================
+   Mobile-first de verdade: a tela é desenhada para 375px e ganha respiro
+   acima de 640px. Nada de layout de dashboard aparecendo no meio.
+   ========================================================================== */
+@media (min-width: 640px) {
+  .pgx {
+    --x-pad: 28px;
+  }
+
+  .px-title {
+    font-size: 34px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .pgx {
+    --x-pad: 32px;
+  }
+
+  /* No desktop quem navega é o cabeçalho fixo do topo — mesma regra que a
+     barra antiga já seguia. Duas navegações simultâneas na mesma tela é o
+     tipo de coisa que faz o usuário não confiar em nenhuma das duas. */
+  .px-nav {
+    display: none;
+  }
+
+  /* A doca deixa de ser fixa no rodapé quando há altura sobrando: no desktop
+     o polegar não é o ponto de alcance. */
+  .px-dock {
+    background: var(--x-ground);
+    border-top: 1px solid var(--x-line);
+  }
+
+  .px-body {
+    gap: 26px;
+  }
+}
+
+/* ==========================================================================
+   TEMA CLARO — por sobrescrita de token, não por reescrita de componente
+   ==========================================================================
+   A home pedia fundo branco. Em vez de escrever uma home paralela com cores
+   cravadas, o tema claro redefine os MESMOS tokens dentro de `.is-light`.
+   Card, botão, chip e campo continuam sendo os componentes de sempre — eles
+   nunca souberam a cor, só o nome dela.
+
+   É também o mecanismo para converter o resto do app: virar uma tela para
+   claro passa a ser acrescentar uma classe, não refazer a tela.
+
+   O verde muda de tom entre os temas de propósito. `#22e3a3` sobre branco dá
+   1.9:1 — ilegível. Sobre escuro é o contrário. Mesma função, dois valores.
+   ========================================================================== */
+.pgx.is-light {
+  /* Silhuetas de contorno: preenchimento mais denso sobre fundo claro. */
+  --x-art-fill: 0.3;
+
+  --x-ground: #ffffff;
+  --x-surface: #f5f8f8;
+  --x-surface-2: #eceff0;
+  --x-surface-3: #e0e6e7;
+  --x-line: #e4eaea;
+  --x-line-strong: #c9d4d3;
+
+  /* Preto com viés de verde — cinza puro sobre uma marca verde lê como
+     descuido, não como neutro escolhido. */
+  --x-ink: #0a1a16;
+  --x-ink-soft: #475853;
+  --x-ink-dim: #6b7c77;
+
+  --x-action: #08996f;
+  --x-action-press: #067d5b;
+  --x-action-ghost: rgba(8, 153, 111, 0.09);
+  --x-action-line: rgba(8, 153, 111, 0.26);
+  --x-on-action: #ffffff;
+
+  --x-urgent: #c2540a;
+  --x-urgent-ghost: rgba(194, 84, 10, 0.1);
+  --x-danger: #c92a2a;
+  --x-danger-ghost: rgba(201, 42, 42, 0.09);
+  --x-info: #2c5bd6;
+  --x-info-ghost: rgba(44, 91, 214, 0.09);
+
+  --x-shadow: 0 14px 30px -20px rgba(10, 26, 22, 0.28);
+  --x-shadow-up: 0 -14px 30px -22px rgba(10, 26, 22, 0.2);
+}
+
+/* ==========================================================================
+   HERO — a laje que engoliu o cabeçalho
+   ==========================================================================
+   O movimento estrutural da referência: status bar, saudação, título, código
+   e progresso moram todos dentro de UMA laje colorida com cantos inferiores
+   arredondados. Não há barra de aplicativo separada. Lê como objeto físico —
+   uma nota de despacho — em vez de "topo de página".
+
+   O contraste é invertido de propósito: a área mais clara e saturada da tela
+   é onde está o conteúdo, e o resto recua. É o oposto de acento-como-respingo.
+   ========================================================================== */
+.px-hero {
+  position: relative;
+  isolation: isolate;
+  background: var(--x-hero-grad);
+  border-radius: 0 0 26px 26px;
+  /* 56px embaixo: é o espaço que o card ancorado morde ao encaixar por cima
+     da borda (margin-top -38px no .px-anchor). */
+  padding: calc(14px + var(--x-safe-t)) var(--x-pad) 56px;
+  color: var(--x-hero-ink);
+  overflow: hidden;
+}
+
+.px-hero-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 18px;
+}
+
+.px-hero-who {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-width: 0;
+}
+
+.px-hero-avatar {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  color: var(--x-hero-ink);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 14px;
+  letter-spacing: 0.02em;
+}
+
+.px-hero-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.px-hero-hi {
+  display: block;
+  font-size: 12.5px;
+  line-height: 1.25;
+  color: var(--x-hero-ink-dim);
+}
+
+.px-hero-name {
+  display: block;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Botão redondo branco — o sino da referência. */
+.px-hero-btn {
+  appearance: none;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: var(--x-hero-deep);
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  position: relative;
+  box-shadow: 0 8px 20px -8px rgba(0, 0, 0, 0.55);
+  transition: transform var(--x-t);
+}
+.px-hero-btn:active {
+  transform: scale(0.94);
+}
+
+.px-hero-btn-dot {
+  position: absolute;
+  /* Sai para FORA do botão, no canto. Ancorado por dentro ele cobria o sino
+     justamente quando havia aviso — o momento em que o ícone mais importa. */
+  top: -3px;
+  right: -3px;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 4px;
+  border-radius: 9px;
+  /* Laranja da marca com texto escuro: sobre o hero profundo, o #c2540a de
+     urgência do tema claro afundava. */
+  background: #ff8a33;
+  color: #1c1005;
+  font-family: var(--x-mono);
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 18px;
+  text-align: center;
+  border: 2px solid #fff;
+  box-sizing: content-box;
+}
+
+/* O herói tipográfico. Um degrau só entre ele e todo o resto — é isso que
+   torna a tela legível num relance. */
+.px-hero-title {
+  margin: 0;
+  font-family: var(--x-display);
+  font-weight: 800;
+  font-size: clamp(28px, 8.4vw, 36px);
+  line-height: 1.02;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  max-width: 13ch;
+  color: var(--x-hero-ink);
+}
+
+.px-hero-sub {
+  margin: 10px 0 0;
+  font-size: 13.5px;
+  line-height: 1.45;
+  color: var(--x-hero-ink-soft);
+  max-width: 30ch;
+}
+
+/* Pílula de estado — a mesma informação do título, em outra forma. */
+.px-hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-shrink: 0;
+  padding: 7px 13px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.32);
+  background: rgba(255, 255, 255, 0.13);
+  color: var(--x-hero-ink);
+  font-size: 12.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.px-hero-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+/* Cartão branco do código + arte do veículo vazando a borda. */
+.px-hero-slab {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+  min-height: 58px;
+}
+
+.px-hero-tag {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  background: #ffffff;
+  border-radius: var(--x-r);
+  padding: 11px 15px;
+  box-shadow: 0 8px 20px -12px rgba(4, 41, 31, 0.45);
+  min-width: 0;
+}
+
+.px-hero-tag-code {
+  display: block;
+  font-family: var(--x-mono);
+  font-weight: 600;
+  font-size: 15px;
+  letter-spacing: 0.01em;
+  color: #0a1a16;
+  white-space: nowrap;
+}
+
+.px-hero-tag-lbl {
+  display: block;
+  font-size: 11.5px;
+  color: #6b7c77;
+  margin-top: 1px;
+}
+
+/* Selos de confiança dentro da laje. Brancos sobre o verde: leem como
+   etiqueta aplicada, não como texto solto. */
+.px-hero-seals {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 18px;
+  position: relative;
+  z-index: 1;
+}
+
+.px-hero-seal {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.13);
+  border: 1px solid rgba(255, 255, 255, 0.26);
+  color: var(--x-hero-ink);
+  font-size: 11.5px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+/* ---- Régua de progresso: pontos + tracejado + rótulos ---------------- */
+.px-track {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  margin-top: 20px;
+}
+
+.px-track-step {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: 7px;
+  min-width: 0;
+}
+
+/* O tracejado sai do ponto para a direita, e nunca depois do último. */
+.px-track-step:not(:last-child)::before {
+  content: '';
+  position: absolute;
+  top: 5px;
+  left: 50%;
+  right: -50%;
+  height: 0;
+  border-top: 2px dashed rgba(255, 255, 255, 0.3);
+}
+
+.px-track-dot {
+  position: relative;
+  z-index: 1;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.px-track-step.is-done .px-track-dot {
+  background: var(--x-hero-bright);
+}
+
+.px-track-step.is-now .px-track-dot {
+  background: #ffffff;
+  box-shadow: 0 0 0 4px rgba(63, 240, 183, 0.55);
+}
+
+.px-track-lbl {
+  font-size: 11.5px;
+  line-height: 1.2;
+  text-align: center;
+  color: rgba(255, 255, 255, 0.6);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.px-track-step.is-now .px-track-lbl,
+.px-track-step.is-done .px-track-lbl {
+  color: var(--x-hero-ink);
+  font-weight: 600;
+}
+
+/* ==========================================================================
+   CARD ANCORADO — a ação principal, mordendo a borda do hero
+   ==========================================================================
+   Dois andares: descrever (texto ou voz) e, quando existe, a faixa com as
+   propostas esperando decisão. Fica no MESMO lugar nos dois estados do hero —
+   o hero muda de conteúdo, a ação principal não muda de endereço.
+   ========================================================================== */
+.px-anchor {
+  margin: -38px var(--x-pad) 0;
+  position: relative;
+  z-index: 2;
+  background: var(--x-ground);
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-r-lg);
+  box-shadow: 0 20px 40px -22px rgba(2, 33, 25, 0.6);
+  overflow: hidden;
+}
+
+.px-anchor-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  min-height: 62px;
+}
+
+.px-anchor-row input {
+  appearance: none;
+  flex: 1;
+  min-width: 0;
+  border: none;
+  outline: none;
+  background: none;
+  font-family: var(--x-body);
+  font-size: 14.5px;
+  color: var(--x-ink);
+  padding: 4px 0;
+}
+.px-anchor-row input::placeholder {
+  color: var(--x-ink-dim);
+}
+.px-anchor:focus-within {
+  border-color: var(--x-action-line);
+}
+
+/* Botão de voz. Só existe quando o navegador tem SpeechRecognition — sem
+   suporte, o botão some e o campo continua sendo campo. */
+.px-anchor-mic {
+  appearance: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 12px;
+  background: var(--x-action-ghost);
+  border: 1px solid var(--x-action-line);
+  color: var(--x-action);
+  display: grid;
+  place-items: center;
+  transition:
+    background var(--x-t),
+    transform var(--x-t);
+}
+.px-anchor-mic:active {
+  transform: scale(0.94);
+}
+
+.px-anchor-mic.is-listening {
+  background: var(--x-action);
+  color: var(--x-on-action);
+  animation: px-pulse 1.2s ease-in-out infinite;
+}
+
+/* A faixa: a informação mais valiosa que a home pode dar. */
+.px-anchor-strip {
+  appearance: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  font-family: inherit;
+  border: none;
+  border-top: 1px solid var(--x-line);
+  background: var(--x-surface);
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  color: var(--x-ink);
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.px-anchor-strip .n {
+  min-width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  background: var(--x-action);
+  color: var(--x-on-action);
+  font-family: var(--x-mono);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 22px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.px-anchor-strip .go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-weight: 600;
+  color: var(--x-action);
+  flex-shrink: 0;
+}
+
+/* ==========================================================================
+   CARDS DE FROTA — serviço com veículo e preço de partida
+   ==========================================================================
+   Silhueta sólida (linguagem de frota, não de vitrine) + o preço mínimo que
+   o motor de preço do app calcula. Nunca número cravado em tela.
+   ========================================================================== */
+.px-fleet {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+@media (min-width: 520px) {
+  .px-fleet {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.px-fleet-card {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  background: var(--x-ground);
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-r);
+  padding: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  color: var(--x-ink);
+  transition:
+    border-color var(--x-t),
+    transform var(--x-t);
+}
+.px-fleet-card:hover,
+.px-fleet-card:focus-visible {
+  border-color: var(--x-action-line);
+}
+.px-fleet-card:active {
+  transform: scale(0.98);
+}
+
+.px-fleet-name {
+  display: block;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 14.5px;
+  letter-spacing: -0.015em;
+}
+
+.px-fleet-price {
+  display: block;
+  font-family: var(--x-mono);
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--x-action);
+  margin-top: 3px;
+}
+.px-fleet-price.is-quote {
+  color: var(--x-ink-dim);
+}
+/* ==========================================================================
+   FAIXA DO OUTRO LADO DO MARKETPLACE
+   ==========================================================================
+   O Pagora tem duas pontas, e quem tem caminhão precisa achar a dele sem
+   caçar em menu. Escura sobre a página branca: o contraste faz dela a coisa
+   mais visível da metade de baixo, sem competir com o hero verde.
+   ========================================================================== */
+.px-band {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  border: none;
+  border-radius: var(--x-r-lg);
+  background: #0a1a16;
+  color: #ffffff;
+  padding: 17px 18px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  font-family: inherit;
+  transition: transform var(--x-t);
+}
+.px-band:active {
+  transform: scale(0.99);
+}
+
+.px-band-art {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: rgba(63, 240, 183, 0.16);
+  color: #3ff0b7;
+}
+
+.px-band-t {
+  display: block;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 15.5px;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.px-band-s {
+  display: block;
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.66);
+  margin-top: 3px;
+  line-height: 1.35;
+}
+
+/* ==========================================================================
+   LINHA DE PEDIDO — o card de "Recent tracking"
+   ========================================================================== */
+.px-pad {
+  padding: 0 var(--x-pad);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.px-recent {
+  appearance: none;
+  width: 100%;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+  background: var(--x-surface);
+  border: 1px solid var(--x-line);
+  border-radius: var(--x-r-lg);
+  padding: 14px;
+  display: grid;
+  gap: 12px;
+  color: var(--x-ink);
+  transition: border-color var(--x-t);
+}
+.px-recent:hover {
+  border-color: var(--x-line-strong);
+}
+
+.px-recent-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.px-recent-art {
+  flex-shrink: 0;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  display: grid;
+  place-items: center;
+  background: var(--x-ground);
+  border: 1px solid var(--x-line);
+}
+
+.px-recent-t {
+  display: block;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.015em;
+}
+
+.px-recent-s {
+  display: block;
+  font-size: 12.5px;
+  color: var(--x-ink-dim);
+  margin-top: 2px;
+}
+
+.px-recent-foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 11px;
+  border-top: 1px solid var(--x-line);
+  font-size: 12px;
+}
+
+/* Rótulo em cima, valor embaixo. Como <span> inline saía "EstimativaR$ 218,40". */
+.px-recent-foot .k {
+  display: block;
+  color: var(--x-ink-dim);
+}
+.px-recent-foot .v {
+  display: block;
+  color: var(--x-ink);
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .px-hero-btn,
+  .px-band,
+  .px-recent,
+  .px-fleet-card {
+    transition: none;
+  }
+}
+
+/* Variante pequena do botão redondo — cabe dentro de um campo sem esticá-lo.
+   Abaixo de 44px só é aceitável para uma ação acessória (limpar o texto) que
+   tem alternativa óbvia: apagar com o teclado. */
+.px-iconbtn--sm {
+  width: 30px;
+  height: 30px;
+  border: none;
+  background: transparent;
+  color: var(--x-ink-dim);
+}
+.px-iconbtn--sm:hover {
+  background: var(--x-surface-2);
+  color: var(--x-ink);
+}
+
+/* ==========================================================================
+   ENTRAR — a porta do app
+   ========================================================================== */
+.px-entrar-body {
+  padding-top: 24px;
+}
+
+/* O campo do código: um input só, grande, mono, espaçado — aceita colar e o
+   autofill de SMS, e não briga com backspace como seis caixinhas brigam. */
+.px-otp {
+  font-family: var(--x-mono);
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 0.42em;
+  text-align: center;
+  text-indent: 0.42em; /* compensa o letter-spacing do último dígito */
+  height: 64px;
+}
+
+/* ==========================================================================
+   CONVERSA
+   ========================================================================== */
+.px-chat {
+  height: 100%;
+}
+
+.px-chat-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: 14px var(--x-pad) 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  background: var(--x-surface);
+}
+
+.px-chat-notice {
+  align-self: center;
+  text-align: center;
+  max-width: 310px;
+  background: var(--x-action-ghost);
+  border: 1px solid var(--x-action-line);
+  color: var(--x-action);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  line-height: 1.45;
+}
+
+.px-chat-empty {
+  align-self: center;
+  text-align: center;
+  max-width: 300px;
+  margin-top: 22px;
+  color: var(--x-ink-dim);
+  font-size: 13px;
+  line-height: 1.5;
+  display: grid;
+  justify-items: center;
+}
+
+.px-chat-error {
+  align-self: center;
+  text-align: center;
+  max-width: 300px;
+  background: var(--x-danger-ghost);
+  color: var(--x-danger);
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 12.5px;
+}
+
+.px-chat-day {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--x-ground);
+  border: 1px solid var(--x-line);
+  font-family: var(--x-mono);
+  font-size: 11.5px;
+  color: var(--x-ink-dim);
+}
+
+.px-msg-row {
+  display: flex;
+  justify-content: flex-start;
+}
+.px-msg-row.is-mine {
+  justify-content: flex-end;
+}
+
+.px-msg {
+  max-width: 78%;
+  background: var(--x-ground);
+  color: var(--x-ink);
+  border: 1px solid var(--x-line);
+  padding: 10px 14px;
+  border-radius: 16px 16px 16px 4px;
+  font-size: 14px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* A minha bolha é o VERDE PROFUNDO da marca, não o verde de ação: fundo de
+   leitura pede o tom fechado, e branco sobre #022119 passa folgado de 7:1. */
+.px-msg.is-mine {
+  background: var(--x-hero-deep);
+  color: #ffffff;
+  border: none;
+  border-radius: 16px 16px 4px 16px;
+}
+
+.px-msg-meta {
+  display: block;
+  font-size: 10px;
+  opacity: 0.6;
+  margin-top: 4px;
+  font-family: var(--x-mono);
+  text-align: right;
+}
+
+.px-chat-block {
+  flex-shrink: 0;
+  padding: 10px 14px;
+  background: var(--x-urgent-ghost);
+  border-top: 1px solid var(--x-urgent);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.px-chat-compose {
+  flex-shrink: 0;
+  padding: 10px var(--x-pad) calc(10px + var(--x-safe-b));
+  border-top: 1px solid var(--x-line);
+  background: var(--x-ground);
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.px-chat-compose .px-input {
+  flex: 1;
+}
+
+.px-chat-send {
+  appearance: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: var(--x-surface-2);
+  color: var(--x-ink-dim);
+  display: grid;
+  place-items: center;
+  transition:
+    background var(--x-t),
+    color var(--x-t),
+    transform var(--x-t);
+}
+.px-chat-send.is-ready {
+  background: var(--x-action);
+  color: var(--x-on-action);
+}
+.px-chat-send:active {
+  transform: scale(0.94);
+}
+
+/* Card de frota selecionável (cadastro de transportador). */
+.px-fleet-card.is-on {
+  border-color: var(--x-action);
+  background: var(--x-action-ghost);
+}
+
+/* O payload do Pix copia-e-cola: mono, quebrando em qualquer ponto. */
+.px-pix-payload {
+  font-size: 11px;
+  color: var(--x-ink-dim);
+  word-break: break-all;
+  background: var(--x-surface);
+  padding: 12px;
+  border-radius: 10px;
+  margin: 10px 0 12px;
+  max-height: 96px;
+  overflow: auto;
+}
+
+/* Espaço para o botão de ditar dentro do textarea, sem cobrir o texto. */
+.px-textarea--voice {
+  padding-right: 54px;
+}
+
+.px-voice-corner {
+  position: absolute;
+  right: 8px;
+  bottom: 8px;
+}
+
+/* ==========================================================================
+   PEDIR DE NOVO — recompra em um toque
+   ========================================================================== */
+.px-repeat {
+  appearance: none;
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  width: 100%;
+  background: var(--x-action-ghost);
+  border: 1px solid var(--x-action-line);
+  border-radius: var(--x-r-lg);
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  color: var(--x-ink);
+  transition:
+    transform var(--x-t),
+    border-color var(--x-t);
+}
+.px-repeat:active {
+  transform: scale(0.99);
+}
+.px-repeat:hover {
+  border-color: var(--x-action);
+}
+
+.px-repeat-art {
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border-radius: 12px;
+  background: var(--x-ground);
+  border: 1px solid var(--x-action-line);
+  color: var(--x-action);
+  display: grid;
+  place-items: center;
+}
+
+.px-repeat-t {
+  display: block;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: -0.015em;
+}
+
+.px-repeat-s {
+  display: block;
+  font-size: 12.5px;
+  color: var(--x-ink-soft);
+  margin-top: 2px;
+}
+
+/* ==========================================================================
+   MINHA REDE
+   ========================================================================== */
+.px-rede-nums {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.px-rede-link {
+  font-size: 12px;
+  color: var(--x-ink-soft);
+  word-break: break-all;
+  background: var(--x-ground);
+  border: 1px solid var(--x-line);
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin: 10px 0 12px;
+}
+
+.px-rede-pct {
+  font-family: var(--x-display);
+  font-weight: 800;
+  font-size: 30px;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: var(--x-action);
+  margin-bottom: 6px;
+}
+
+/* ==========================================================================
+   COMPROVANTE
+   ========================================================================== */
+.px-comp-selo {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  border-radius: 999px;
+  background: var(--x-action-ghost);
+  border: 1px solid var(--x-action-line);
+  color: var(--x-action);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.px-comp-codigo {
+  margin-top: 8px;
+  font-size: 14px;
+  color: var(--x-ink-dim);
+  letter-spacing: 0.06em;
+}
+
+/* ==========================================================================
+   AVALIAR — cinco alvos grandes, toque em vez de arraste
+   ========================================================================== */
+.px-stars {
+  display: flex;
+  justify-content: center;
+  gap: 6px;
+}
+
+.px-star {
+  appearance: none;
+  cursor: pointer;
+  background: none;
+  border: none;
+  /* 56px de alvo: é a mão inteira, não a ponta do dedo. */
+  width: 56px;
+  height: 56px;
+  display: grid;
+  place-items: center;
+  color: var(--x-line-strong);
+  transition:
+    transform var(--x-t),
+    color var(--x-t);
+}
+.px-star.is-on {
+  color: var(--x-urgent);
+}
+.px-star:active {
+  transform: scale(0.9);
+}
+
+.px-stars-sentido {
+  text-align: center;
+  font-family: var(--x-display);
+  font-weight: 700;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  margin: 0;
+  min-height: 26px;
+}

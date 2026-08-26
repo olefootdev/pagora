@@ -13,7 +13,7 @@
 // =====================================================================
 import { useEffect, useState } from 'react';
 import { Icon } from '../icons';
-import { StatusBar, TopBar } from '../core';
+import { Body, Button, Card, Empty, IconButton, Num, Screen } from '../ui/kit';
 import { formatCents } from '../domains/money';
 import {
   createPixPayment,
@@ -96,11 +96,15 @@ export const Checkout = ({ go, orderId }: CheckoutProps) => {
   if (!orderId) {
     return (
       <Shell go={go} title="Pagamento">
-        <Message
+        <Empty
           icon="alert"
           title="Pedido não informado"
-          body="Volte e escolha uma proposta para continuar."
-          action={{ label: 'Ver meus pedidos', onClick: () => go('history-list') }}
+          sub="Volte e escolha uma proposta para continuar."
+          action={
+            <Button variant="primary" onClick={() => go('pedidos')}>
+              Ver meus pedidos
+            </Button>
+          }
         />
       </Shell>
     );
@@ -109,60 +113,72 @@ export const Checkout = ({ go, orderId }: CheckoutProps) => {
   return (
     <Shell go={go} title="Pagamento">
       {phase === 'loading' && (
-        <Message icon="refresh" title="Gerando seu Pix…" body="Isso leva alguns segundos." />
+        <Empty icon="refresh" title="Gerando seu Pix…" sub="Isso leva alguns segundos." />
       )}
 
       {phase === 'error' && (
-        <Message
+        <Empty
           icon="alert"
           title="Não deu certo"
-          body={error ?? 'Tente novamente em instantes.'}
-          action={{ label: 'Tentar de novo', onClick: retry }}
+          sub={error ?? 'Tente novamente em instantes.'}
+          action={
+            <Button variant="primary" onClick={retry}>
+              Tentar de novo
+            </Button>
+          }
         />
       )}
 
       {phase === 'paid' && (
-        <Message
+        <Empty
           icon="check-circle"
-          tone="success"
           title="Pagamento confirmado"
-          body="O prestador já foi avisado e vai iniciar o serviço."
-          action={{ label: 'Acompanhar pedido', onClick: () => go('tracking', { orderId }) }}
+          sub="O transportador já foi avisado e vai iniciar o serviço."
+          action={
+            <Button variant="primary" onClick={() => go(`acompanhar/${orderId}`)}>
+              Acompanhar pedido
+            </Button>
+          }
         />
       )}
 
       {phase === 'ready' && charge && (
-        <div
-          style={{ padding: '20px 20px 32px', display: 'flex', flexDirection: 'column', gap: 18 }}
-        >
-          {/* Valor */}
-          <div className="pg-card pg-card--dark" style={{ padding: 22, textAlign: 'center' }}>
-            <div className="pg-h-eyebrow" style={{ color: 'var(--green-500)', margin: 0 }}>
-              TOTAL A PAGAR
+        <>
+          {/* Valor — o maior número da tela, no verde profundo da marca. */}
+          <Card
+            style={{
+              background: 'var(--x-hero-deep)',
+              border: 'none',
+              color: '#ffffff',
+              textAlign: 'center',
+            }}
+          >
+            <div className="px-eyebrow" style={{ color: 'var(--x-hero-bright)' }}>
+              Total a pagar
             </div>
-            <div
-              className="pg-mono"
-              style={{ fontSize: 38, fontWeight: 700, letterSpacing: '-0.02em', marginTop: 6 }}
-            >
-              {formatCents(charge.amountCents)}
+            <div style={{ marginTop: 8, display: 'grid', justifyItems: 'center' }}>
+              <Num value={formatCents(charge.amountCents)} />
             </div>
             {secondsLeft !== null && (
-              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.7)', marginTop: 8 }}>
+              <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.72)', marginTop: 8 }}>
                 {secondsLeft > 0 ? (
                   <>
-                    Expira em <strong className="pg-mono">{formatClock(secondsLeft)}</strong>
+                    Expira em{' '}
+                    <strong className="px-data" style={{ color: '#fff' }}>
+                      {formatClock(secondsLeft)}
+                    </strong>
                   </>
                 ) : (
                   'Este Pix expirou — gere um novo.'
                 )}
               </div>
             )}
-          </div>
+          </Card>
 
           {/* QR Code */}
           {charge.pixQrCode && (
-            <div className="pg-card pg-card--padded" style={{ textAlign: 'center' }}>
-              <div className="pg-h-eyebrow">ESCANEIE COM O APP DO SEU BANCO</div>
+            <Card style={{ textAlign: 'center' }}>
+              <div className="px-eyebrow">Escaneie com o app do seu banco</div>
               <img
                 src={`data:image/png;base64,${charge.pixQrCode}`}
                 alt="QR Code do Pix para pagamento"
@@ -176,58 +192,40 @@ export const Checkout = ({ go, orderId }: CheckoutProps) => {
                   background: '#fff',
                 }}
               />
-            </div>
+            </Card>
           )}
 
           {/* Copia e cola */}
           {charge.pixPayload && (
-            <div className="pg-card pg-card--padded">
-              <div className="pg-h-eyebrow">OU USE O PIX COPIA E COLA</div>
-              <div
-                className="pg-mono"
-                style={{
-                  fontSize: 11,
-                  color: 'var(--text-mute)',
-                  wordBreak: 'break-all',
-                  background: 'var(--ink-100)',
-                  padding: 12,
-                  borderRadius: 10,
-                  margin: '10px 0 12px',
-                  maxHeight: 96,
-                  overflow: 'auto',
-                }}
+            <Card>
+              <div className="px-eyebrow">Ou use o Pix copia e cola</div>
+              <div className="px-pix-payload px-data">{charge.pixPayload}</div>
+              <Button
+                variant="primary"
+                block
+                iconStart={copied ? 'check' : 'copy'}
+                onClick={() => void copy()}
               >
-                {charge.pixPayload}
-              </div>
-              <button className="pg-btn pg-btn--accent" style={{ width: '100%' }} onClick={copy}>
-                <Icon name={copied ? 'check' : 'copy'} size={16} />
                 {copied ? 'Código copiado' : 'Copiar código Pix'}
-              </button>
-            </div>
+              </Button>
+            </Card>
           )}
 
           {/* Espera */}
-          <div
-            className="pg-row"
-            style={{
-              gap: 10,
-              padding: 14,
-              borderRadius: 12,
-              background: 'var(--ink-100)',
-              alignItems: 'flex-start',
-            }}
-          >
-            <Icon name="clock" size={18} />
-            <div style={{ fontSize: 13, color: 'var(--text-mute)', lineHeight: 1.5 }}>
-              Assim que o banco confirmar, esta tela muda sozinha — pode deixar aberta. O prestador
-              só é acionado depois da confirmação.
+          <Card tone="flat">
+            <div className="px-row px-row--top">
+              <Icon name="clock" size={18} style={{ color: 'var(--x-ink-dim)', flexShrink: 0 }} />
+              <p className="px-opt-s" style={{ marginTop: 0 }}>
+                Assim que o banco confirmar, esta tela muda sozinha — pode deixar aberta. O
+                transportador só é acionado depois da confirmação.
+              </p>
             </div>
-          </div>
+          </Card>
 
-          <button className="pg-btn pg-btn--ghost" onClick={() => go('history-list')}>
+          <Button variant="quiet" block onClick={() => go('pedidos')}>
             Pagar depois
-          </button>
-        </div>
+          </Button>
+        </>
       )}
     </Shell>
   );
@@ -236,58 +234,13 @@ export const Checkout = ({ go, orderId }: CheckoutProps) => {
 // ---------------------------------------------------------------------
 function Shell({ go, title, children }: { go: GoFn; title: string; children: React.ReactNode }) {
   return (
-    <div className="pg-screen" data-screen-label="P1 Checkout Pix">
-      <StatusBar />
-      <TopBar onBack={() => go('history-list')} title={title} />
-      <div className="pg-viewport">{children}</div>
-    </div>
-  );
-}
-
-function Message({
-  icon,
-  title,
-  body,
-  action,
-  tone,
-}: {
-  icon: string;
-  title: string;
-  body: string;
-  action?: { label: string; onClick: () => void };
-  tone?: 'success';
-}) {
-  return (
-    <div
-      style={{
-        padding: '56px 28px',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        textAlign: 'center',
-        gap: 12,
-      }}
-    >
-      <div
-        style={{
-          width: 64,
-          height: 64,
-          borderRadius: '50%',
-          display: 'grid',
-          placeItems: 'center',
-          background: tone === 'success' ? 'var(--green-500)' : 'var(--ink-100)',
-        }}
-      >
-        <Icon name={icon} size={28} />
-      </div>
-      <h2 style={{ fontSize: 20, margin: 0 }}>{title}</h2>
-      <p style={{ color: 'var(--text-mute)', fontSize: 14, margin: 0, lineHeight: 1.5 }}>{body}</p>
-      {action && (
-        <button className="pg-btn pg-btn--accent" style={{ marginTop: 8 }} onClick={action.onClick}>
-          {action.label}
-        </button>
-      )}
-    </div>
+    <Screen label="Checkout Pix">
+      <header className="px-head px-head--sticky">
+        <IconButton icon="arrow-left" label="Voltar" onClick={() => go('pedidos')} />
+        <div className="px-head-title">{title}</div>
+      </header>
+      <Body>{children}</Body>
+    </Screen>
   );
 }
 

@@ -35,16 +35,75 @@ export function guessCity(address: string | undefined): string | null {
     .split(',')
     .map((p) => p.trim())
     .filter(Boolean);
-  return parts.length >= 2 ? (parts[parts.length - 1] ?? null) : null;
+  if (parts.length < 2) return null;
+
+  const last = parts[parts.length - 1] ?? null;
+  if (!last) return null;
+
+  // "Rua da Obra, 500" tem duas partes e a última é o NÚMERO, não a cidade.
+  // Sem esta guarda, `origin_city = '500'` — e o pedido some de todo filtro
+  // por região, porque nenhum prestador atende a cidade "500".
+  if (/^[\d\s.\-/º°]+$/.test(last)) return null;
+
+  return last;
+}
+
+/**
+ * Cidade e UF do pedido, preferindo o dado estruturado do Places.
+ *
+ * `guessCity` sempre foi um substituto declarado: "pega o penúltimo trecho
+ * separado por vírgula". Erra em endereço sem vírgula, em rodovia com km, e em
+ * qualquer coisa que o usuário digite fora do padrão — e uma cidade errada faz
+ * o pedido aparecer para prestadores da região errada.
+ *
+ * Com o Places ligado, `originCity` vem do `administrative_area_level_2` do
+ * Google. A heurística fica como caminho de exceção: sem chave, é o que existe.
+ */
+export function localityFor(
+  service: ServiceType,
+  s: PagoraState,
+): {
+  originCity: string | null;
+  originState: string | null;
+  destCity: string | null;
+  destState: string | null;
+} {
+  const { origin, dest } = addressesFor(service, s);
+
+  const originCity = s.originCity ?? guessCity(origin);
+  const originState = s.originState ?? null;
+
+  // Caçamba é UM endereço só: entrega e retirada no mesmo lugar. O destino
+  // espelha a origem em vez de ser recalculado — recalcular a partir do mesmo
+  // texto podia dar resultado diferente do dado estruturado do Places, e o
+  // pedido saía com origem em "Santo André" e destino em "500".
+  if (service === 'cacamba') {
+    return { originCity, originState, destCity: originCity, destState: originState };
+  }
+
+  return {
+    originCity,
+    originState,
+    destCity: s.destCity ?? guessCity(dest),
+    destState: s.destState ?? null,
+  };
 }
 
 /** Endereço de origem e destino conforme o fluxo — cada um usa campos próprios. */
-function addressesFor(service: ServiceType, s: PagoraState) {
+export function addressesFor(service: ServiceType, s: PagoraState) {
   switch (service) {
     case 'frete':
       return { origin: s.origin, dest: s.dest };
     case 'guincho':
-      return { origin: s.location ?? s.currentLoc, dest: s.destAddr };
+      // `currentLoc` é o endereço onde o veículo está parado. `location` é o
+      // TIPO DE ACESSO ('rua' | 'garagem' | 'dificil' | 'expressa') — entra no
+      // preço, nunca no endereço.
+      //
+      // A ordem estava invertida (`s.location ?? s.currentLoc`), então todo
+      // pedido de guincho gravava "rua" ou "garagem" como origem e saía com
+      // `origin_city = null`: `guessCity('rua')` não acha vírgula. O efeito
+      // vivo era o prestador de guincho não conseguir filtrar por região.
+      return { origin: s.currentLoc, dest: s.destAddr };
     case 'cacamba':
       // Caçamba é entrega e retirada no mesmo endereço.
       return { origin: s.address, dest: s.address };
@@ -62,7 +121,7 @@ function addressesFor(service: ServiceType, s: PagoraState) {
 export async function publishServiceRequest(
   input: PublishInput,
 ): Promise<Tables<'service_requests'>> {
-  const { origin, dest } = addressesFor(input.service, input.state);
+  const locality = localityFor(input.service, input.state);
 
   const scheduledFor =
     input.state.scheduledDate && input.state.scheduledTime
@@ -75,8 +134,10 @@ export async function publishServiceRequest(
       client_id: input.clientId,
       service: input.service,
       payload: input.state as never,
-      origin_city: guessCity(origin),
-      dest_city: guessCity(dest),
+      origin_city: locality.originCity,
+      origin_state: locality.originState,
+      dest_city: locality.destCity,
+      dest_state: locality.destState,
       scheduled_for: scheduledFor,
       estimate_low_cents: input.estimate?.lowCents ?? null,
       estimate_high_cents: input.estimate?.highCents ?? null,
