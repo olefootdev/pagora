@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 import { Icon } from './icons';
 import type { ScreenProps } from './types';
 import { supabase } from './lib/supabase';
+import { loadErrorMessage } from './lib/timeout';
 import { track } from './lib/analytics';
 
 // =====================================================================
@@ -277,9 +278,13 @@ const WaitlistCapture = () => {
       setStatus('ok');
     } catch (err) {
       setStatus('err');
-      const msg = err instanceof Error ? err.message : 'Tente novamente';
-      // Mensagem amigável pra duplicado (constraint unique)
-      setErrorMsg(/duplicate|unique/i.test(msg) ? 'Esse contato já está na lista.' : msg);
+      // O `message` cru do Supabase é inglês técnico — "Failed to fetch" com
+      // o backend fora do ar. O duplicado continua tendo texto próprio: é o
+      // único caso em que a pessoa precisa saber que já se cadastrou.
+      const raw = err instanceof Error ? err.message : '';
+      setErrorMsg(
+        /duplicate|unique/i.test(raw) ? 'Esse contato já está na lista.' : loadErrorMessage(err),
+      );
     }
   };
 

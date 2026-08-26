@@ -1,4 +1,5 @@
 import { supabase } from './supabase';
+import { loadErrorMessage } from './timeout';
 
 // =====================================================================
 // PAGORA — Auth helpers (OTP via SMS)
@@ -41,4 +42,47 @@ export async function ensureProfile() {
 export async function signOut() {
   const { error } = await supabase.auth.signOut();
   if (error) throw error;
+}
+
+/**
+ * Mensagem de erro da porta de entrada.
+ *
+ * A tela Entrar mostrava `e.message` cru. Com o backend fora do ar isso vira
+ * **"Failed to fetch"** em inglês, na primeira tela que a pessoa vê — foi
+ * assim que este bug apareceu, verificado contra o projeto pausado.
+ *
+ * O supabase-js devolve as mensagens de auth em inglês, sempre. Traduzir aqui
+ * é o mesmo padrão de `translateReviewError` e `translateDisputeError`: cada
+ * domínio traduz o que só ele sabe interpretar, e delega o resto para
+ * `loadErrorMessage`, que já cuida de rede e sessão.
+ */
+export function authErrorMessage(error: unknown): string {
+  const raw = error instanceof Error ? error.message : String(error ?? '');
+
+  // Código errado e código vencido chegam na MESMA mensagem do Supabase.
+  // Separá-los exigiria adivinhar; dizer as duas possibilidades é honesto e
+  // já indica a saída (pedir outro).
+  if (/token has expired|invalid token|otp.*(expired|invalid)|invalid.*otp/i.test(raw)) {
+    return 'Código incorreto ou expirado. Peça um novo código.';
+  }
+
+  // O Supabase limita reenvio por segurança e devolve o tempo em segundos.
+  const espera = raw.match(/only request this after (\d+) seconds?/i);
+  if (espera) {
+    return `Aguarde ${espera[1]} segundos para pedir outro código.`;
+  }
+  if (/rate limit|too many requests/i.test(raw)) {
+    return 'Muitas tentativas seguidas. Espere um minuto e tente de novo.';
+  }
+
+  if (/invalid phone|phone.*invalid/i.test(raw)) {
+    return 'Número inválido. Confira o DDD e os 9 dígitos.';
+  }
+
+  if (/sms|provider|twilio|messagebird/i.test(raw)) {
+    return 'Não conseguimos enviar o SMS agora. Tente de novo em instantes.';
+  }
+
+  // Rede, sessão e o resto: um lugar só, o mesmo do resto do app.
+  return loadErrorMessage(error);
 }

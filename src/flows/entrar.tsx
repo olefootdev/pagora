@@ -23,7 +23,7 @@
 import { useRef, useState } from 'react';
 import { Body, Button, Dock, ErrorNote, Field, Screen, cx } from '../ui/kit';
 import { Icon } from '../icons';
-import { signInWithPhone, verifyOtp } from '../lib/auth';
+import { authErrorMessage, signInWithPhone, verifyOtp } from '../lib/auth';
 import { isValidMobilePhone, maskPhone } from '../domains/validation/br';
 import { track } from '../lib/analytics';
 import type { GoFn } from '../types';
@@ -51,7 +51,7 @@ export const Entrar = ({ go }: { go: GoFn }) => {
       // O foco vai para o código no próximo quadro, quando o campo existir.
       setTimeout(() => codeInput.current?.focus(), 50);
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Falha ao enviar o código');
+      setError(authErrorMessage(e));
     } finally {
       setLoading(false);
     }
@@ -67,7 +67,7 @@ export const Entrar = ({ go }: { go: GoFn }) => {
       // valor já mora lá. Slides entre o código e a primeira ação eram custo.
       go('inicio');
     } catch (e) {
-      setError(e instanceof Error ? e.message : 'Código inválido');
+      setError(authErrorMessage(e));
     } finally {
       setLoading(false);
     }
