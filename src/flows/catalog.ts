@@ -15,7 +15,7 @@
 
 import type { VehicleType } from '../domains/pricing/frete-pricing';
 import type { NeedKind } from '../domains/intent/intent';
-import { BauArt, CacambaArt, TruckArt, VanArt } from '../ui/art';
+import { BauArt, TruckArt, VanArt } from '../ui/art';
 
 // ---------------------------------------------------------------------
 // VEÍCULOS
@@ -102,8 +102,6 @@ export const CACAMBA_SIZES: CacambaSpec[] = [
   { m3: 5, fits: 'Banheiro e cozinha, obra média', weight: 'até 4 t' },
   { m3: 8, fits: 'Demolição, limpeza de terreno', weight: 'até 6 t' },
 ];
-
-export const CacambaSizeArt = CacambaArt;
 
 export const CACAMBA_PERIODS = [
   { id: 1, label: '1 dia', sub: 'Retirada no mesmo dia' },

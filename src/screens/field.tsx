@@ -131,59 +131,5 @@ export const Field = ({
   );
 };
 
-/** Grupo de checkboxes com o mesmo tratamento de erro. */
-export const CheckboxGroup = <T extends string>({
-  label,
-  options,
-  value,
-  onChange,
-  error,
-}: {
-  label: string;
-  options: readonly { value: T; label: string }[];
-  value: T[];
-  onChange: (next: T[]) => void;
-  error?: string | undefined;
-}) => {
-  const id = useId();
-  const errorId = `${id}-error`;
-
-  return (
-    <fieldset
-      style={{ border: 0, padding: 0, margin: 0, display: 'grid', gap: 8 }}
-      aria-invalid={error ? true : undefined}
-      aria-describedby={error ? errorId : undefined}
-    >
-      <legend style={{ fontSize: 13, color: 'var(--text-mute)', padding: 0 }}>{label}</legend>
-      <div className="pg-row" style={{ gap: 8, flexWrap: 'wrap' }}>
-        {options.map((option) => {
-          const checked = value.includes(option.value);
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="checkbox"
-              aria-checked={checked}
-              className={`pg-btn pg-btn--sm ${checked ? 'pg-btn--accent' : 'pg-btn--ghost'}`}
-              onClick={() =>
-                onChange(
-                  checked ? value.filter((v) => v !== option.value) : [...value, option.value],
-                )
-              }
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-      {error && (
-        <span id={errorId} role="alert" style={{ fontSize: 12, color: 'var(--red-500, #e5484d)' }}>
-          {error}
-        </span>
-      )}
-    </fieldset>
-  );
-};
-
 /** Reexport: telas que montam payload precisam do valor sem máscara. */
 export { onlyDigits };

@@ -150,15 +150,15 @@ export const Rail = ({ step, total }: { step: number; total: number }) => {
 // TIPOGRAFIA
 // =====================================================================
 
-export const Eyebrow = ({ children }: { children: ReactNode }) => (
+const Eyebrow = ({ children }: { children: ReactNode }) => (
   <div className="px-eyebrow">{children}</div>
 );
 
-export const Title = ({ children, small = false }: { children: ReactNode; small?: boolean }) => (
+const Title = ({ children, small = false }: { children: ReactNode; small?: boolean }) => (
   <h1 className={cx('px-title', small && 'px-title--sm')}>{children}</h1>
 );
 
-export const Sub = ({ children }: { children: ReactNode }) => <p className="px-sub">{children}</p>;
+const Sub = ({ children }: { children: ReactNode }) => <p className="px-sub">{children}</p>;
 
 export const SectionTitle = ({ children, id }: { children: ReactNode; id?: string }) => (
   <h2 className="px-sectitle" id={id}>
@@ -386,30 +386,6 @@ export const Option = ({
       ) : selected ? (
         <Icon name="check-circle" size={20} />
       ) : null}
-    </span>
-  </button>
-);
-
-export const Tile = ({
-  title,
-  sub,
-  icon,
-  art,
-  onClick,
-}: {
-  title: ReactNode;
-  sub?: ReactNode;
-  icon?: string;
-  art?: ReactNode;
-  onClick: () => void;
-}) => (
-  <button className="px-tile" onClick={onClick}>
-    <span className="px-tile-art" aria-hidden="true">
-      {art ?? (icon ? <Icon name={icon} size={21} /> : null)}
-    </span>
-    <span>
-      <span className="px-tile-t">{title}</span>
-      {sub && <span className="px-tile-s">{sub}</span>}
     </span>
   </button>
 );

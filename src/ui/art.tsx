@@ -170,123 +170,6 @@ export const CacambaArt = ({ m3 = 5, ...p }: ArtProps & { m3?: number }) => {
 };
 
 // ---------------------------------------------------------------------
-// CARGA — o que está sendo transportado
-// ---------------------------------------------------------------------
-
-const CargoFrame = ({
-  size = 40,
-  className,
-  children,
-}: ArtProps & { children: React.ReactNode }) => (
-  <svg
-    width={size}
-    height={size}
-    viewBox="0 0 32 32"
-    fill="none"
-    className={className}
-    aria-hidden="true"
-    focusable="false"
-  >
-    {children}
-  </svg>
-);
-
-const cbody = {
-  fill: 'currentColor',
-  style: { opacity: 'var(--x-art-fill, 0.16)' },
-  stroke: 'currentColor',
-  strokeWidth: 1.5,
-};
-
-/** Mudança — sofá. É o objeto que as pessoas citam quando pedem mudança. */
-export const MudancaArt = (p: ArtProps) => (
-  <CargoFrame {...p}>
-    <path d="M5 14v-3a2 2 0 0 1 2-2h18a2 2 0 0 1 2 2v3" {...cbody} />
-    <rect x="3" y="13.5" width="26" height="8.5" rx="2.2" {...cbody} />
-    <path d="M9 14v-3.5M23 14v-3.5" stroke="currentColor" strokeWidth="1.3" opacity=".5" />
-    <path d="M6 22v3M26 22v3" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </CargoFrame>
-);
-
-/** Entulho — pilha com escombro. Não é caixa, e a diferença importa. */
-export const EntulhoArt = (p: ArtProps) => (
-  <CargoFrame {...p}>
-    <path d="M3 24l6-9 5 5 4-7 5 6 6 5H3Z" {...cbody} />
-    <path
-      d="M10.5 12.5l2-2.5 2.5 2M21 9.5l1.8-2 2.2 1.6"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      opacity=".6"
-    />
-    <path d="M2 24h28" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" />
-  </CargoFrame>
-);
-
-/** Material de construção — tijolos empilhados no pallet. */
-export const MaterialArt = (p: ArtProps) => (
-  <CargoFrame {...p}>
-    <rect x="6" y="9" width="9" height="5" rx=".8" {...cbody} />
-    <rect x="17" y="9" width="9" height="5" rx=".8" {...cbody} />
-    <rect x="6" y="15.5" width="9" height="5" rx=".8" {...cbody} />
-    <rect x="17" y="15.5" width="9" height="5" rx=".8" {...cbody} />
-    <path
-      d="M3 22.5h26M6 22.5V26M26 22.5V26"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinecap="round"
-    />
-  </CargoFrame>
-);
-
-/** Carga geral — caixas e volumes. */
-export const CargaArt = (p: ArtProps) => (
-  <CargoFrame {...p}>
-    <rect x="4" y="13" width="12" height="11" rx="1.4" {...cbody} />
-    <rect x="17" y="8" width="11" height="16" rx="1.4" {...cbody} />
-    <path d="M10 13v11M22.5 8v16" stroke="currentColor" strokeWidth="1.2" opacity=".5" />
-    <path
-      d="M7.5 16.5h5M20 12h5"
-      stroke="currentColor"
-      strokeWidth="1.4"
-      strokeLinecap="round"
-      opacity=".6"
-    />
-  </CargoFrame>
-);
-
-/** Veículo — para guincho. */
-export const CarroArt = (p: ArtProps) => (
-  <CargoFrame {...p}>
-    <path
-      d="M4 20v-3.5c0-.8.4-1.4 1.2-1.7l2.3-.8 3-4.4c.4-.6 1-.9 1.8-.9h7.6c.7 0 1.3.3 1.7.9l3 4.4 2.3.8c.8.3 1.2.9 1.2 1.7V20H4Z"
-      {...cbody}
-    />
-    <path d="M10.5 14h11l-2.3-3.6h-6.4L10.5 14Z" fill="currentColor" opacity=".45" />
-    <circle cx="9.5" cy="20.5" r="2.6" fill="currentColor" opacity=".9" />
-    <circle cx="22.5" cy="20.5" r="2.6" fill="currentColor" opacity=".9" />
-  </CargoFrame>
-);
-
-/** Máquina / equipamento pesado. */
-export const MaquinaArt = (p: ArtProps) => (
-  <CargoFrame {...p}>
-    <rect x="4" y="13" width="12" height="8" rx="1.4" {...cbody} />
-    <path
-      d="M16 15l6-6h4"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-    />
-    <path d="M24 8.5l4 3.5-3.5 3-3.5-3 3-3.5Z" {...cbody} />
-    <path d="M3 24.5h26" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
-    <circle cx="8.5" cy="21.5" r="2.2" fill="currentColor" opacity=".85" />
-    <circle cx="14" cy="21.5" r="2.2" fill="currentColor" opacity=".85" />
-  </CargoFrame>
-);
-
-// ---------------------------------------------------------------------
 // Registros — para as telas montarem catálogo sem repetir o switch
 // ---------------------------------------------------------------------
 
@@ -297,15 +180,6 @@ export const VEHICLE_ART: Record<string, (p: ArtProps) => React.ReactElement> = 
   carreta: CarretaArt,
   guincho: GuinchoArt,
   cacamba: CacambaArt,
-};
-
-export const CARGO_ART: Record<string, (p: ArtProps) => React.ReactElement> = {
-  mudanca: MudancaArt,
-  entulho: EntulhoArt,
-  material: MaterialArt,
-  carga: CargaArt,
-  carro: CarroArt,
-  maquina: MaquinaArt,
 };
 
 // ---------------------------------------------------------------------
