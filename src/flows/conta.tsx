@@ -26,6 +26,7 @@ import { ClientNav } from '../ui/area';
 import { Icon } from '../icons';
 import { initialsOf } from '../domains/providers/provider.service';
 import { useProfile } from '../hooks/useProfile';
+import { formatPhoneForDisplay } from '../domains/validation/br';
 import { useSession } from '../hooks/useSession';
 import { supabase } from '../lib/supabase';
 import type { GoFn } from '../types';
@@ -86,6 +87,13 @@ export const Conta = ({ go }: { go: GoFn }) => {
 
   const linhas: Linha[] = [
     {
+      id: 'dados',
+      label: 'Meus dados',
+      sub: 'Nome e cidade',
+      icon: 'user',
+      onClick: () => go('meus-dados'),
+    },
+    {
       id: 'rede',
       label: 'Minha Rede',
       sub: 'Seu link e quanto rende cada indicação',
@@ -133,7 +141,7 @@ export const Conta = ({ go }: { go: GoFn }) => {
               {profile?.full_name || 'Sua conta'}
             </div>
             <div className="px-data" style={{ color: 'var(--x-ink-dim)', marginTop: 3 }}>
-              {profile?.phone ?? user?.phone ?? ''}
+              {formatPhoneForDisplay(profile?.phone ?? user?.phone ?? '')}
             </div>
           </div>
           {profile?.role === 'provider' && <Chip tone="on">Transportador</Chip>}

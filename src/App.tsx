@@ -3,6 +3,8 @@ import { Suspense, lazy, useEffect, type ComponentType } from 'react';
 
 import { resolveRoute } from './routes';
 import { parseReferral, rememberReferral } from './domains/referral/referral';
+import { needsOnboarding } from './domains/profile/profile.service';
+import { useProfile } from './hooks/useProfile';
 import type { GoFn } from './types';
 
 // `core` fica ESTÁTICO: a landing é a primeira pintura e o Logo é usado pelo
@@ -59,6 +61,7 @@ const MinhaRede = lazyFrom(() => import('./flows/minha-rede'), 'MinhaRede');
 const Comprovante = lazyFrom(() => import('./flows/comprovante'), 'Comprovante');
 const Avaliar = lazyFrom(() => import('./flows/avaliar'), 'Avaliar');
 const Disputa = lazyFrom(() => import('./flows/disputa'), 'Disputa');
+const MeusDados = lazyFrom(() => import('./flows/meus-dados'), 'MeusDados');
 const CadastroTransportador = lazyFrom(
   () => import('./flows/cadastro-transportador'),
   'CadastroTransportador',
@@ -91,6 +94,8 @@ const AdminFinanceiro = lazyFrom(() => import('./screens/admin-financeiro'), 'Ad
 const NEW_CLIENT_SCREENS = new Set([
   'inicio',
   'minha-rede',
+  'meus-dados',
+  'boas-vindas',
   'comprovante',
   'avaliar',
   'pedido',
@@ -141,6 +146,27 @@ function AppShell() {
 
   // Rota derivada do path. Em HashRouter o pathname já vem sem o '#'.
   const { route, slug } = resolveRoute(location.pathname);
+
+  // ---------------------------------------------------------------
+  // Portão de apresentação
+  // ---------------------------------------------------------------
+  // `ensure_profile` cria a linha sem `full_name`, e até agora nada pedia o
+  // nome. Quem já tem sessão aberta hoje está exatamente nesse estado — por
+  // isso o portão vive aqui, e não na saída do login: gatilho no login só
+  // pegaria quem entrasse de novo.
+  //
+  // Ele só vale para a área de dentro. Landing, termos e a própria tela de
+  // boas-vindas seguem livres, senão o app se tranca fora de si mesmo.
+  const { profile } = useProfile();
+  const areaInterna =
+    NEW_CLIENT_SCREENS.has(route) || NEW_PROVIDER_SCREENS.has(route) || route === 'chat';
+  const precisaApresentar =
+    needsOnboarding(profile) && areaInterna && route !== 'boas-vindas' && route !== 'meus-dados';
+
+  useEffect(() => {
+    // `replace`: as boas-vindas não são um lugar para onde voltar.
+    if (precisaApresentar) navigate('/boas-vindas', { replace: true });
+  }, [precisaApresentar, navigate]);
   const params = (location.state as Record<string, unknown> | null) || {};
 
   const go: GoFn = (next, p = {}) => {
@@ -198,6 +224,10 @@ function AppShell() {
         return <Conta go={go} />;
       case 'minha-rede':
         return <MinhaRede go={go} />;
+      case 'meus-dados':
+        return <MeusDados go={go} />;
+      case 'boas-vindas':
+        return <MeusDados go={go} welcome />;
       case 'comprovante':
         return <Comprovante go={go} orderId={slug} />;
       case 'avaliar':

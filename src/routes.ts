@@ -37,6 +37,8 @@ export const ALL_SCREENS = [
   'pedidos',
   'avisos',
   'conta',
+  'meus-dados',
+  'boas-vindas',
   'minha-rede',
   'perto',
   'parceiro',

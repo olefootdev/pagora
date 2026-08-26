@@ -31,6 +31,10 @@ export type AnalyticsEvent =
   // telefone → código → sessão é o que diz se o custo está virando conta.
   | 'otp_enviado'
   | 'login_ok'
+  // Apresentação: a taxa entre `login_ok` e `onboarding_concluido` é o custo
+  // real de pedir o nome — se cair muito, o passo está pedindo demais.
+  | 'onboarding_concluido'
+  | 'perfil_editado'
   // Recompra: a taxa de repetição é a métrica que diz se o marketplace
   // fideliza ou se cada pedido é um cliente novo.
   | 'pedido_repetido'
