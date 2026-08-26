@@ -1,5 +1,11 @@
 # PAGORA — Estado da sessão (handoff)
 
+> 📄 **Começando agora?** Leia primeiro
+> [`docs/status-refatoracao-2026-08-25.md`](docs/status-refatoracao-2026-08-25.md).
+> Ele tem o estado da refatoração de UI/UX, a decisão que está aberta esperando
+> o dono do produto, e as armadilhas que já custaram tempo nesta sessão.
+> **Nada da refatoração foi commitado** — 34 arquivos na árvore de trabalho.
+
 > Última atualização: **14/08/2026**. Núcleo transacional (Pix + ledger + saque)
 > implementado no código; **falta aplicar as migrations e configurar o Asaas**.
 
@@ -134,6 +140,238 @@ conta bancária.
 código. As telas novas são as únicas que falam com o banco; cada painel antigo
 ganhou um botão levando à versão real. Unificar as duas é o trabalho que resta
 depois de ligar o fluxo de descoberta (criar pedido → receber propostas).
+
+---
+
+### FASE 8 — Refatoração de UI/UX (agosto/2026)
+
+> Auditoria completa do que existia, seguida da jornada nova. Decisão do
+> usuário em 25/08: **convivência** (nada some antes da substituta existir) e
+> **verde como cor de ação**, laranja reservado para urgência.
+
+**Sistema visual novo — `src/ui/`**
+
+- `tokens.css`: escuro por padrão, escopado em `.pgx`. Não vaza para as telas
+  antigas — por isso as 51 rotas continuam no ar sem alteração.
+- `kit.tsx`: primitivos em React (`Button`, `Card`, `Field`, `Option`, `Sheet`,
+  `Chip`, `Num`, `Timeline`, `RouteLine`…). Acaba o estilo inline
+  sobrescrevendo classe, que era o sintoma de classe que nunca cobriu a
+  variante necessária.
+- `art.tsx`: silhuetas de veículo e caçamba com **escala real compartilhada** —
+  a van ocupa metade da carreta na tela porque ocupa metade dela na rua. A
+  caçamba de 3 m³ é desenhada menor que a de 8 m³.
+- `area.tsx`: uma barra por área (cliente / prestador), em vez de uma barra
+  servindo 37 rotas.
+- Tipografia: **Archivo** (display) + **IBM Plex Sans** (corpo) + **IBM Plex
+  Mono** (dado). Sai a Nunito, arredondada e com voz de app de delivery.
+
+**Jornada nova — `src/flows/`**
+
+Seis telas viram três. Toque na opção avança (não existe "Continuar"
+desabilitado esperando escolha); veículo, ajudante e acesso viram detalhes
+opcionais com padrão inferido pelo tipo de carga.
+
+| Rota                         | O que é                                                 |
+| ---------------------------- | ------------------------------------------------------- |
+| `/inicio`                    | Abre pela pergunta, não pelo saldo da carteira          |
+| `/pedido/:necessidade`       | Três passos: o quê → onde → quem pode fazer             |
+| `/escolher/:requestId`       | Propostas ao vivo, com rótulo de recomendação           |
+| `/acompanhar/:orderId`       | Mapa protagonista, timeline, segurança                  |
+| `/pedidos` `/conta` `/perto` | Área do cliente                                         |
+| `/parceiro*`                 | Casa do prestador: oportunidades, viagem, ganhos, conta |
+
+**Domínio novo — testado**
+
+- `domains/intent/`: lê texto livre ("preciso retirar 3 toneladas de entulho")
+  e devolve a necessidade com os termos que a justificam. Tabela de vocabulário
+  legível, **não** classificador estatístico.
+- `domains/orders/recommend.ts`: rótulos "mais rápido / melhor custo-benefício /
+  mais econômico". Regra inegociável: **empate não produz vencedor**, e o
+  rótulo perdido NÃO desce para a segunda colocada.
+- `domains/pricing/service-pricing.ts`: guincho e caçamba saíram de
+  `extra.tsx`, em centavos, **sem fallback silencioso** e com os mesmos
+  números que já estavam no ar.
+- `domains/providers/`: lista de prestadores aprovados de verdade.
+- `lib/timeout.ts`: limite de espera e tradução de erro de rede.
+- `routes.ts`: resolução de rota com segmento, testável fora do router.
+
+**Bugs corrigidos no caminho**
+
+1. **Guincho gravava o tipo de acesso como endereço.** `addressesFor` usava
+   `s.location ?? s.currentLoc`, e `location` é `'rua' | 'garagem' | …`. Todo
+   pedido de guincho saía com `origin_city = null` e o prestador não conseguia
+   filtrar por região. Coberto por regressão.
+2. **Sem rede, a tela ficava em esqueleto para sempre.** Descoberto verificando
+   com o host do Supabase inacessível. O usuário do Pagora está numa obra —
+   sinal ruim é o estado normal. Agora há limite de 15 s, mensagem que diz o
+   que houve e botão de tentar de novo.
+3. **`[object Object]` na tela.** O supabase-js rejeita com objeto simples, não
+   `Error`. `loadErrorMessage` normaliza num lugar só.
+4. **Cascata de CSS.** `.pgx button { color: inherit }` vale (0,1,1) e vencia
+   `.px-btn--primary` (0,1,0): dentro de um bloco de texto cinza, o rótulo do
+   botão verde ficava cinza sobre verde.
+5. **Dados de demonstração vazando para pedido real.** O `initialState` do
+   store trazia "Av. Paulista, 1000" e data 29/04/2026 — num fluxo que grava
+   pedido de verdade, endereço falso já preenchido é o pior padrão possível.
+6. **Code splitting desfeito.** `flows/pedido.tsx` era importado estática e
+   dinamicamente; o chunk do fluxo colava no de entrada. O type guard foi para
+   o domínio e o bundle de entrada caiu de 298 kB para 257 kB.
+7. **Diagnóstico errado.** Falha de rede aparecia como "não encontramos este
+   transporte" — mentira que vira ligação para o suporte.
+
+**Acessibilidade verificada, não presumida**
+
+Contraste AA medido com composição de alpha (todos passam), nenhum alvo de
+toque abaixo de 44 px, um `<h1>` por tela sem salto de nível, todo botão de
+ícone com nome acessível, todo campo com rótulo, estado nunca comunicado só
+por cor.
+
+**413 testes** (era 253), `tsc --noEmit` limpo, ESLint com 0 erros.
+
+**Sobretaxa de urgência do guincho: removida em 25/08/2026.** Era a última
+pendência comercial do escopo. `GUINCHO_URGENCY_SURCHARGE_CENTS = 0`, o teste
+que garantia o +50% foi invertido em vez de deletado, e a tela antiga
+(`extra.tsx`) foi alinhada junto — enquanto duas telas do mesmo serviço
+convivem, elas não podem discordar sobre preço. A regra agora é uma só nos
+três serviços: quem precisa agora paga o mesmo que quem agenda.
+
+---
+
+### FASE 9 — Distância real, mapa, aposentadoria e avisos (25/08/2026)
+
+Quatro frentes que **não dependem das migrations** — todas rodam contra o
+schema `0001`–`0004` que já está no ar.
+
+**1. Places Autocomplete e distância real**
+
+- `domains/geo/distance.ts` decide QUAL distância usar e registra COMO ela foi
+  obtida: rota real → linha reta corrigida → padrão do domínio. O rótulo do
+  extrato muda junto ("12,4 km por via" / "3,2 km aproximados" / "15,0 km
+  estimados"), porque esconder a diferença transforma estimativa em promessa
+  quebrada.
+- `URBAN_ROAD_FACTOR = 13/10` é escolha de modelagem, nomeada e testada, usada
+  **só** quando a rota real falha. Linha reta pura subestima todo trajeto
+  urbano de forma sistemática, e subestimar preço faz prestador recusar pedido.
+- `ui/address-field.tsx` + `hooks/usePlaces.ts`: com chave, sugere endereço e
+  grava coordenada, cidade e UF; **sem chave, é um input de texto comum** — o
+  comportamento de hoje, preservado inteiro. O SDK só carrega na tela de
+  endereço, não na landing: a chave é cobrada por carregamento.
+- `localityFor` passou a preferir o dado estruturado do Places à heurística
+  `guessCity`.
+
+  Efeito medido no navegador, no mesmo trajeto: **R$ 360,00 → R$ 218,40**.
+  Estava sendo cobrado como 15 km um percurso de 3.
+
+**2. Mapa real**
+
+- `PagoraMap` ganhou `colorScheme` (escuro — o mapa claro do Google sobre
+  `#0B0D0F` é um retângulo branco) e `fitToContent`, que enquadra a rota
+  inteira em vez de abrir centrado com zoom fixo.
+- `tripGeometry` monta marcadores e rota a partir do que o pedido guardou.
+  Caçamba tem um ponto só e **não** ganha rota inventada; pedido sem
+  coordenada cai na ilustração, e o texto alternativo diz isso.
+
+**3. Telas duplicadas aposentadas**
+
+`proposals`, `compare`, `history-list`, `provider-dash`, `admin-dash` e
+`prov-signup` saíram. `phase1.tsx` e `phase4.tsx` foram deletados; os
+componentes mortos saíram de `extra.tsx`, `other.tsx` e `cliente-mapa.tsx`.
+
+Aposentar **não foi deletar a rota**: `RETIRED_ROUTES` em `routes.ts`
+redireciona cada uma para a substituta, porque link de `#/history-list` já foi
+compartilhado por WhatsApp. Há teste garantindo que toda substituta existe e
+que nenhuma é, ela mesma, uma rota aposentada — senão vira laço.
+
+**4. Centro de avisos**
+
+- `domains/notifications/feed.ts` **deriva** os avisos das linhas que o usuário
+  já pode ler. Não cria tabela: o realtime de `quotes` e `orders` está ligado
+  desde a `0002`.
+- Regras que os testes protegem: propostas do mesmo pedido viram **um** aviso
+  (cinco cartões seriam spam do próprio app); `pending_payment` não avisa
+  (é o que o usuário acabou de causar); "a caminho" não avisa o prestador
+  (foi ele quem marcou).
+- O "lido" mora no `localStorage` por usuário — o único estado não derivável, e
+  barato demais para justificar migration.
+- Aba "Avisos" na barra do cliente, com selo de não lidos.
+
+**Bugs corrigidos no caminho**
+
+- `guessCity('Rua da Obra, 500')` devolvia `'500'` como cidade. Nenhum
+  prestador atende a cidade "500", então o pedido sumia de todo filtro por
+  região.
+- Caçamba gravava `dest_city` recalculado do mesmo texto da origem, podendo
+  divergir do dado estruturado. Agora o destino espelha a origem — é um
+  endereço só.
+- `providerNetCents` deriva o líquido do prestador quando a coluna da `0007`
+  não existe. Um `?? 0` mostrava "Você recebe R$ 0,00" num serviço de R$ 300.
+
+**476 testes** (era 416), `tsc` limpo, ESLint 0 erros.
+
+**Ainda depende da chave do Google:** sugestão de endereço, coordenada e rota
+real. Sem ela tudo degrada para o que o app já fazia — nada quebra, e a
+estimativa continua rotulada honestamente como estimada.
+
+---
+
+### FASE 10 — Home refeita em tema claro (25/08/2026)
+
+A crítica do usuário foi direta e correta: a refatoração passou pela home sem
+resolvê-la. Era uma pilha de blocos do mesmo peso — cabeçalho pequeno, campo,
+grade, card. Funcionava e não dizia nada.
+
+A nova copia a ESTRUTURA da referência de rastreio que o produto elegeu, com
+três diferenças que são do Pagora:
+
+1. **Fundo branco, hero em gradiente verde.** A referência é amarelo sobre
+   preto; aqui o contraste vem do verde saturado contra a página clara.
+2. **O hero tem TRÊS estados.** A primeira versão tinha dois, e isso era um
+   erro de concepção: "logado sem pedido" caía no estado de visitante, e quem
+   já era cliente levava o discurso de vendas de novo toda vez que abria o app.
+   Hoje são: visitante (proposta de valor + selos), cliente ocioso ("O que você
+   vai transportar hoje?" + atalho para as propostas pendentes) e cliente com
+   transporte em andamento (status, código e régua de quatro marcos — o estado
+   da referência). A referência do Behance **só sabe existir no terceiro**.
+3. **As duas pontas do marketplace na primeira tela.** Quem contrata acha pelos
+   círculos; quem quer ser contratado acha pela faixa escura. Estava enterrado
+   em Conta.
+
+O campo de busca fica ancorado por cima da borda do hero: lugar fixo, que não
+se move quando a laje troca de estado.
+
+**Tema claro por escopo de token.** `<Screen light>` acrescenta `.is-light`, que
+redefine os MESMOS tokens `--x-*`. Card, botão, chip e campo continuam sendo os
+componentes de sempre — eles nunca souberam a cor, só o nome dela. É assim que
+o resto do app vira claro quando for a hora: uma prop por tela, não uma
+reescrita.
+
+O verde muda de tom entre os temas de propósito: `#22e3a3` sobre branco dá
+1.9:1 e é ilegível. Claro usa `#08996f`. Mesma função, dois valores.
+
+**Bugs encontrados no caminho**
+
+- `--x-safe-t` **nunca existiu** — só `--x-safe-b`. Um token indefinido dentro
+  de um `padding` ABREVIADO invalida a declaração inteira: o hero perdia também
+  o recuo lateral e encostava nas bordas. O token agora existe, e ele importa
+  por si: o hero sangra até o topo e passa por baixo do recorte da câmera.
+- `useLiveOrder` fazia `setState` síncrono no corpo do efeito. Não era só
+  estilo: em troca de conta, o pedido do usuário anterior aparecia por um
+  quadro. Agora o resultado guarda de quem ele é e a leitura confere.
+- A arte de veículo preenche a 16% da cor, calibrada para fundo escuro. Sobre
+  claro virava fantasma — corrigido com regra que vence o atributo de
+  apresentação do SVG.
+
+**479 testes** (era 476), `tsc` limpo, ESLint 0 erros.
+
+Defeitos corrigidos depois de ver a área interna logada: o selo do sino cobria
+o próprio sino justamente quando havia aviso, e os cards de pedido saíam com os
+textos colados ("FreteAguardando propostas") — `<span>` sem `display: block`,
+o mesmo erro cometido três vezes nesta sessão.
+
+⚠️ **Inconsistência aberta, de propósito:** a home é clara e o resto do app
+continua escuro. Trocar de aba pisca entre os dois. O mecanismo para resolver
+está pronto (`<Screen light>`), mas converter as outras sete telas é decisão
+estética que ainda não foi tomada.
 
 ---
 
