@@ -73,7 +73,7 @@ Reconciliação de um branch GitHub que havia regredido (sessão paralela tinha 
 
 Substitui 1.062 linhas anteriores (cara de IA) por design editorial brutalista inspirado nas referências NURA e neo-bank fornecidas pelo cliente.
 
-- Canvas preto puro com type mix Plus Jakarta Sans 800 + **Instrument Serif italic** (palavras-acento como "Boa tarde, _Marina_.")
+- Canvas preto puro com type mix Plus Jakarta Sans 800 + **Instrument Serif italic** (palavras-acento como "Boa tarde, _Pagorina_.")
 - 7 primitivos visuais reutilizáveis: HEyebrow, HSectionLabel, HChunkyTag, HStatPill, HServiceTile, HProviderCard, HShortcutCard
 - Hierarquia da página: Greeting com nome italic + Wallet card · Hero 2 colunas (Map + Live order com "12min" em 52px) · Stat row com 4 pills · Services com arrow-circle · Providers grid · Atalhos · Promo "Indique e ganhe" com chunky tag lime e sombra hard
 - Grids responsivos: 4 colunas em desktop → 2 em tablet → 1 em mobile

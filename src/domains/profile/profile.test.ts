@@ -4,7 +4,7 @@ import { needsOnboarding, tidyName, validateProfile } from './profile.service';
 describe('validateProfile', () => {
   it('aceita só o primeiro nome — muita gente se apresenta assim', () => {
     // Exigir sobrenome trava o cadastro por preciosismo.
-    expect(validateProfile({ fullName: 'Marina' })).toEqual({});
+    expect(validateProfile({ fullName: 'Pagorina' })).toEqual({});
   });
 
   it('recusa nome vazio ou de uma letra', () => {
@@ -15,20 +15,20 @@ describe('validateProfile', () => {
 
   it('número em nome é telefone colado no campo errado', () => {
     expect(validateProfile({ fullName: '11987654321' }).fullName).toBe('Só o nome, sem números.');
-    expect(validateProfile({ fullName: 'Marina 2' }).fullName).toBeTruthy();
+    expect(validateProfile({ fullName: 'Pagorina 2' }).fullName).toBeTruthy();
   });
 
   it('cidade é opcional, mas se vier tem que estar inteira', () => {
-    expect(validateProfile({ fullName: 'Marina' }).city).toBeUndefined();
-    expect(validateProfile({ fullName: 'Marina', city: '' }).city).toBeUndefined();
-    expect(validateProfile({ fullName: 'Marina', city: 'S' }).city).toBeTruthy();
-    expect(validateProfile({ fullName: 'Marina', city: 'Santo André' }).city).toBeUndefined();
+    expect(validateProfile({ fullName: 'Pagorina' }).city).toBeUndefined();
+    expect(validateProfile({ fullName: 'Pagorina', city: '' }).city).toBeUndefined();
+    expect(validateProfile({ fullName: 'Pagorina', city: 'S' }).city).toBeTruthy();
+    expect(validateProfile({ fullName: 'Pagorina', city: 'Santo André' }).city).toBeUndefined();
   });
 
   it('UF precisa existir', () => {
-    expect(validateProfile({ fullName: 'Marina', state: 'SP' }).state).toBeUndefined();
-    expect(validateProfile({ fullName: 'Marina', state: 'sp' }).state).toBeUndefined();
-    expect(validateProfile({ fullName: 'Marina', state: 'XX' }).state).toBe('UF inválida.');
+    expect(validateProfile({ fullName: 'Pagorina', state: 'SP' }).state).toBeUndefined();
+    expect(validateProfile({ fullName: 'Pagorina', state: 'sp' }).state).toBeUndefined();
+    expect(validateProfile({ fullName: 'Pagorina', state: 'XX' }).state).toBe('UF inválida.');
   });
 
   it('acento não é número — nome brasileiro passa', () => {
@@ -42,7 +42,7 @@ describe('tidyName', () => {
   it('conserta o que o teclado do celular produz', () => {
     expect(tidyName('joão da silva')).toBe('João da Silva');
     expect(tidyName('JOÃO DA SILVA')).toBe('João da Silva');
-    expect(tidyName('  marina   alves  ')).toBe('Marina Alves');
+    expect(tidyName('  pagorina   alves  ')).toBe('Pagorina Alves');
   });
 
   it('partícula no começo é nome, não partícula', () => {
