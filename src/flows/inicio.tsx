@@ -21,10 +21,10 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { Body, Button, Chip, Screen, SectionTitle, Skeleton, cx } from '../ui/kit';
 import { Hero, HeroSeal } from '../ui/hero';
+import { SERVICO_FOTO } from '../ui/servico-foto';
 import { AnchorCard, type AnchorStrip } from '../ui/anchor-card';
 import { ClientNav } from '../ui/area';
 import { Icon } from '../icons';
-import { FLEET_ART } from '../ui/art';
 import { readIntent, type Need, type NeedKind } from '../domains/intent/intent';
 import { startingPriceCents } from '../domains/pricing/starting-price';
 import { listMyRequests } from '../domains/orders/request.service';
@@ -167,17 +167,30 @@ export const Inicio = ({ go }: { go: GoFn }) => {
                 <span style={{ fontSize: 11.5, color: 'var(--x-ink-dim)' }}>preços de partida</span>
               </div>
               <div className="px-fleet" style={{ marginTop: 14 }}>
-                {SHORTCUTS.map((s) => {
+                {SHORTCUTS.map((s, i) => {
                   const price = startingPriceCents(s.need);
-                  const Art = FLEET_ART[s.need];
+                  const foto = SERVICO_FOTO[s.need];
                   return (
                     <button
                       key={s.need}
                       className="px-fleet-card"
                       onClick={() => start(s.need, 'atalho')}
                     >
-                      <span aria-hidden="true">{Art ? <Art size={56} /> : null}</span>
-                      <span>
+                      {foto && (
+                        <img
+                          className="px-fleet-foto"
+                          src={foto}
+                          alt=""
+                          width={670}
+                          height={335}
+                          /* As duas primeiras estão logo abaixo do hero e
+                             entram na primeira tela; adiar o carregamento
+                             delas só produziria buraco verde. */
+                          loading={i < 2 ? 'eager' : 'lazy'}
+                          decoding="async"
+                        />
+                      )}
+                      <span className="px-fleet-veu">
                         <span className="px-fleet-name">{s.label}</span>
                         <span className={cx('px-fleet-price', price == null && 'is-quote')}>
                           {price != null

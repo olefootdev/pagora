@@ -2007,15 +2007,20 @@ button.px-chip {
    Silhueta sólida (linguagem de frota, não de vitrine) + o preço mínimo que
    o motor de preço do app calcula. Nunca número cravado em tela.
    ========================================================================== */
+/* Uma coluna. As fotos da frota são deitadas e o veículo atravessa o quadro
+   inteiro: em duas colunas o card fica quase quadrado e AMPUTA o caminhão —
+   medido, não suposto. Largura inteira é o que deixa o veículo legível. */
 .px-fleet {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: minmax(0, 1fr);
   gap: 10px;
 }
 
-@media (min-width: 520px) {
+/* Em tela larga voltam as colunas: lá o card tem largura de sobra e a foto
+   continua deitada. */
+@media (min-width: 560px) {
   .px-fleet {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 
@@ -2024,44 +2029,79 @@ button.px-chip {
   cursor: pointer;
   font-family: inherit;
   text-align: left;
-  background: var(--x-ground);
-  border: 1px solid var(--x-line);
+  position: relative;
+  overflow: hidden;
+  /* Reserva a altura antes de a foto chegar. Sem isto a lista pula a cada
+     imagem carregada, e o toque cai no card errado. */
+  aspect-ratio: 2 / 1;
+  /* O verde de fundo das fotos, para o card não piscar branco no carregamento
+     e para a borda arredondada não vazar claro por baixo do JPEG. */
+  background: #139677;
+  border: 0;
   border-radius: var(--x-r);
-  padding: 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 9px;
-  color: var(--x-ink);
+  padding: 0;
+  display: block;
+  color: #fff;
   transition:
-    border-color var(--x-t),
-    transform var(--x-t);
+    transform var(--x-t),
+    box-shadow var(--x-t);
 }
 .px-fleet-card:hover,
 .px-fleet-card:focus-visible {
-  border-color: var(--x-action-line);
+  box-shadow: 0 0 0 2px var(--x-action);
 }
 .px-fleet-card:active {
-  transform: scale(0.98);
+  transform: scale(0.985);
 }
 
+.px-fleet-foto {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+/* O véu existe para o texto ter contraste sobre QUALQUER parte da foto —
+   inclusive sobre a cabine branca, que é onde o texto cairia sem ele. */
+.px-fleet-veu {
+  position: absolute;
+  inset: auto 0 0 0;
+  padding: 12px 14px 13px;
+  display: grid;
+  gap: 2px;
+  background: linear-gradient(
+    to top,
+    rgba(2, 33, 25, 0.94) 0%,
+    rgba(2, 33, 25, 0.78) 46%,
+    rgba(2, 33, 25, 0) 100%
+  );
+}
+
+/* Sobre a foto o nome cresce: ele deixou de dividir o card com um vetor e
+   passou a ser a única coisa escrita ali. */
 .px-fleet-name {
   display: block;
   font-family: var(--x-display);
   font-weight: 700;
-  font-size: 14.5px;
-  letter-spacing: -0.015em;
+  font-size: 17px;
+  letter-spacing: -0.02em;
+  color: #fff;
 }
 
+/* O verde de ação não tem contraste sobre o véu escuro. Este é o mesmo verde
+   claro do hero, que foi feito exatamente para fundo escuro. */
 .px-fleet-price {
   display: block;
   font-family: var(--x-mono);
-  font-size: 11px;
+  font-size: 11.5px;
   font-weight: 600;
-  color: var(--x-action);
-  margin-top: 3px;
+  color: var(--x-hero-bright);
+  margin-top: 0;
 }
 .px-fleet-price.is-quote {
-  color: var(--x-ink-dim);
+  color: rgba(255, 255, 255, 0.72);
 }
 /* ==========================================================================
    FAIXA DO OUTRO LADO DO MARKETPLACE
