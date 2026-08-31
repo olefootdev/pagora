@@ -27,6 +27,7 @@ import { ClientNav } from '../ui/area';
 import { Icon } from '../icons';
 import { readIntent, type Need, type NeedKind } from '../domains/intent/intent';
 import { startingPriceCents } from '../domains/pricing/starting-price';
+import { orderCode } from '../domains/orders/order-code';
 import { listMyRequests } from '../domains/orders/request.service';
 import { findRepeatable, repeatLabel } from '../domains/orders/repeat';
 import { listMyOrders } from '../domains/orders/order.service';
@@ -291,12 +292,12 @@ const HeroEmAndamento = ({ go, order }: { go: GoFn; order: Tables<'orders'> }) =
           cursor: 'pointer',
           width: '100%',
         }}
-        aria-label={`Acompanhar pedido ${order.id.slice(0, 8)}`}
+        aria-label={`Acompanhar pedido ${orderCode(order.id)}`}
       >
         <span className="px-hero-tag">
           <Icon name="package" size={22} style={{ color: 'var(--x-action)', flexShrink: 0 }} />
           <span style={{ minWidth: 0, textAlign: 'left' }}>
-            <span className="px-hero-tag-code">#{order.id.slice(0, 8).toUpperCase()}</span>
+            <span className="px-hero-tag-code">{orderCode(order.id)}</span>
             <span className="px-hero-tag-lbl">Toque para acompanhar</span>
           </span>
         </span>

@@ -8,8 +8,15 @@
 // Sobre o arquivo: o original é PNG de 958×649 e ~570 kB cada — 3,3 MB para
 // as seis, o que é inaceitável na primeira tela do app. Aqui elas estão
 // recortadas em 2:1 (o recorte também tira o verde morto de cima e de baixo,
-// então o veículo ocupa mais quadro) e salvas em JPEG 670×335, ~65 kB cada.
-// 392 kB no total, 88% a menos.
+// então o veículo ocupa mais quadro) e salvas em JPEG progressivo 670×335.
+// **218 kB no total, 94% a menos.**
+//
+// O fundo das seis NÃO era o mesmo verde: media de #118A6B a #1A8F72, e
+// empilhadas numa coluna dava para ver que não batiam. Todas foram levadas
+// para #159173, a média — por deslocamento linear da imagem inteira, não
+// repintando só o fundo. Deslocar tudo evita halo na borda do veículo e
+// mantém a sombra coerente; o caminhão é verde da marca, então acompanhar o
+// ajuste é o certo. O `--x-fleet-bg` do CSS usa este mesmo valor.
 //
 // JPEG e não WebP porque o `sips` do macOS lê WebP mas não escreve. Não custa
 // transparência: o fundo é chapado. Se um dia entrar uma etapa de build com

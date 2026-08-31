@@ -77,6 +77,11 @@
   --x-hero-deep: #022119;
   --x-hero-bright: #3ff0b7;
 
+  /* O verde de fundo das fotos da frota. As seis foram normalizadas para
+     este valor; o card usa o mesmo para não piscar branco enquanto a
+     imagem carrega. Não muda com o tema — a foto é a mesma. */
+  --x-fleet-bg: #159173;
+
   /* ---- Movimento ----------------------------------------------------- */
   --x-t: 160ms cubic-bezier(0.2, 0.75, 0.25, 1);
   --x-t-slow: 320ms cubic-bezier(0.2, 0.75, 0.25, 1);
@@ -2034,9 +2039,9 @@ button.px-chip {
   /* Reserva a altura antes de a foto chegar. Sem isto a lista pula a cada
      imagem carregada, e o toque cai no card errado. */
   aspect-ratio: 2 / 1;
-  /* O verde de fundo das fotos, para o card não piscar branco no carregamento
-     e para a borda arredondada não vazar claro por baixo do JPEG. */
-  background: #139677;
+  /* Para o card não piscar branco no carregamento e a borda arredondada não
+     vazar claro por baixo do JPEG. */
+  background: var(--x-fleet-bg);
   border: 0;
   border-radius: var(--x-r);
   padding: 0;
@@ -2613,4 +2618,86 @@ button.px-chip {
   letter-spacing: -0.02em;
   margin: 0;
   min-height: 26px;
+}
+
+/* ==========================================================================
+   AVISO DE VERSÃO NOVA
+   ==========================================================================
+   Num app instalado a aba nunca fecha, então a versão antiga pode durar
+   semanas. A faixa fica no topo, acima de tudo, e some sozinha ao atualizar.
+   Não é modal: ninguém deve ser interrompido no meio de um pedido por causa
+   de deploy. */
+.px-atualiza {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px calc(10px + var(--x-safe-t, 0px));
+  background: var(--x-ink);
+  color: var(--x-ground);
+}
+
+.px-atualiza-t {
+  flex: 1;
+  min-width: 0;
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.px-atualiza-btn {
+  appearance: none;
+  cursor: pointer;
+  flex-shrink: 0;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 999px;
+  border: 0;
+  background: var(--x-action);
+  color: #05261c;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* ==========================================================================
+   TELA QUE NÃO CARREGOU
+   ==========================================================================
+   Substitui a página em branco que aparecia quando o módulo de uma tela não
+   baixava. Centralizada e com saída — branco não tem saída. */
+.px-quebrada {
+  flex: 1;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 40px 28px;
+  background: var(--x-ground);
+  color: var(--x-ink);
+}
+
+.px-quebrada-t {
+  margin: 0;
+  font-family: var(--x-display);
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+}
+
+.px-quebrada-s {
+  margin: 0;
+  max-width: 30ch;
+  font-size: 14.5px;
+  line-height: 1.5;
+  color: var(--x-ink-soft);
+}
+
+.px-quebrada-acoes {
+  display: grid;
+  gap: 10px;
+  width: 100%;
+  max-width: 280px;
+  margin-top: 14px;
 }

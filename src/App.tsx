@@ -5,6 +5,9 @@ import { resolveRoute } from './routes';
 import { parseReferral, rememberReferral } from './domains/referral/referral';
 import { needsOnboarding } from './domains/profile/profile.service';
 import { useProfile } from './hooks/useProfile';
+import { AvisoAtualizacao } from './ui/instalar';
+import { LimiteDeErro } from './ui/tela-quebrada';
+import { aquecerTelas } from './lib/pwa';
 import type { GoFn } from './types';
 
 // `core` fica ESTÁTICO: a landing é a primeira pintura e o Logo é usado pelo
@@ -132,9 +135,34 @@ function ScreenSkeleton() {
   );
 }
 
+/**
+ * As telas do dia a dia, para o cache do service worker ter todas antes de a
+ * rede sumir. Sem isto, "abre offline" valeria só para o que já foi aberto —
+ * e a primeira vez que alguém precisasse de Pedidos no subsolo, não teria.
+ *
+ * Fora da lista de propósito: landing, admin e cadastro de transportador.
+ * Ninguém precisa deles sem sinal, e baixá-los custaria dado de quem está
+ * trabalhando.
+ */
+const TELAS_DO_DIA = [
+  () => import('./flows/inicio'),
+  () => import('./flows/pedidos'),
+  () => import('./flows/avisos'),
+  () => import('./flows/conta'),
+  () => import('./flows/pedido'),
+  () => import('./flows/acompanhar'),
+  () => import('./flows/escolher'),
+  () => import('./flows/parceiro'),
+];
+
 function AppShell() {
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Depois que a tela atual está de pé e o navegador está ocioso.
+  useEffect(() => {
+    aquecerTelas(TELAS_DO_DIA);
+  }, []);
 
   // Indicação: o link da Minha Rede chega como `#/inicio?ref=abc12345`.
   // Guardar na chegada é o que impede que todo compartilhamento feito antes
@@ -276,6 +304,7 @@ function AppShell() {
 
   return (
     <div className="pg-app">
+      <AvisoAtualizacao />
       <DesktopHeader route={route} isConsumer={isConsumer} go={go} />
       <div className="pg-stage">
         <div className="pg-phone-wrap">
@@ -287,9 +316,15 @@ function AppShell() {
               {/* Um Suspense por tela: a chave força o fallback a reaparecer
                   ao trocar de rota para um módulo ainda não baixado, em vez de
                   segurar a tela anterior congelada. */}
-              <Suspense key={route} fallback={<ScreenSkeleton />}>
-                {renderScreen()}
-              </Suspense>
+              {/* O limite tem que ficar POR FORA do Suspense: o erro que
+                  importa é o do próprio carregamento do módulo, e ele sobe
+                  pelo Suspense. Sem isto o app inteiro fica em branco quando
+                  um pedaço não baixa — verificado offline. */}
+              <LimiteDeErro chave={route}>
+                <Suspense key={route} fallback={<ScreenSkeleton />}>
+                  {renderScreen()}
+                </Suspense>
+              </LimiteDeErro>
             </div>
           </div>
         </div>

@@ -23,6 +23,7 @@ import {
   Stack,
 } from '../ui/kit';
 import { ClientNav } from '../ui/area';
+import { LinhaInstalar } from '../ui/instalar';
 import { Icon } from '../icons';
 import { initialsOf } from '../domains/providers/provider.service';
 import { useProfile } from '../hooks/useProfile';
@@ -147,6 +148,8 @@ export const Conta = ({ go }: { go: GoFn }) => {
           {profile?.role === 'provider' && <Chip tone="on">Transportador</Chip>}
           {profile?.role === 'admin' && <Chip tone="info">Admin</Chip>}
         </div>
+
+        <LinhaInstalar />
 
         <Stack gap="tight">
           {linhas.map((l) => (

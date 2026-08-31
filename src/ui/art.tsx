@@ -325,16 +325,3 @@ export const FrotaPranchaArt = (p: ArtProps) => (
     <FWheel cx={53.5} />
   </Frame>
 );
-
-/**
- * Frota por necessidade — o mapa que a home e os cards de serviço consomem.
- * Chaveado pelos `NeedKind` do domínio de intenção.
- */
-export const FLEET_ART: Record<string, (p: ArtProps) => React.ReactElement> = {
-  entulho: FrotaCacambaArt,
-  mudanca: FrotaBauArt,
-  carga: FrotaVanArt,
-  material: FrotaPlataformaArt,
-  veiculo: FrotaGuinchoArt,
-  maquina: FrotaPranchaArt,
-};

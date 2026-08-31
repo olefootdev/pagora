@@ -7,7 +7,9 @@ import prettier from 'eslint-config-prettier';
 import { defineConfig, globalIgnores } from 'eslint/config';
 
 export default defineConfig([
-  globalIgnores(['dist', 'node_modules', '.wrangler']),
+  // `dist-*` no plural: os builds de preview (dist-demo) já derrubaram o
+  // lint duas vezes, com mais de mil erros vindos do bundle minificado.
+  globalIgnores(['dist', 'dist-*', 'node_modules', '.wrangler']),
   {
     files: ['**/*.{js,jsx,ts,tsx}'],
     extends: [

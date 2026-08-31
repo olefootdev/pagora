@@ -35,6 +35,10 @@ export type AnalyticsEvent =
   // real de pedir o nome — se cair muito, o passo está pedindo demais.
   | 'onboarding_concluido'
   | 'perfil_editado'
+  // Instalação: a fatia de gente com o app na tela inicial é o número que
+  // diz se o Pagora virou hábito ou continua sendo um site que se visita.
+  | 'app_instalado'
+  | 'app_instalacao_recusada'
   // Recompra: a taxa de repetição é a métrica que diz se o marketplace
   // fideliza ou se cada pedido é um cliente novo.
   | 'pedido_repetido'
