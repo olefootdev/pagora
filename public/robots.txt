@@ -1,4 +1,4 @@
 User-agent: *
 Allow: /
 
-Sitemap: https://pagora.com.br/sitemap.xml
+Sitemap: https://pagorapro.com/sitemap.xml

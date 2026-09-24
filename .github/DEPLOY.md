@@ -1,6 +1,6 @@
 # Deploy — Cloudflare Pages
 
-Setup mínimo pra colocar pagora.com.br no ar via `git push origin main`.
+Setup mínimo pra colocar pagorapro.com no ar via `git push origin main`.
 
 ## 1. Criar o projeto no Cloudflare
 
@@ -27,7 +27,11 @@ Vars `VITE_*` são **inlined no bundle no momento do build**. Não dá pra troca
 
 ## 3. Domínio custom
 
-Cloudflare Pages → projeto `pagora` → **Custom domains → Set up a custom domain** → `pagora.com.br` e `www.pagora.com.br`. Registrar DNS no painel do registrador (Registro.br ou onde for) apontando pros nameservers do Cloudflare, OU adicionando os 2 CNAMEs que o Pages mostrar.
+Cloudflare Pages → projeto `pagora` → **Custom domains → Set up a custom domain** → `pagorapro.com` e `www.pagorapro.com`.
+
+O domínio é `.com` (gTLD), não `.com.br` — o registrador é onde ele foi comprado (GoDaddy, Namecheap, Cloudflare Registrar etc.), não o Registro.br. Aponte os nameservers para o Cloudflare, OU adicione os 2 CNAMEs que o Pages mostrar.
+
+Depois que o domínio responder, revalide o preview social em <https://developers.facebook.com/tools/debug/> — o Facebook e o WhatsApp cacheiam `og:image` de forma agressiva, e uma primeira leitura com 404 fica gravada.
 
 ## 4. Primeiro deploy
 

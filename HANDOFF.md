@@ -70,7 +70,7 @@ Pra próxima sessão atacar FASE 3 (Maps).
 4. **Restrict key:**
    - Application restrictions → HTTP referrers:
      - `http://localhost:5173/*`
-     - Seu domínio futuro (ex: `https://pagora.com.br/*`)
+     - Seu domínio futuro (ex: `https://pagorapro.com/*`)
    - API restrictions → habilitar SÓ:
      - Maps JavaScript API
      - Directions API

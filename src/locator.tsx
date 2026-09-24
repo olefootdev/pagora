@@ -510,7 +510,7 @@ const Locator = ({ go }: ScreenProps) => {
                   textOverflow: 'ellipsis',
                 }}
               >
-                pagora.app/r/PG-1247-x9k
+                pagorapro.com/r/PG-1247-x9k
               </span>
               <button
                 className="pg-btn pg-btn--ghost pg-btn--sm"

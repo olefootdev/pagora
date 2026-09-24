@@ -2645,7 +2645,7 @@ const Receipt = ({ go }: ScreenProps) => {
                   className="pg-mono"
                   style={{ fontSize: 11, color: 'var(--text-mute)', marginTop: 2 }}
                 >
-                  pagora.app/v/PG-1247-A47B
+                  pagorapro.com/v/PG-1247-A47B
                 </div>
               </div>
             </div>
