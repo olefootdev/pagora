@@ -257,7 +257,7 @@ create policy presence_delete_self on pagora.provider_presence
   using (provider_id = auth.uid());
 
 -- order_waypoints: só o prestador do pedido grava, e só enquanto o pedido
--- está em andamento. Sem UPDATE/DELETE para ninguém — trilha é imutável.
+-- está em deslocamento. Sem UPDATE/DELETE para ninguém — trilha é imutável.
 drop policy if exists waypoints_insert_provider on pagora.order_waypoints;
 create policy waypoints_insert_provider on pagora.order_waypoints
   for insert to authenticated
@@ -266,7 +266,7 @@ create policy waypoints_insert_provider on pagora.order_waypoints
       select 1 from pagora.orders o
       where o.id = order_id
         and o.provider_id = auth.uid()
-        and o.status = 'in_progress'
+        and o.status in ('in_progress', 'en_route')
     )
   );
 
@@ -331,11 +331,14 @@ begin
     is_available = coalesce(p_available, pp.is_available),
     last_ping_at = now();
 
-  -- Pedido em andamento? Registra a trilha junto.
+  -- Pedido em deslocamento? Registra a trilha junto.
+  -- `en_route` veio da migration financial_enums e é o estado em que o
+  -- prestador está literalmente a caminho — deixá-lo de fora faria a trilha
+  -- ficar vazia justamente no trecho que interessa.
   select o.id into v_order_id
     from pagora.orders o
    where o.provider_id = auth.uid()
-     and o.status = 'in_progress'
+     and o.status in ('in_progress', 'en_route')
    order by o.created_at desc
    limit 1;
 
@@ -526,7 +529,12 @@ begin
 
   -- Rastreio é privilégio de pedido vivo. Pedido encerrado/cancelado para de
   -- expor a posição do prestador.
-  if v_order.status not in ('pending_payment', 'in_progress') then
+  --
+  -- A lista cobre os estados vivos do enum atual (ampliado pela migration
+  -- financial_enums). Ficam de fora os terminais — completed, cancelled,
+  -- disputed, settled, expired, refunded — porque é exatamente aí que o
+  -- acesso à posição do prestador precisa cessar.
+  if v_order.status not in ('pending_payment', 'paid', 'in_progress', 'en_route') then
     raise exception 'order_not_trackable: status is %', v_order.status;
   end if;
 
@@ -607,7 +615,7 @@ language sql stable as $$
   select o.id
     from pagora.orders o
    where (o.client_id = auth.uid() or o.provider_id = auth.uid())
-     and o.status in ('pending_payment', 'in_progress')
+     and o.status in ('pending_payment', 'paid', 'in_progress', 'en_route')
    order by o.created_at desc
    limit 1;
 $$;
