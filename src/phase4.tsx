@@ -5,8 +5,17 @@ import { useState as useStateP4, useMemo as useMemoP4 } from 'react';
 import { Icon } from './icons';
 import { StatusBar as SBp4, TopBar as TBp4 } from './core';
 import type { ScreenProps } from './types';
-import { parsePlate, PLATE_ERROR_MESSAGES } from './lib/placa';
+import { parsePlate, PLATE_ERROR_MESSAGES, plateKey, formatPlate } from './lib/placa';
 import { minimumCNH, cnhCovers, type BodyType } from './lib/conformidade';
+import { isValidCPF, formatCPF } from './lib/documentos';
+import { ExigenciasPreview } from './exigencias';
+import { supabase } from './lib/supabase';
+import { track } from './lib/analytics';
+import type { ServiceType } from './lib/database.types';
+
+const SERVICE_ENUM: readonly ServiceType[] = ['frete', 'guincho', 'cacamba'];
+const isServiceType = (id: string): id is ServiceType =>
+  (SERVICE_ENUM as readonly string[]).includes(id);
 
 type ProvData = {
   name: string;
@@ -27,13 +36,23 @@ type ProvData = {
    * exigência de RNTRC é o PBT — sem ele, conformidade.ts não tem o que avaliar.
    */
   pbt: number;
-  bank: string;
-  agency: string;
-  account: string;
-  pixKey: string;
-  selfie: boolean;
-  doc: boolean;
+  /** Serviços que o candidato presta. Coluna NOT NULL em provider_applications. */
+  services: string[];
+  /** Região de atuação, texto livre. Também NOT NULL na tabela. */
+  regions: string;
 };
+
+// Dados bancários e upload de documento saíram deste formulário de propósito.
+//
+// Banco/agência/conta/Pix: o candidato só recebe depois de ter pedido
+// concluído, o que exige aprovação e login. Guardar dado de pagamento de quem
+// ainda não foi aprovado é passivo sem contrapartida — e numa tabela que
+// aceita INSERT anônimo. `providers` já tem essas colunas desde a 0001, e é lá
+// que entram, com o prestador autenticado escrevendo na própria linha.
+//
+// Selfie e documento: o upload não existe (falta Storage). Marcar
+// `selfie = true` sem arquivo por trás registraria uma verificação que não
+// aconteceu — exatamente o que o PAGORA CHECK existe para evitar.
 
 // Mapeia o rótulo do select para a carroceria que a matriz de conformidade
 // entende. Mantido aqui, junto do select, para que mexer nas opções da tela
@@ -68,16 +87,21 @@ const ProvSignup = ({ go }: ScreenProps) => {
     bodyType: 'Van pequena',
     capacity: 800,
     pbt: 3500,
-    bank: 'Nubank',
-    agency: '',
-    account: '',
-    pixKey: '',
-    selfie: false,
-    doc: false,
+    services: [],
+    regions: '',
   });
+  const [status, setStatus] = useStateP4<'idle' | 'sending' | 'err'>('idle');
+  const [errorMsg, setErrorMsg] = useStateP4('');
   const update = <K extends keyof ProvData>(k: K, v: ProvData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
-  const total = 5;
+  const toggleService = (id: string) =>
+    update(
+      'services',
+      data.services.includes(id)
+        ? data.services.filter((x) => x !== id)
+        : [...data.services, id],
+    );
+  const total = 4;
 
   // Placa só é avaliada depois que o prestador digitou os 7 caracteres. Gritar
   // "inválida" no segundo caractere é hostil e não ajuda ninguém.
@@ -104,24 +128,126 @@ const ProvSignup = ({ go }: ScreenProps) => {
   // Trava só o passo do veículo, e só por placa inválida. PBT e CNH geram
   // aviso, não bloqueio: são corrigíveis na análise e travar o cadastro por
   // eles perderia prestador por excesso de rigor.
-  const canAdvance = step !== 3 || plateCheck === null || plateCheck.ok;
-  const titles = [
-    'Vamos começar',
-    'CNH e habilitação',
-    'Seu veículo',
-    'Conta para receber',
-    'Selfie e documento',
-  ];
+  // CPF é validado por dígito verificador, sem consultar ninguém. Só avalia
+  // depois dos 11 dígitos, pela mesma razão da placa.
+  const cpfCheck = useMemoP4(() => {
+    const d = data.cpf.replace(/\D/g, '');
+    if (d.length < 11) return null;
+    return isValidCPF(d);
+  }, [data.cpf]);
+
+  const titles = ['Vamos começar', 'CNH e habilitação', 'Seu veículo', 'Onde você atende'];
   const subs = [
-    'Crie sua conta de prestador em 5 minutos',
+    'Conte quem você é e o que você faz',
     'Precisamos verificar sua habilitação',
     'Conte-nos sobre o veículo de trabalho',
-    'Onde vamos depositar seus ganhos',
-    'Última etapa: validação de identidade',
+    'Última etapa: sua região de atuação',
   ];
 
-  // Após o último passo segue pro fluxo de confirmação genérico do prestador (provider-confirm em other.jsx)
-  const next = () => (step < total ? setStep(step + 1) : go('provider-confirm'));
+  const canAdvance = (() => {
+    if (status === 'sending') return false;
+    // Passo 1: nome, telefone e ao menos um serviço são obrigatórios na tabela.
+    // CPF inválido trava porque ele vira chave de consulta ao RNTRC depois.
+    if (step === 1) {
+      return (
+        data.name.trim().length > 2 &&
+        data.phone.replace(/\D/g, '').length >= 10 &&
+        data.services.some(isServiceType) &&
+        cpfCheck !== false
+      );
+    }
+    // Passo 3: só placa malformada trava. PBT e CNH geram aviso — são
+    // corrigíveis na análise, e travar por eles perderia prestador por excesso
+    // de rigor.
+    if (step === 3) return plateCheck === null || plateCheck.ok;
+    if (step === 4) return data.regions.trim().length > 2;
+    return true;
+  })();
+
+  // ---------------------------------------------------------------------
+  // Envio
+  // ---------------------------------------------------------------------
+  // Destino é `provider_applications`, NÃO `providers`. A 0004 explica: o
+  // candidato ainda não tem conta, e `providers.profile_id` referencia
+  // `auth.users`. Esta tabela é a caixa de entrada pública; o admin aprova e
+  // só então o fluxo migra.
+  const submit = async () => {
+    if (status === 'sending') return;
+    setStatus('sending');
+    setErrorMsg('');
+    try {
+      const services = data.services.filter(isServiceType);
+      if (services.length === 0) {
+        setStatus('err');
+        setErrorMsg('Selecione ao menos um serviço no primeiro passo.');
+        return;
+      }
+
+      const phone = data.phone.trim();
+      const cpfDigits = data.cpf.replace(/\D/g, '') || null;
+
+      // Não há checagem de duplicata aqui de propósito.
+      //
+      // `provider_applications` tem RLS forçado e ZERO policy de SELECT: um
+      // `select ... where phone = ...` como anon sempre volta vazio, por mais
+      // duplicatas que existam. O formulário curto em other.tsx faz essa
+      // consulta e ela nunca encontrou nada — código morto que dá falsa
+      // sensação de proteção.
+      //
+      // Quem realmente barra é o trigger `enforce_public_form_rate_limit`
+      // (migration hardening_public_forms): 5 envios por IP e 3 por telefone
+      // a cada hora. Ele roda dentro do banco, onde enxerga as linhas, e é
+      // tratado no catch abaixo.
+
+      const parsed = parsePlate(data.plate);
+      const { error } = await supabase.from('provider_applications').insert({
+        full_name: data.name.trim(),
+        phone,
+        email: data.email.trim() || null,
+        services,
+        regions: data.regions.trim(),
+        // `vehicle` é a coluna legada em texto livre, mantida para o admin que
+        // já lê a fila do formulário curto no mesmo lugar.
+        vehicle: [data.bodyType, data.model, data.year].filter(Boolean).join(' · ') || null,
+        cpf: cpfDigits,
+        cnh_number: data.cnh.replace(/\D/g, '') || null,
+        cnh_category: data.cnhCat || null,
+        plate: parsed.ok ? parsed.plate : data.plate.trim() || null,
+        // Forma canônica Mercosul: é o que permite deduplicar o mesmo caminhão
+        // cadastrado em formatos diferentes.
+        plate_key: plateKey(data.plate),
+        vehicle_model: data.model.trim() || null,
+        vehicle_year: data.year ? Number(data.year) : null,
+        vehicle_color: data.color.trim() || null,
+        body_type: BODY_TYPE_BY_LABEL[data.bodyType] ?? 'outro',
+        pbt_kg: data.pbt || null,
+        capacity_kg: data.capacity || null,
+        source: 'onboarding-completo',
+        user_agent:
+          typeof navigator !== 'undefined' ? navigator.userAgent.slice(0, 200) : null,
+      });
+      if (error) throw error;
+
+      track('prestador_cadastrado', {
+        tipo: services.join(','),
+        regiao: data.regions.trim(),
+        origem: 'onboarding-completo',
+      });
+      go('provider-confirm');
+    } catch (err) {
+      setStatus('err');
+      const bruto = err instanceof Error ? err.message : '';
+      // O trigger de rate limit devolve uma mensagem técnica. Traduzir aqui
+      // evita mostrar "rate_limit_exceeded" para um caminhoneiro.
+      setErrorMsg(
+        bruto.includes('rate_limit_exceeded')
+          ? 'Já recebemos um cadastro com esse telefone há pouco. Aguarde nosso retorno no WhatsApp.'
+          : bruto || 'Não conseguimos enviar. Verifique sua conexão e tente novamente.',
+      );
+    }
+  };
+
+  const next = () => (step < total ? setStep(step + 1) : submit());
   const back = () => (step > 1 ? setStep(step - 1) : go('provider-landing'));
 
   return (
@@ -182,10 +308,30 @@ const ProvSignup = ({ go }: ScreenProps) => {
                 <input
                   className="pg-input"
                   placeholder="000.000.000-00"
-                  value={data.cpf}
-                  onChange={(e) => update('cpf', e.target.value)}
-                  style={{ fontFamily: 'var(--font-mono)' }}
+                  value={formatCPF(data.cpf)}
+                  onChange={(e) => update('cpf', e.target.value.replace(/\D/g, '').slice(0, 11))}
+                  inputMode="numeric"
+                  aria-invalid={cpfCheck === false}
+                  style={{
+                    fontFamily: 'var(--font-mono)',
+                    borderColor:
+                      cpfCheck === false
+                        ? 'var(--danger)'
+                        : cpfCheck === true
+                          ? 'var(--green-500)'
+                          : undefined,
+                  }}
                 />
+                {cpfCheck === false && (
+                  <span className="pg-helper is-error">
+                    CPF inválido — confira os números digitados.
+                  </span>
+                )}
+                {cpfCheck === true && (
+                  <span className="pg-helper" style={{ color: 'var(--green-700)' }}>
+                    CPF válido
+                  </span>
+                )}
               </div>
               <div className="pg-field">
                 <label className="pg-label">Telefone (WhatsApp)</label>
@@ -207,6 +353,49 @@ const ProvSignup = ({ go }: ScreenProps) => {
                   onChange={(e) => update('email', e.target.value)}
                 />
               </div>
+              <div className="pg-field">
+                <label className="pg-label">Que serviços você presta?</label>
+                <div className="pg-stack pg-stack--sm" style={{ marginTop: 4 }}>
+                  {[
+                    { id: 'frete', icon: 'truck', t: 'Frete / Mudança' },
+                    { id: 'guincho', icon: 'tow', t: 'Guincho' },
+                    { id: 'cacamba', icon: 'dumpster', t: 'Caçamba' },
+                  ].map((o) => (
+                    <button
+                      key={o.id}
+                      type="button"
+                      onClick={() => toggleService(o.id)}
+                      className={`pg-choice${data.services.includes(o.id) ? ' is-active' : ''}`}
+                    >
+                      <span className="pg-choice-bullet is-square" />
+                      <span
+                        style={{
+                          width: 30,
+                          height: 30,
+                          borderRadius: 8,
+                          background: data.services.includes(o.id)
+                            ? 'rgba(255,255,255,0.1)'
+                            : 'var(--ink-100)',
+                          display: 'grid',
+                          placeItems: 'center',
+                        }}
+                      >
+                        <Icon name={o.icon} size={16} />
+                      </span>
+                      <div className="pg-choice-body">
+                        <div className="pg-choice-title" style={{ fontSize: 15 }}>
+                          {o.t}
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reaproveita o mesmo componente do formulário curto: o candidato
+                  vê o que vão pedir antes de investir os 4 passos. */}
+              <ExigenciasPreview services={data.services} />
+
               <div
                 className="pg-card pg-card--soft"
                 style={{ padding: 14, fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.5 }}
@@ -493,174 +682,79 @@ const ProvSignup = ({ go }: ScreenProps) => {
           {step === 4 && (
             <div className="pg-stack">
               <div className="pg-field">
-                <label className="pg-label">Banco</label>
-                <select
-                  className="pg-input"
-                  value={data.bank}
-                  onChange={(e) => update('bank', e.target.value)}
-                >
-                  <option>Nubank</option>
-                  <option>Itaú</option>
-                  <option>Bradesco</option>
-                  <option>Caixa</option>
-                  <option>Santander</option>
-                  <option>Banco do Brasil</option>
-                  <option>Inter</option>
-                  <option>C6 Bank</option>
-                </select>
-              </div>
-              <div className="pg-row" style={{ gap: 10 }}>
-                <div className="pg-field" style={{ flex: 1 }}>
-                  <label className="pg-label">Agência</label>
-                  <input
-                    className="pg-input"
-                    placeholder="0000"
-                    value={data.agency}
-                    onChange={(e) => update('agency', e.target.value)}
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  />
-                </div>
-                <div className="pg-field" style={{ flex: 2 }}>
-                  <label className="pg-label">Conta corrente</label>
-                  <input
-                    className="pg-input"
-                    placeholder="00000-0"
-                    value={data.account}
-                    onChange={(e) => update('account', e.target.value)}
-                    style={{ fontFamily: 'var(--font-mono)' }}
-                  />
-                </div>
-              </div>
-              <div className="pg-divider" />
-              <div className="pg-field">
-                <label className="pg-label">Ou use uma chave Pix (recomendado)</label>
-                <input
-                  className="pg-input"
-                  placeholder="CPF, telefone, email ou aleatória"
-                  value={data.pixKey}
-                  onChange={(e) => update('pixKey', e.target.value)}
+                <label className="pg-label">Regiões que você atende</label>
+                <textarea
+                  className="pg-textarea"
+                  placeholder="Ex.: São Paulo capital e Grande SP"
+                  value={data.regions}
+                  onChange={(e) => update('regions', e.target.value)}
                 />
-                <div className="pg-helper">
-                  <Icon name="bolt" size={12} color="currentColor" /> Saques via Pix são
-                  instantâneos, sem taxa
+                <span className="pg-helper">
+                  Cidades ou bairros. Quanto mais específico, melhor o encaixe com os pedidos.
+                </span>
+              </div>
+
+              {/* Revisão antes do envio: o candidato vê exatamente o que vai
+                  para a análise. Erro de digitação em placa ou PBT custa uma
+                  recusa, e recusa custa um prestador. */}
+              <div className="pg-card pg-card--padded">
+                <div className="pg-h-eyebrow" style={{ margin: '0 0 10px' }}>
+                  CONFIRA ANTES DE ENVIAR
+                </div>
+                <div className="pg-stack pg-stack--sm" style={{ fontSize: 13 }}>
+                  {[
+                    ['Nome', data.name || '—'],
+                    ['CPF', data.cpf ? formatCPF(data.cpf) : '—'],
+                    ['WhatsApp', data.phone || '—'],
+                    [
+                      'Serviços',
+                      data.services.length
+                        ? data.services
+                            .map((s) => ({ frete: 'Frete', guincho: 'Guincho', cacamba: 'Caçamba' })[s] ?? s)
+                            .join(', ')
+                        : '—',
+                    ],
+                    ['CNH', data.cnh ? `${data.cnh} · categoria ${data.cnhCat}` : `categoria ${data.cnhCat}`],
+                    ['Veículo', [data.bodyType, data.model, data.year].filter(Boolean).join(' · ')],
+                    ['Placa', plateCheck?.ok ? formatPlate(plateCheck.plate) : data.plate || '—'],
+                    ['PBT', data.pbt ? `${data.pbt.toLocaleString('pt-BR')} kg` : '—'],
+                    ['Capacidade', `${data.capacity.toLocaleString('pt-BR')} kg`],
+                  ].map(([rotulo, valor]) => (
+                    <div key={rotulo} className="pg-row pg-row--between" style={{ gap: 12 }}>
+                      <span style={{ color: 'var(--text-mute)' }}>{rotulo}</span>
+                      <span style={{ fontWeight: 600, textAlign: 'right' }}>{valor}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
+
+              {cnhCheck && !cnhCheck.ok && (
+                <div
+                  className="pg-card pg-card--soft"
+                  style={{
+                    padding: 14,
+                    fontSize: 12,
+                    lineHeight: 1.5,
+                    borderLeft: '3px solid var(--orange-600)',
+                  }}
+                >
+                  <Icon name="alert" size={14} color="var(--orange-600)" /> Sua CNH categoria{' '}
+                  {data.cnhCat} não habilita um veículo de {data.pbt.toLocaleString('pt-BR')} kg de
+                  PBT. Você pode enviar assim mesmo — nossa equipe confere na análise.
+                </div>
+              )}
+
+              {/* Pagamento e documentos entram depois da aprovação, quando o
+                  prestador tem conta. Dizer isso aqui evita a pergunta
+                  "cadê a parte do banco?". */}
               <div
                 className="pg-card pg-card--soft"
                 style={{ padding: 14, fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.5 }}
               >
-                <Icon name="credit-card" size={14} color="currentColor" /> A conta precisa estar no
-                seu nome (CPF cadastrado). Caso contrário, a transferência será recusada.
+                <Icon name="info" size={14} color="currentColor" /> Dados bancários e fotos dos
+                documentos são pedidos <strong>depois da aprovação</strong>, já dentro da sua conta.
+                Não pedimos conta de quem ainda não foi aprovado.
               </div>
-            </div>
-          )}
-
-          {step === 5 && (
-            <div className="pg-stack">
-              {/* selfie */}
-              <button
-                onClick={() => update('selfie', !data.selfie)}
-                className="pg-card pg-card--padded"
-                style={{
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  border: data.selfie
-                    ? '1.5px solid var(--green-500)'
-                    : '1.5px dashed var(--border-strong)',
-                  background: data.selfie ? 'var(--green-50)' : 'var(--paper)',
-                }}
-              >
-                <div className="pg-row" style={{ gap: 14 }}>
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      background: data.selfie ? 'var(--green-500)' : 'var(--ink-100)',
-                      display: 'grid',
-                      placeItems: 'center',
-                    }}
-                  >
-                    {data.selfie ? (
-                      <Icon name="check" size={24} strokeWidth={2.5} color="var(--green-700)" />
-                    ) : (
-                      <Icon name="camera" size={24} color="currentColor" />
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>Selfie de verificação</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-soft)', marginTop: 2 }}>
-                      {data.selfie
-                        ? 'Foto enviada · revisão em 24h'
-                        : 'Tire uma selfie segurando sua CNH'}
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              {/* RG / doc */}
-              <button
-                onClick={() => update('doc', !data.doc)}
-                className="pg-card pg-card--padded"
-                style={{
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  border: data.doc
-                    ? '1.5px solid var(--green-500)'
-                    : '1.5px dashed var(--border-strong)',
-                  background: data.doc ? 'var(--green-50)' : 'var(--paper)',
-                }}
-              >
-                <div className="pg-row" style={{ gap: 14 }}>
-                  <div
-                    style={{
-                      width: 56,
-                      height: 56,
-                      borderRadius: 28,
-                      background: data.doc ? 'var(--green-500)' : 'var(--ink-100)',
-                      display: 'grid',
-                      placeItems: 'center',
-                    }}
-                  >
-                    {data.doc ? (
-                      <Icon name="check" size={24} strokeWidth={2.5} color="var(--green-700)" />
-                    ) : (
-                      <Icon name="doc" size={24} color="currentColor" />
-                    )}
-                  </div>
-                  <div style={{ flex: 1 }}>
-                    <div style={{ fontSize: 15, fontWeight: 700 }}>Comprovante de residência</div>
-                    <div style={{ fontSize: 12, color: 'var(--text-soft)', marginTop: 2 }}>
-                      {data.doc ? 'Documento enviado' : 'Conta de luz, água ou telefone (≤90 dias)'}
-                    </div>
-                  </div>
-                </div>
-              </button>
-
-              <div className="pg-divider" />
-
-              {/* terms */}
-              <label
-                className="pg-row"
-                style={{ gap: 10, alignItems: 'flex-start', cursor: 'pointer' }}
-              >
-                <input
-                  type="checkbox"
-                  defaultChecked
-                  style={{ marginTop: 4, width: 18, height: 18, accentColor: 'var(--night-900)' }}
-                />
-                <span style={{ fontSize: 12, color: 'var(--text-soft)', lineHeight: 1.5 }}>
-                  Concordo com os{' '}
-                  <a href="#" style={{ color: 'var(--green-700)', fontWeight: 600 }}>
-                    Termos do Prestador
-                  </a>{' '}
-                  e a{' '}
-                  <a href="#" style={{ color: 'var(--green-700)', fontWeight: 600 }}>
-                    Política de comissão
-                  </a>{' '}
-                  (15% por pedido + R$ 2 de taxa fixa).
-                </span>
-              </label>
             </div>
           )}
         </div>
@@ -670,13 +764,34 @@ const ProvSignup = ({ go }: ScreenProps) => {
         className="pg-page-foot"
         style={{ borderTop: '1px solid var(--border)', padding: 16, background: 'var(--paper)' }}
       >
+        {status === 'err' && (
+          <div
+            role="alert"
+            style={{
+              marginBottom: 10,
+              padding: '10px 12px',
+              borderRadius: 8,
+              background: 'rgba(220,38,38,0.08)',
+              border: '1px solid rgba(220,38,38,0.25)',
+              color: 'var(--danger)',
+              fontSize: 12,
+              lineHeight: 1.45,
+            }}
+          >
+            {errorMsg}
+          </div>
+        )}
         <button
           className="pg-btn pg-btn--primary pg-btn--lg pg-btn--block"
           onClick={next}
           disabled={!canAdvance}
           style={canAdvance ? undefined : { opacity: 0.5, cursor: 'not-allowed' }}
         >
-          {step === total ? 'Enviar para análise' : 'Continuar'}
+          {status === 'sending'
+            ? 'Enviando…'
+            : step === total
+              ? 'Enviar para análise'
+              : 'Continuar'}
         </button>
       </div>
     </div>

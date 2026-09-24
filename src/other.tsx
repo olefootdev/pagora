@@ -240,23 +240,16 @@ const ProviderSignup = ({ go }: ScreenProps) => {
         setErrorMsg('Rodoviário ainda não está aceito. Selecione frete, guincho ou caçamba.');
         return;
       }
-      // Dedup soft em 24h: o índice composto (phone, created_at desc) faz a
-      // query rápida. Race conditions extremas permitiriam 2 inserts paralelos
-      // do mesmo phone — aceitável pra inbox de candidatos (admin tria).
       const phone = form.phone.trim();
-      const since = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString();
-      const { count: recentCount } = await supabase
-        .from('provider_applications')
-        .select('id', { count: 'exact', head: true })
-        .eq('phone', phone)
-        .gte('created_at', since);
-      if ((recentCount ?? 0) > 0) {
-        setStatus('err');
-        setErrorMsg(
-          'Já recebemos um cadastro com esse telefone hoje. Aguarde nosso retorno no WhatsApp.',
-        );
-        return;
-      }
+
+      // Havia aqui um `select count(*) where phone = ...` para deduplicar.
+      // Removido porque NUNCA funcionou: `provider_applications` tem RLS
+      // forçado e nenhuma policy de SELECT, então a consulta como anon volta
+      // vazia por mais duplicatas que existam — o insert seguia sempre.
+      //
+      // Quem barra de verdade é o trigger `enforce_public_form_rate_limit`
+      // (migration hardening_public_forms), que roda dentro do banco: 5 envios
+      // por IP e 3 por telefone a cada hora. Tratado no catch.
 
       const { error } = await supabase.from('provider_applications').insert({
         full_name: form.name.trim(),
@@ -275,7 +268,14 @@ const ProviderSignup = ({ go }: ScreenProps) => {
       go('provider-confirm');
     } catch (err) {
       setStatus('err');
-      setErrorMsg(err instanceof Error ? err.message : 'Tente novamente');
+      const bruto = err instanceof Error ? err.message : '';
+      // O trigger de rate limit devolve mensagem técnica; traduzir aqui evita
+      // mostrar "rate_limit_exceeded" para o prestador.
+      setErrorMsg(
+        bruto.includes('rate_limit_exceeded')
+          ? 'Já recebemos um cadastro com esse telefone há pouco. Aguarde nosso retorno no WhatsApp.'
+          : bruto || 'Tente novamente',
+      );
     }
   };
   return (

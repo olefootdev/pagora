@@ -12,12 +12,34 @@ export type UserRole = 'client' | 'provider' | 'admin';
 export type ServiceType = 'frete' | 'guincho' | 'cacamba';
 export type RequestStatus = 'open' | 'quoting' | 'accepted' | 'cancelled' | 'expired';
 export type QuoteStatus = 'pending' | 'sent' | 'accepted' | 'rejected' | 'expired' | 'withdrawn';
+// Ampliado pela migration órfã financial_enums (ver reconcile_orphan_schema).
+// `en_route` é o estado que a geolocalização usa para decidir se o pedido é
+// rastreável — ver order_tracking().
 export type OrderStatus =
   | 'pending_payment'
+  | 'paid'
+  | 'en_route'
   | 'in_progress'
   | 'completed'
+  | 'settled'
   | 'cancelled'
-  | 'disputed';
+  | 'disputed'
+  | 'expired'
+  | 'refunded';
+
+/** Carroceria. Enum criado pela migration pagora_check. */
+export type BodyType =
+  | 'moto'
+  | 'furgao'
+  | 'van'
+  | 'bau'
+  | 'carroceria'
+  | 'basculante'
+  | 'poliguindaste'
+  | 'prancha'
+  | 'lanca'
+  | 'cavalo_mecanico'
+  | 'outro';
 export type DisputeStatus =
   | 'open'
   | 'responded'
@@ -254,6 +276,22 @@ type ProviderApplicationRow = {
   decision: 'approved' | 'rejected' | null;
   decision_notes: string | null;
   created_at: string;
+
+  // Detalhes de habilitação e veículo (migration provider_application_details).
+  // Banco e fotos NÃO entram aqui: só depois da aprovação, em `providers`.
+  cpf: string | null;
+  cnh_number: string | null;
+  cnh_category: string | null;
+  plate: string | null;
+  /** Forma canônica Mercosul — dedup entre placa antiga e nova. */
+  plate_key: string | null;
+  vehicle_model: string | null;
+  vehicle_year: number | null;
+  vehicle_color: string | null;
+  body_type: BodyType | null;
+  /** Peso Bruto Total. Define categoria de CNH e exigência de RNTRC. */
+  pbt_kg: number | null;
+  capacity_kg: number | null;
 };
 type ProviderApplicationInsert = {
   full_name: string;
@@ -267,6 +305,18 @@ type ProviderApplicationInsert = {
   utm_source?: string | null;
   utm_medium?: string | null;
   user_agent?: string | null;
+
+  cpf?: string | null;
+  cnh_number?: string | null;
+  cnh_category?: string | null;
+  plate?: string | null;
+  plate_key?: string | null;
+  vehicle_model?: string | null;
+  vehicle_year?: number | null;
+  vehicle_color?: string | null;
+  body_type?: BodyType | null;
+  pbt_kg?: number | null;
+  capacity_kg?: number | null;
 };
 type ProviderApplicationUpdate = Partial<ProviderApplicationRow>;
 
