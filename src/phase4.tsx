@@ -1,10 +1,12 @@
 // =====================================================================
 // FASE 4 PRESTADOR — Onboarding
 // =====================================================================
-import { useState as useStateP4 } from 'react';
+import { useState as useStateP4, useMemo as useMemoP4 } from 'react';
 import { Icon } from './icons';
 import { StatusBar as SBp4, TopBar as TBp4 } from './core';
 import type { ScreenProps } from './types';
+import { parsePlate, PLATE_ERROR_MESSAGES } from './lib/placa';
+import { minimumCNH, cnhCovers, type BodyType } from './lib/conformidade';
 
 type ProvData = {
   name: string;
@@ -19,12 +21,32 @@ type ProvData = {
   color: string;
   bodyType: string;
   capacity: number;
+  /**
+   * Peso Bruto Total. Campo novo e não redundante com `capacity`: capacidade é
+   * carga útil, PBT é veículo carregado. Quem define categoria de CNH e
+   * exigência de RNTRC é o PBT — sem ele, conformidade.ts não tem o que avaliar.
+   */
+  pbt: number;
   bank: string;
   agency: string;
   account: string;
   pixKey: string;
   selfie: boolean;
   doc: boolean;
+};
+
+// Mapeia o rótulo do select para a carroceria que a matriz de conformidade
+// entende. Mantido aqui, junto do select, para que mexer nas opções da tela
+// force olhar para este mapa — se ficasse em conformidade.ts, uma opção nova
+// cairia silenciosamente em 'outro'.
+const BODY_TYPE_BY_LABEL: Record<string, BodyType> = {
+  'Van pequena': 'van',
+  'Van média': 'van',
+  'Caminhão 3/4': 'bau',
+  'Caminhão Toco': 'carroceria',
+  'Guincho prancha': 'prancha',
+  'Guincho asa-delta': 'lanca',
+  'Caminhão caçamba': 'basculante',
 };
 
 // ---------------------------------------------------------------------
@@ -45,6 +67,7 @@ const ProvSignup = ({ go }: ScreenProps) => {
     color: '',
     bodyType: 'Van pequena',
     capacity: 800,
+    pbt: 3500,
     bank: 'Nubank',
     agency: '',
     account: '',
@@ -55,6 +78,33 @@ const ProvSignup = ({ go }: ScreenProps) => {
   const update = <K extends keyof ProvData>(k: K, v: ProvData[K]) =>
     setData((d) => ({ ...d, [k]: v }));
   const total = 5;
+
+  // Placa só é avaliada depois que o prestador digitou os 7 caracteres. Gritar
+  // "inválida" no segundo caractere é hostil e não ajuda ninguém.
+  const plateCheck = useMemoP4(() => {
+    const raw = data.plate.replace(/[^A-Za-z0-9]/g, '');
+    if (raw.length < 7) return null;
+    return parsePlate(data.plate);
+  }, [data.plate]);
+
+  // CNH declarada no passo 2 × veículo descrito no passo 3. Pegar a
+  // incompatibilidade aqui evita uma recusa na análise por algo que o
+  // prestador poderia ter corrigido em 5 segundos.
+  const cnhCheck = useMemoP4(() => {
+    const required = minimumCNH({
+      pbtKg: data.pbt,
+      capacityKg: data.capacity,
+      bodyType: BODY_TYPE_BY_LABEL[data.bodyType] ?? 'outro',
+      hasTrailer: false,
+    });
+    if (!required) return null;
+    return { required, ok: cnhCovers(data.cnhCat, required) };
+  }, [data.pbt, data.capacity, data.bodyType, data.cnhCat]);
+
+  // Trava só o passo do veículo, e só por placa inválida. PBT e CNH geram
+  // aviso, não bloqueio: são corrigíveis na análise e travar o cadastro por
+  // eles perderia prestador por excesso de rigor.
+  const canAdvance = step !== 3 || plateCheck === null || plateCheck.ok;
   const titles = [
     'Vamos começar',
     'CNH e habilitação',
@@ -278,8 +328,36 @@ const ProvSignup = ({ go }: ScreenProps) => {
                     placeholder="ABC-1D23"
                     value={data.plate}
                     onChange={(e) => update('plate', e.target.value.toUpperCase())}
-                    style={{ fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}
+                    maxLength={8}
+                    aria-invalid={plateCheck ? !plateCheck.ok : undefined}
+                    style={{
+                      fontFamily: 'var(--font-mono)',
+                      textTransform: 'uppercase',
+                      borderColor:
+                        plateCheck && !plateCheck.ok
+                          ? 'var(--danger)'
+                          : plateCheck?.ok
+                            ? 'var(--green-500)'
+                            : undefined,
+                    }}
                   />
+                  {plateCheck && !plateCheck.ok && (
+                    <span className="pg-helper is-error">
+                      {PLATE_ERROR_MESSAGES[plateCheck.reason]}
+                    </span>
+                  )}
+                  {plateCheck?.ok && plateCheck.corrections.length > 0 && (
+                    // Correção nunca é silenciosa: mostramos o que entendemos
+                    // para que o prestador desminta se estivermos errados.
+                    <span className="pg-helper" style={{ color: 'var(--green-700)' }}>
+                      Entendemos <strong>{plateCheck.plate}</strong> · confirme se está certo
+                    </span>
+                  )}
+                  {plateCheck?.ok && plateCheck.corrections.length === 0 && (
+                    <span className="pg-helper" style={{ color: 'var(--green-700)' }}>
+                      Placa {plateCheck.format === 'mercosul' ? 'Mercosul' : 'antiga'} válida
+                    </span>
+                  )}
                 </div>
                 <div className="pg-field" style={{ flex: 1 }}>
                   <label className="pg-label">Ano</label>
@@ -345,6 +423,41 @@ const ProvSignup = ({ go }: ScreenProps) => {
                   </span>
                 </div>
               </div>
+
+              <div className="pg-field">
+                <label className="pg-label">Peso Bruto Total — PBT (kg)</label>
+                <input
+                  className="pg-input"
+                  inputMode="numeric"
+                  placeholder="3500"
+                  value={data.pbt || ''}
+                  onChange={(e) => update('pbt', +e.target.value.replace(/\D/g, '') || 0)}
+                  style={{ fontFamily: 'var(--font-mono)' }}
+                />
+                <span className="pg-helper">
+                  Está no CRLV do veículo. É o peso com carga — diferente da capacidade acima.
+                  Define sua categoria de CNH e se a ANTT exige RNTRC.
+                </span>
+              </div>
+
+              {cnhCheck && !cnhCheck.ok && (
+                <div
+                  className="pg-card pg-card--soft"
+                  style={{
+                    padding: 14,
+                    fontSize: 12,
+                    lineHeight: 1.5,
+                    borderLeft: '3px solid var(--orange-600)',
+                  }}
+                >
+                  <Icon name="alert" size={14} color="var(--orange-600)" />{' '}
+                  <strong>Sua CNH categoria {data.cnhCat} não habilita este veículo.</strong> Para
+                  PBT de {data.pbt.toLocaleString('pt-BR')} kg é preciso categoria{' '}
+                  {cnhCheck.required}. Revise o PBT ou a categoria no passo anterior — assim seu
+                  cadastro não é recusado na análise.
+                </div>
+              )}
+
               {/* upload veículo */}
               <div>
                 <label className="pg-label" style={{ marginBottom: 6 }}>
@@ -557,7 +670,12 @@ const ProvSignup = ({ go }: ScreenProps) => {
         className="pg-page-foot"
         style={{ borderTop: '1px solid var(--border)', padding: 16, background: 'var(--paper)' }}
       >
-        <button className="pg-btn pg-btn--primary pg-btn--lg pg-btn--block" onClick={next}>
+        <button
+          className="pg-btn pg-btn--primary pg-btn--lg pg-btn--block"
+          onClick={next}
+          disabled={!canAdvance}
+          style={canAdvance ? undefined : { opacity: 0.5, cursor: 'not-allowed' }}
+        >
           {step === total ? 'Enviar para análise' : 'Continuar'}
         </button>
       </div>

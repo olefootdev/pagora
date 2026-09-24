@@ -1,47 +1,51 @@
-import { useState as useStateL, useEffect as useEffectL } from 'react';
+import { useState as useStateL, useEffect as useEffectL, lazy, Suspense } from 'react';
 import { Icon } from './icons';
-import { StatusBar, TopBar } from './core';
+import { StatusBar } from './core';
 import type { ScreenProps } from './types';
+import {
+  MOCK_TRACKING,
+  MOCK_ROUTE,
+  pointAlongRoute,
+  haversineKm,
+  formatDistance,
+} from './lib/geo';
+
+// Leaflet em chunk separado — ver mapa-prestadores.tsx.
+const MapaRastreio = lazy(() => import('./mapa-rastreio'));
 
 // =====================================================================
 // LOCATOR — localizador completo do prestador a caminho
 // =====================================================================
+/** Rumo em graus → ponto cardeal abreviado. */
+const compassLabel = (deg: number): string => {
+  const dirs = ['NORTE', 'NE', 'LESTE', 'SE', 'SUL', 'SO', 'OESTE', 'NO'];
+  return dirs[Math.round(((deg % 360) + 360) % 360 / 45) % 8]!;
+};
+
 const Locator = ({ go }: ScreenProps) => {
-  const [eta, setEta] = useStateL(8);
-  const [distance, setDistance] = useStateL(2.4);
   const [showShare, setShowShare] = useStateL(false);
-  const [progress, setProgress] = useStateL(0.32); // 0..1 path progress
+  const [progress, setProgress] = useStateL(0.32);
+
+  // TODO(banco): trocar por polling de
+  //   supabase.rpc('order_tracking', { p_order_id })
+  // O tipo OrderTracking já espelha o retorno. A RPC devolve lat/lng exatos,
+  // heading, speed_kmh e eta_minutes prontos — este bloco some quase inteiro.
+  const tracking = MOCK_TRACKING;
 
   useEffectL(() => {
-    const t = setInterval(() => {
-      setProgress((p) => {
-        const np = Math.min(0.98, p + 0.005);
-        setEta(Math.max(1, Math.round(8 * (1 - np))));
-        setDistance(+(2.4 * (1 - np)).toFixed(1));
-        return np;
-      });
-    }, 1200);
+    const t = setInterval(() => setProgress((p) => Math.min(0.98, p + 0.005)), 1200);
     return () => clearInterval(t);
   }, []);
 
-  // path from prestador to cliente — quadratic curve
-  const pathD = 'M 60 380 Q 130 280 180 240 T 280 140 T 330 70';
-  // sample point along curve at progress
-  const pointAt = (t: number): [number, number] => {
-    // crude sampling: linear interpolation through 4 keypoints
-    const pts: ReadonlyArray<readonly [number, number]> = [
-      [60, 380],
-      [180, 240],
-      [280, 140],
-      [330, 70],
-    ];
-    const seg = Math.min(2, Math.floor(t * 3));
-    const lt = t * 3 - seg;
-    const a = pts[seg]!;
-    const b = pts[seg + 1]!;
-    return [a[0] + (b[0] - a[0]) * lt, a[1] + (b[1] - a[1]) * lt];
-  };
-  const [px, py] = pointAt(progress);
+  const route = pointAlongRoute(MOCK_ROUTE, progress);
+  const destination = { lat: tracking.dest_lat!, lng: tracking.dest_lng! };
+
+  // Distância e ETA derivam da posição real no mapa, não de um contador
+  // decrescente. Quando o dado vier da RPC, estes dois valores já chegam
+  // calculados no servidor e as duas linhas abaixo saem.
+  const distance = route ? haversineKm(route.position, destination) : 0;
+  const speed = tracking.speed_kmh ?? 25;
+  const eta = Math.max(1, Math.ceil((distance * 1.35) / speed * 60));
 
   return (
     <div
@@ -51,158 +55,26 @@ const Locator = ({ go }: ScreenProps) => {
     >
       <StatusBar />
 
-      {/* MAP — full bleed */}
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background: '#E8EEF5',
-          zIndex: 0,
-        }}
-      >
-        <svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 390 600"
-          preserveAspectRatio="xMidYMid slice"
-          style={{ display: 'block' }}
-        >
-          <defs>
-            <pattern id="locgrid" width="34" height="34" patternUnits="userSpaceOnUse">
-              <path
-                d="M 34 0 L 0 0 0 34"
-                fill="none"
-                stroke="rgba(7,14,26,0.045)"
-                strokeWidth="1"
-              />
-            </pattern>
-            <linearGradient id="routegrad" x1="0" y1="0" x2="1" y2="0">
-              <stop offset="0" stopColor="#22E3A3" />
-              <stop offset="1" stopColor="#0FA77A" />
-            </linearGradient>
-          </defs>
-          <rect width="390" height="600" fill="#E8EEF5" />
-          <rect width="390" height="600" fill="url(#locgrid)" />
-
-          {/* parks / blocks */}
-          <rect x="20" y="40" width="120" height="80" fill="#D4E1D2" rx="4" />
-          <rect x="160" y="30" width="80" height="70" fill="#D6DEE8" rx="4" />
-          <rect x="260" y="20" width="110" height="90" fill="#D6DEE8" rx="4" />
-          <rect x="20" y="140" width="90" height="70" fill="#D6DEE8" rx="4" />
-          <rect x="130" y="130" width="120" height="90" fill="#D4E1D2" rx="4" />
-          <rect x="270" y="130" width="100" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="20" y="240" width="100" height="100" fill="#D6DEE8" rx="4" />
-          <rect x="140" y="250" width="120" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="280" y="240" width="90" height="100" fill="#D6DEE8" rx="4" />
-          <rect x="30" y="370" width="100" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="150" y="360" width="100" height="90" fill="#D6DEE8" rx="4" />
-          <rect x="270" y="370" width="100" height="80" fill="#D6DEE8" rx="4" />
-          <rect x="40" y="480" width="110" height="90" fill="#D6DEE8" rx="4" />
-          <rect x="170" y="470" width="100" height="100" fill="#D6DEE8" rx="4" />
-          <rect x="290" y="480" width="80" height="90" fill="#D6DEE8" rx="4" />
-
-          {/* major roads */}
-          <path d="M0 120 L390 120" stroke="#fff" strokeWidth="14" />
-          <path d="M0 230 L390 230" stroke="#fff" strokeWidth="10" />
-          <path d="M0 350 L390 350" stroke="#fff" strokeWidth="14" />
-          <path d="M0 460 L390 460" stroke="#fff" strokeWidth="10" />
-          <path d="M150 0 L150 600" stroke="#fff" strokeWidth="12" />
-          <path d="M260 0 L260 600" stroke="#fff" strokeWidth="14" />
-
-          {/* dashed road indicators */}
-          <path
-            d="M0 120 L390 120"
-            stroke="rgba(7,14,26,0.15)"
-            strokeWidth="1"
-            strokeDasharray="6 8"
-          />
-          <path
-            d="M0 350 L390 350"
-            stroke="rgba(7,14,26,0.15)"
-            strokeWidth="1"
-            strokeDasharray="6 8"
-          />
-          <path
-            d="M260 0 L260 600"
-            stroke="rgba(7,14,26,0.15)"
-            strokeWidth="1"
-            strokeDasharray="6 8"
-          />
-
-          {/* completed route (behind) */}
-          <path
-            d={pathD}
-            fill="none"
-            stroke="rgba(15,167,122,0.25)"
-            strokeWidth="6"
-            strokeLinecap="round"
-          />
-          {/* active route up to progress */}
-          <path
-            d={pathD}
-            fill="none"
-            stroke="url(#routegrad)"
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray="600"
-            strokeDashoffset={600 - 600 * progress}
-          />
-
-          {/* destination (cliente) */}
-          <g transform="translate(330 70)">
-            <circle r="20" fill="rgba(7,14,26,0.08)" />
-            <circle r="11" fill="var(--night-900)" stroke="#fff" strokeWidth="3" />
-            <text
-              y="-22"
-              textAnchor="middle"
-              fontFamily="JetBrains Mono"
-              fontSize="10"
-              fontWeight="700"
-              fill="#070E1A"
-            >
-              VOCÊ
-            </text>
-          </g>
-
-          {/* origin (prestador start) */}
-          <g transform="translate(60 380)">
-            <circle r="9" fill="#fff" stroke="#0FA77A" strokeWidth="3" />
-          </g>
-
-          {/* moving prestador marker */}
-          <g transform={`translate(${px} ${py})`}>
-            <circle r="32" fill="rgba(34,227,163,0.12)">
-              <animate attributeName="r" from="22" to="42" dur="1.8s" repeatCount="indefinite" />
-              <animate
-                attributeName="opacity"
-                from="0.5"
-                to="0"
-                dur="1.8s"
-                repeatCount="indefinite"
-              />
-            </circle>
-            <circle r="18" fill="#fff" stroke="#0FA77A" strokeWidth="3" />
-            <g transform="translate(-9 -9)">
-              <path
-                d="M2 13V5h11v8"
-                fill="none"
-                stroke="#070E1A"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M13 8h3l2 2v3h-5"
-                fill="none"
-                stroke="#070E1A"
-                strokeWidth="1.6"
-                strokeLinejoin="round"
-              />
-              <circle cx="6" cy="14" r="1.6" fill="#070E1A" />
-              <circle cx="15" cy="14" r="1.6" fill="#070E1A" />
-            </g>
-          </g>
-        </svg>
+      {/* MAPA REAL — ocupa a tela toda, chrome flutua por cima */}
+      <div style={{ position: 'absolute', inset: 0, zIndex: 0 }}>
+        {route && (
+          <Suspense
+            fallback={<div style={{ height: '100%', background: 'var(--ink-100)' }} />}
+          >
+            <MapaRastreio
+              center={destination}
+              zoom={14}
+              height="100%"
+              position={route.position}
+              heading={route.heading}
+              destination={destination}
+              traveled={route.traveled}
+              remaining={route.remaining}
+            />
+          </Suspense>
+        )}
       </div>
+
 
       {/* TOP CHROME — minimal */}
       <div
@@ -312,77 +184,36 @@ const Locator = ({ go }: ScreenProps) => {
           className="pg-mono"
           style={{ fontSize: 22, fontWeight: 700, lineHeight: 1, letterSpacing: '-0.01em' }}
         >
-          42
+          {Math.round(speed)}
         </div>
         <div className="pg-h-eyebrow" style={{ margin: '2px 0 0', fontSize: 8 }}>
           KM/H
         </div>
         <div style={{ height: 1, background: 'var(--border)', margin: '8px 0' }} />
         <div style={{ display: 'grid', placeItems: 'center', marginBottom: 2 }}>
-          <Icon name="navigation" size={16} />
+          <span
+            style={{
+              display: 'grid',
+              placeItems: 'center',
+              transform: `rotate(${route?.heading ?? 0}deg)`,
+              transition: 'transform 600ms ease-out',
+            }}
+          >
+            <Icon name="navigation" size={16} />
+          </span>
         </div>
         <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 8 }}>
-          NORTE
+          {compassLabel(route?.heading ?? 0)}
         </div>
       </div>
 
-      {/* NEXT TURN STRIP */}
-      <div
-        style={{
-          position: 'absolute',
-          top: 130,
-          left: 16,
-          zIndex: 3,
-          background: 'var(--night-900)',
-          color: '#fff',
-          borderRadius: 12,
-          padding: '10px 14px',
-          boxShadow: '0 4px 14px rgba(7,14,26,0.22)',
-          display: 'flex',
-          alignItems: 'center',
-          gap: 10,
-          maxWidth: 220,
-        }}
-      >
-        <span
-          style={{
-            width: 36,
-            height: 36,
-            borderRadius: 10,
-            background: 'rgba(34,227,163,0.16)',
-            color: 'var(--green-500)',
-            display: 'grid',
-            placeItems: 'center',
-            flexShrink: 0,
-          }}
-        >
-          {/* turn-right arrow */}
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M6 20v-7a4 4 0 0 1 4-4h9" />
-            <path d="m15 5 4 4-4 4" />
-          </svg>
-        </span>
-        <div style={{ flex: 1, minWidth: 0 }}>
-          <div
-            className="pg-mono"
-            style={{ fontSize: 11, color: 'var(--green-500)', letterSpacing: '0.08em' }}
-          >
-            EM 400 M
-          </div>
-          <div style={{ fontSize: 13, fontWeight: 600, lineHeight: 1.2, marginTop: 2 }}>
-            Vire à direita na <strong>Av. Paulista</strong>
-          </div>
-        </div>
-      </div>
+      {/*
+        A faixa de "próxima curva" ("Vire à direita na Av. Paulista") foi
+        removida: era navegação passo a passo inventada. Produzi-la de verdade
+        exige um serviço de rotas pago, e o cliente não precisa disso — ele
+        quer saber quando o prestador chega, não por onde ele vai. Quem precisa
+        de rota é o prestador, e esse já usa Waze/Maps.
+      */}
 
       {/* BOTTOM SHEET — provider info + actions */}
       <div
@@ -427,7 +258,7 @@ const Locator = ({ go }: ScreenProps) => {
                 className="pg-mono"
                 style={{ fontSize: 11, color: 'var(--text-mute)', marginLeft: 6 }}
               >
-                · {distance} km
+                · {formatDistance(distance)}
               </span>
             </div>
           </div>

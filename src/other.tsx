@@ -5,6 +5,7 @@ import { track } from './lib/analytics';
 import { supabase } from './lib/supabase';
 import type { ServiceType } from './lib/database.types';
 import type { ScreenProps } from './types';
+import { ExigenciasPreview } from './exigencias';
 
 const SERVICE_ENUM: readonly ServiceType[] = ['frete', 'guincho', 'cacamba'];
 const isServiceType = (id: string): id is ServiceType =>
@@ -356,6 +357,8 @@ const ProviderSignup = ({ go }: ScreenProps) => {
               ))}
             </div>
           </div>
+
+          <ExigenciasPreview services={form.services} />
 
           <div className="pg-field">
             <span className="pg-label">Veículo / Equipamento</span>

@@ -355,6 +355,53 @@ export const requirementsFor = (
     .filter((r) => !r.appliesWhen || r.appliesWhen(ctx, vehicle))
     .map(({ appliesWhen: _drop, ...req }) => req);
 
+export type PreviewRequirement = Requirement & {
+  /** Depende do veículo — só dá para confirmar depois do cadastro da frota. */
+  vehicleDependent: boolean;
+};
+
+/**
+ * Exigências possíveis de um serviço, ANTES de existir veículo cadastrado.
+ *
+ * Serve à tela de captação: o prestador precisa saber o que vão pedir dele
+ * antes de investir 5 passos de formulário. Descobrir no fim que falta
+ * licença municipal é o jeito mais caro de perder um cadastro.
+ *
+ * Diferente de `requirementsFor`, não filtra por veículo — marca as regras
+ * condicionais com `vehicleDependent` para que a tela diga "depende do seu
+ * veículo" em vez de afirmar o que ainda não dá para afirmar.
+ */
+export const previewRequirementsFor = (service: ServiceType): PreviewRequirement[] =>
+  (REQUIREMENT_MATRIX[service] ?? []).map(({ appliesWhen, ...req }) => ({
+    ...req,
+    vehicleDependent: appliesWhen != null,
+  }));
+
+/** União das exigências de vários serviços, sem repetir documento. */
+export const previewRequirementsForMany = (
+  services: ServiceType[],
+): PreviewRequirement[] => {
+  const byKind = new Map<CredentialKind, PreviewRequirement>();
+  for (const s of services) {
+    for (const req of previewRequirementsFor(s)) {
+      const existing = byKind.get(req.kind);
+      // Documento exigido por dois serviços fica com a exigência mais forte:
+      // obrigatório em um e recomendado em outro é, na prática, obrigatório.
+      if (!existing || LEVEL_RANK[req.level] > LEVEL_RANK[existing.level]) {
+        byKind.set(req.kind, req);
+      }
+    }
+  }
+  return [...byKind.values()].sort((a, b) => LEVEL_RANK[b.level] - LEVEL_RANK[a.level]);
+};
+
+const LEVEL_RANK: Record<RequirementLevel, number> = {
+  nao_aplicavel: 0,
+  recomendado: 1,
+  condicional: 2,
+  obrigatorio: 3,
+};
+
 export type CheckStatus = 'aprovado' | 'pendente' | 'bloqueado';
 
 export type CheckResult = {

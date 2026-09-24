@@ -1,112 +1,52 @@
-import { useState as useStateB, useMemo as useMemoB } from 'react';
+import { useState as useStateB, useMemo as useMemoB, lazy, Suspense } from 'react';
 import { Icon } from './icons';
 import { StatusBar, TopBar } from './core';
 import type { ScreenProps } from './types';
+import { MOCK_NEARBY_PROVIDERS, SP_CENTER, formatDistance } from './lib/geo';
+
+// Leaflet só entra no bundle de quem abre o mapa.
+const MapaPrestadores = lazy(() => import('./mapa-prestadores'));
+
+/** Placeholder do mesmo tamanho do mapa — evita o salto de layout ao carregar. */
+const MapaSkeleton = ({ height = 340 }: { height?: number }) => (
+  <div
+    style={{
+      height,
+      background: 'var(--ink-100)',
+      display: 'grid',
+      placeItems: 'center',
+      color: 'var(--text-mute)',
+      fontSize: 12,
+    }}
+  >
+    Carregando mapa…
+  </div>
+);
 
 // =====================================================================
 // MAP — prestadores próximos com filtros · estilo Google Maps
 // =====================================================================
 const ProvidersMap = ({ go }: ScreenProps) => {
-  const [filter, setFilter] = useStateB('near');
-  const [selected, setSelected] = useStateB('p1');
-  const providers = [
-    {
-      id: 'p1',
-      name: 'Carlos Mudanças',
-      initials: 'CM',
-      x: 168,
-      y: 280,
-      rating: 4.7,
-      reviews: 89,
-      dist: '0.8 km',
-      price: 210,
-      fav: true,
-      service: 'Frete',
-    },
-    {
-      id: 'p2',
-      name: 'JM Transportes',
-      initials: 'JM',
-      x: 286,
-      y: 168,
-      rating: 4.9,
-      reviews: 142,
-      dist: '1.4 km',
-      price: 240,
-      service: 'Frete',
-    },
-    {
-      id: 'p3',
-      name: 'Frete Já SP',
-      initials: 'FJ',
-      x: 232,
-      y: 388,
-      rating: 4.8,
-      reviews: 256,
-      dist: '2.1 km',
-      price: 295,
-      service: 'Frete',
-    },
-    {
-      id: 'p4',
-      name: 'Roberto Frota',
-      initials: 'RF',
-      x: 332,
-      y: 326,
-      rating: 4.5,
-      reviews: 47,
-      dist: '2.8 km',
-      price: 260,
-      service: 'Guincho',
-    },
-    {
-      id: 'p5',
-      name: 'Lúcia Caçambas',
-      initials: 'LC',
-      x: 96,
-      y: 432,
-      rating: 4.6,
-      reviews: 64,
-      dist: '3.4 km',
-      price: 195,
-      service: 'Caçamba',
-    },
-    {
-      id: 'p6',
-      name: 'Auto Socorro 24h',
-      initials: 'AS',
-      x: 64,
-      y: 196,
-      rating: 4.8,
-      reviews: 311,
-      dist: '4.0 km',
-      price: 285,
-      service: 'Guincho',
-    },
-  ];
-  const sorted = [...providers].sort((a, b) => {
-    if (filter === 'cheap') return a.price - b.price;
-    if (filter === 'best') return b.rating - a.rating;
-    return parseFloat(a.dist) - parseFloat(b.dist);
-  });
-  const sel = providers.find((p) => p.id === selected);
+  const [filter, setFilter] = useStateB<'near' | 'best' | 'live'>('near');
+  const [selected, setSelected] = useStateB<string | null>(
+    MOCK_NEARBY_PROVIDERS[0]?.provider_id ?? null,
+  );
 
-  // Google Maps palette
-  const C = {
-    land: '#F5F1E8', // off-white land
-    landAlt: '#EFEAD8', // residential
-    park: '#C8E6C9', // green park
-    parkLight: '#D4E9C5',
-    water: '#A8D5F0',
-    road: '#FFFFFF', // major road fill
-    roadStroke: '#E0DCD0',
-    arterial: '#FFE082', // yellow arterial
-    arterialStroke: '#E5C66B',
-    highway: '#FFB74D', // orange highway
-    highwayStroke: '#D89940',
-    label: '#5C5040',
-    labelLight: '#8B7E6C',
-  };
+  // TODO(banco): trocar por
+  //   supabase.rpc('nearby_providers', { p_lat, p_lng, p_service, p_radius_km })
+  // O tipo NearbyProvider já espelha o retorno da RPC — a troca é só a origem.
+  const providers = MOCK_NEARBY_PROVIDERS;
+  const user = SP_CENTER;
+
+  const sorted = useMemoB(() => {
+    const list = [...providers];
+    if (filter === 'best') return list.sort((a, b) => b.rating_avg - a.rating_avg);
+    if (filter === 'live') return list.filter((p) => p.is_available);
+    return list.sort((a, b) => a.distance_km - b.distance_km);
+  }, [filter, providers]);
+
+  const sel = providers.find((p) => p.provider_id === selected) ?? null;
+  const liveCount = providers.filter((p) => p.is_available).length;
 
   return (
     <div
@@ -117,7 +57,7 @@ const ProvidersMap = ({ go }: ScreenProps) => {
       <StatusBar />
       <TopBar onBack={() => go('home')} title="Prestadores" />
 
-      {/* filter chips */}
+      {/* filtros */}
       <div
         style={{
           padding: '10px 14px',
@@ -126,480 +66,84 @@ const ProvidersMap = ({ go }: ScreenProps) => {
         }}
       >
         <div className="pg-segmented">
-          <button
-            className={`pg-segmented-item${filter === 'near' ? ' is-active' : ''}`}
-            onClick={() => setFilter('near')}
-          >
-            Mais próximos
-          </button>
-          <button
-            className={`pg-segmented-item${filter === 'cheap' ? ' is-active' : ''}`}
-            onClick={() => setFilter('cheap')}
-          >
-            Mais baratos
-          </button>
-          <button
-            className={`pg-segmented-item${filter === 'best' ? ' is-active' : ''}`}
-            onClick={() => setFilter('best')}
-          >
-            Melhor avaliados
-          </button>
+          {/*
+            "Mais baratos" saiu de propósito. O prestador não tem preço fixo no
+            Pagora — ele responde com proposta. Exibir um valor aqui prometeria
+            algo que o produto não entrega, e o cliente cobraria essa promessa.
+          */}
+          {(
+            [
+              ['near', 'Mais próximos'],
+              ['best', 'Melhor avaliados'],
+              ['live', `Disponíveis (${liveCount})`],
+            ] as const
+          ).map(([id, label]) => (
+            <button
+              key={id}
+              className={`pg-segmented-item${filter === id ? ' is-active' : ''}`}
+              onClick={() => setFilter(id)}
+            >
+              {label}
+            </button>
+          ))}
         </div>
       </div>
 
-      {/* MAP — Google Maps style */}
-      <div
-        style={{
-          position: 'relative',
-          height: 340,
-          flexShrink: 0,
-          background: C.land,
-          overflow: 'hidden',
-        }}
-      >
-        <svg
-          width="100%"
-          height="100%"
-          viewBox="0 0 390 340"
-          preserveAspectRatio="xMidYMid slice"
-          style={{ display: 'block' }}
-        >
-          <defs>
-            <filter id="pinShadow" x="-50%" y="-50%" width="200%" height="200%">
-              <feDropShadow dx="0" dy="2" stdDeviation="2" floodOpacity="0.3" />
-            </filter>
-          </defs>
-
-          {/* base land */}
-          <rect width="390" height="340" fill={C.land} />
-
-          {/* residential blocks (subtle alt color) */}
-          <rect x="0" y="0" width="195" height="120" fill={C.landAlt} opacity="0.55" />
-          <rect x="195" y="220" width="195" height="120" fill={C.landAlt} opacity="0.55" />
-
-          {/* WATER — river crossing */}
-          <path
-            d="M -10 60 Q 80 40, 160 80 T 320 100 L 410 95 L 410 130 Q 330 135, 240 110 T 80 100 L -10 110 Z"
-            fill={C.water}
+      {/* MAPA REAL */}
+      <div style={{ position: 'relative', flexShrink: 0 }}>
+        <Suspense fallback={<MapaSkeleton />}>
+          <MapaPrestadores
+            center={user}
+            zoom={14}
+            height={340}
+            providers={sorted}
+            selectedId={selected}
+            onSelect={setSelected}
+            user={user}
+            radiusKm={5}
           />
+        </Suspense>
 
-          {/* PARKS / green areas */}
-          <ellipse cx="290" cy="240" rx="55" ry="42" fill={C.park} />
-          <ellipse cx="290" cy="240" rx="55" ry="42" fill={C.parkLight} opacity="0.5" />
-          <ellipse cx="60" cy="290" rx="38" ry="28" fill={C.park} />
-          <ellipse cx="170" cy="55" rx="32" ry="20" fill={C.park} />
-
-          {/* ROAD CASING (darker stroke under) — drawn first so road fill sits on top */}
-          {/* highways */}
-          <path d="M -10 175 L 410 175" stroke={C.highwayStroke} strokeWidth="14" />
-          <path d="M 195 -10 L 195 350" stroke={C.highwayStroke} strokeWidth="14" />
-          {/* arterials */}
-          <path d="M -10 245 L 410 245" stroke={C.arterialStroke} strokeWidth="11" />
-          <path d="M 80 -10 L 80 350" stroke={C.arterialStroke} strokeWidth="10" />
-          <path d="M 310 -10 L 310 350" stroke={C.arterialStroke} strokeWidth="10" />
-          {/* local roads */}
-          <path d="M -10 210 L 410 210" stroke={C.roadStroke} strokeWidth="8" />
-          <path d="M -10 285 L 410 285" stroke={C.roadStroke} strokeWidth="8" />
-          <path d="M -10 145 L 410 145" stroke={C.roadStroke} strokeWidth="7" />
-          <path d="M 130 -10 L 130 350" stroke={C.roadStroke} strokeWidth="7" />
-          <path d="M 250 -10 L 250 350" stroke={C.roadStroke} strokeWidth="7" />
-          <path d="M 360 -10 L 360 350" stroke={C.roadStroke} strokeWidth="7" />
-          {/* diagonal scenic road */}
-          <path
-            d="M -10 320 Q 100 260 200 250 T 410 200"
-            fill="none"
-            stroke={C.roadStroke}
-            strokeWidth="7"
-          />
-
-          {/* ROAD FILL (white/yellow/orange on top of casings) */}
-          <path d="M -10 175 L 410 175" stroke={C.highway} strokeWidth="11" />
-          <path d="M 195 -10 L 195 350" stroke={C.highway} strokeWidth="11" />
-          <path d="M -10 245 L 410 245" stroke={C.arterial} strokeWidth="8.5" />
-          <path d="M 80 -10 L 80 350" stroke={C.arterial} strokeWidth="7.5" />
-          <path d="M 310 -10 L 310 350" stroke={C.arterial} strokeWidth="7.5" />
-          <path d="M -10 210 L 410 210" stroke={C.road} strokeWidth="5.5" />
-          <path d="M -10 285 L 410 285" stroke={C.road} strokeWidth="5.5" />
-          <path d="M -10 145 L 410 145" stroke={C.road} strokeWidth="5" />
-          <path d="M 130 -10 L 130 350" stroke={C.road} strokeWidth="5" />
-          <path d="M 250 -10 L 250 350" stroke={C.road} strokeWidth="5" />
-          <path d="M 360 -10 L 360 350" stroke={C.road} strokeWidth="5" />
-          <path
-            d="M -10 320 Q 100 260 200 250 T 410 200"
-            fill="none"
-            stroke={C.road}
-            strokeWidth="5"
-          />
-
-          {/* small connector roads (lighter, no casing) */}
-          <path d="M 80 60 L 195 60" stroke={C.road} strokeWidth="3" opacity="0.85" />
-          <path d="M 250 60 L 360 60" stroke={C.road} strokeWidth="3" opacity="0.85" />
-          <path d="M 130 110 L 250 110" stroke={C.road} strokeWidth="3" opacity="0.85" />
-          <path d="M 80 320 L 195 320" stroke={C.road} strokeWidth="3" opacity="0.85" />
-          <path d="M 250 320 L 360 320" stroke={C.road} strokeWidth="3" opacity="0.85" />
-
-          {/* highway shields (small numbered badges) */}
-          <g transform="translate(150 175)">
-            <rect
-              x="-12"
-              y="-7"
-              width="24"
-              height="14"
-              rx="3"
-              fill="#fff"
-              stroke="#D89940"
-              strokeWidth="1"
-            />
-            <text
-              textAnchor="middle"
-              y="3"
-              fontFamily="Inter,sans-serif"
-              fontSize="9"
-              fontWeight="700"
-              fill="#5C5040"
-            >
-              SP-15
-            </text>
-          </g>
-          <g transform="translate(195 100)">
-            <rect
-              x="-10"
-              y="-7"
-              width="20"
-              height="14"
-              rx="3"
-              fill="#fff"
-              stroke="#D89940"
-              strokeWidth="1"
-            />
-            <text
-              textAnchor="middle"
-              y="3"
-              fontFamily="Inter,sans-serif"
-              fontSize="9"
-              fontWeight="700"
-              fill="#5C5040"
-            >
-              232
-            </text>
-          </g>
-
-          {/* PLACE LABELS */}
-          <text
-            x="50"
-            y="35"
-            fontFamily="Inter,sans-serif"
-            fontSize="10"
-            fontWeight="600"
-            fill={C.label}
-            letterSpacing="0.6"
-          >
-            PINHEIROS
-          </text>
-          <text
-            x="290"
-            y="35"
-            fontFamily="Inter,sans-serif"
-            fontSize="10"
-            fontWeight="600"
-            fill={C.label}
-            letterSpacing="0.6"
-          >
-            VILA MADALENA
-          </text>
-          <text
-            x="40"
-            y="160"
-            fontFamily="Inter,sans-serif"
-            fontSize="9"
-            fontWeight="500"
-            fill={C.labelLight}
-          >
-            Itaim Bibi
-          </text>
-          <text
-            x="295"
-            y="270"
-            fontFamily="Inter,sans-serif"
-            fontSize="8"
-            fontWeight="500"
-            fill="#5A8A5A"
-            textAnchor="middle"
-          >
-            Parque do Povo
-          </text>
-          <text
-            x="60"
-            y="295"
-            fontFamily="Inter,sans-serif"
-            fontSize="7"
-            fontWeight="500"
-            fill="#5A8A5A"
-            textAnchor="middle"
-          >
-            P. Villa-Lobos
-          </text>
-          <text
-            x="160"
-            y="60"
-            fontFamily="Inter,sans-serif"
-            fontSize="7"
-            fontStyle="italic"
-            fill="#3A6B9C"
-            textAnchor="middle"
-          >
-            Rio Pinheiros
-          </text>
-          <text
-            x="220"
-            y="170"
-            fontFamily="Inter,sans-serif"
-            fontSize="7"
-            fontWeight="500"
-            fill={C.labelLight}
-          >
-            Av. Brigadeiro
-          </text>
-          <text
-            x="105"
-            y="244"
-            fontFamily="Inter,sans-serif"
-            fontSize="7"
-            fontWeight="500"
-            fill={C.labelLight}
-          >
-            R. Teodoro
-          </text>
-
-          {/* POI dots — restaurants, gas, hospital style */}
-          <circle cx="100" cy="200" r="3" fill="#E57373" />
-          <circle cx="240" cy="220" r="3" fill="#FFA726" />
-          <circle cx="340" cy="170" r="3" fill="#42A5F5" />
-          <circle cx="220" cy="295" r="3" fill="#26A69A" />
-          <circle cx="135" cy="320" r="3" fill="#AB47BC" />
-
-          {/* USER LOCATION — blue dot google style */}
-          <g transform="translate(195 168)">
-            <circle r="28" fill="#4285F4" opacity="0.18">
-              <animate attributeName="r" from="14" to="36" dur="2.4s" repeatCount="indefinite" />
-              <animate
-                attributeName="opacity"
-                from="0.35"
-                to="0"
-                dur="2.4s"
-                repeatCount="indefinite"
-              />
-            </circle>
-            <circle r="9" fill="#4285F4" stroke="#fff" strokeWidth="3" />
-          </g>
-
-          {/* PROVIDER PINS — Google Maps teardrop */}
-          {providers.map((p) => {
-            const isSel = p.id === selected;
-            const color =
-              p.service === 'Frete'
-                ? 'var(--green-700)'
-                : p.service === 'Guincho'
-                  ? 'var(--orange-600)'
-                  : '#7E57C2';
-            return (
-              <g
-                key={p.id}
-                transform={`translate(${p.x} ${p.y})`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setSelected(p.id)}
-                filter="url(#pinShadow)"
-              >
-                {isSel ? (
-                  <>
-                    {/* Selected: large teardrop */}
-                    <path
-                      d="M 0 -34 C 12 -34 18 -25 18 -16 C 18 -6 12 0 0 14 C -12 0 -18 -6 -18 -16 C -18 -25 -12 -34 0 -34 Z"
-                      fill={color}
-                      stroke="#fff"
-                      strokeWidth="2.5"
-                    />
-                    <circle cx="0" cy="-17" r="9" fill="#fff" />
-                    <text
-                      textAnchor="middle"
-                      y="-13.5"
-                      fontFamily="JetBrains Mono"
-                      fontSize="9"
-                      fontWeight="700"
-                      fill={color}
-                    >
-                      {p.initials}
-                    </text>
-                  </>
-                ) : (
-                  <>
-                    {/* Unselected: small circular dot */}
-                    <circle r="11" fill={color} stroke="#fff" strokeWidth="2.5" />
-                    <text
-                      textAnchor="middle"
-                      y="3.5"
-                      fontFamily="JetBrains Mono"
-                      fontSize="9"
-                      fontWeight="700"
-                      fill="#fff"
-                    >
-                      {p.initials}
-                    </text>
-                  </>
-                )}
-              </g>
-            );
-          })}
-        </svg>
-
-        {/* Map controls — top-right */}
-        <div
-          style={{
-            position: 'absolute',
-            top: 12,
-            right: 12,
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 8,
-          }}
-        >
-          <button aria-label="Camadas" style={mapBtnStyle}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#444"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <polygon points="12 2 2 7 12 12 22 7 12 2" />
-              <polyline points="2 17 12 22 22 17" />
-              <polyline points="2 12 12 17 22 12" />
-            </svg>
-          </button>
-          <button aria-label="Sua localização" style={mapBtnStyle}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#4285F4"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <circle cx="12" cy="12" r="3" />
-              <path d="M12 2v3" />
-              <path d="M12 19v3" />
-              <path d="M2 12h3" />
-              <path d="M19 12h3" />
-            </svg>
-          </button>
-        </div>
-
-        {/* Zoom controls — bottom right */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 12,
-            right: 12,
-            display: 'flex',
-            flexDirection: 'column',
-            background: '#fff',
-            borderRadius: 6,
-            boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
-            overflow: 'hidden',
-          }}
-        >
-          <button aria-label="Aproximar" style={zoomBtnStyle}>
-            ＋
-          </button>
-          <div style={{ height: 1, background: '#E0E0E0' }} />
-          <button aria-label="Afastar" style={zoomBtnStyle}>
-            −
-          </button>
-        </div>
-
-        {/* Scale bar — bottom left */}
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 14,
-            left: 12,
-            display: 'flex',
-            alignItems: 'center',
-            gap: 4,
-          }}
-        >
-          <span
-            style={{
-              height: 8,
-              width: 60,
-              borderLeft: '2px solid #444',
-              borderRight: '2px solid #444',
-              borderBottom: '2px solid #444',
-            }}
-          />
-          <span
-            style={{
-              fontSize: 10,
-              color: '#444',
-              fontFamily: 'Inter,sans-serif',
-              fontWeight: 500,
-              textShadow: '0 1px 0 rgba(255,255,255,0.8)',
-            }}
-          >
-            500 m
-          </span>
-        </div>
-
-        {/* Legend chip top-left */}
+        {/* legenda */}
         <div
           style={{
             position: 'absolute',
             top: 12,
             left: 12,
-            background: '#fff',
-            borderRadius: 6,
+            zIndex: 500,
+            background: 'var(--paper)',
+            borderRadius: 8,
             padding: '6px 10px',
-            boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
+            boxShadow: 'var(--shadow-md)',
             display: 'flex',
             gap: 10,
             fontSize: 10,
-            fontFamily: 'Inter,sans-serif',
           }}
         >
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span
-              style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--green-700)' }}
-            />
-            Frete
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span
-              style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--orange-600)' }}
-            />
-            Guincho
-          </span>
-          <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-            <span style={{ width: 8, height: 8, borderRadius: '50%', background: '#7E57C2' }} />
-            Caçamba
-          </span>
+          {[
+            ['Frete', '#0f9d63'],
+            ['Guincho', '#e2680f'],
+            ['Caçamba', '#7e57c2'],
+          ].map(([label, color]) => (
+            <span key={label} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+              <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+              {label}
+            </span>
+          ))}
         </div>
 
-        {/* Selected provider preview card — floating bottom */}
+        {/* card do selecionado */}
         {sel && (
           <div
             style={{
               position: 'absolute',
               left: 12,
-              right: 80,
-              bottom: 50,
-              background: '#fff',
-              borderRadius: 10,
-              boxShadow: '0 2px 10px rgba(0,0,0,0.22)',
+              right: 12,
+              bottom: 12,
+              zIndex: 500,
+              background: 'var(--paper)',
+              borderRadius: 12,
+              boxShadow: 'var(--shadow-lg)',
               padding: '10px 12px',
               display: 'flex',
               alignItems: 'center',
@@ -608,8 +152,8 @@ const ProvidersMap = ({ go }: ScreenProps) => {
           >
             <div
               style={{
-                width: 36,
-                height: 36,
+                width: 38,
+                height: 38,
                 borderRadius: 10,
                 background: 'var(--night-900)',
                 color: 'var(--green-500)',
@@ -621,10 +165,16 @@ const ProvidersMap = ({ go }: ScreenProps) => {
                 flexShrink: 0,
               }}
             >
-              {sel.initials}
+              {sel.display_name
+                .split(/\s+/)
+                .slice(0, 2)
+                .map((w) => w[0])
+                .join('')}
             </div>
             <div style={{ flex: 1, minWidth: 0 }}>
-              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>{sel.name}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, lineHeight: 1.2 }}>
+                {sel.display_name}
+              </div>
               <div
                 style={{
                   fontSize: 11,
@@ -632,21 +182,34 @@ const ProvidersMap = ({ go }: ScreenProps) => {
                   marginTop: 2,
                   display: 'flex',
                   gap: 5,
+                  alignItems: 'center',
                 }}
               >
                 <Icon name="star" size={10} />
                 <span>
-                  {sel.rating} · {sel.reviews}
+                  {sel.rating_avg} · {sel.rating_count}
                 </span>
                 <span>·</span>
-                <span>{sel.dist}</span>
+                <span>{formatDistance(sel.distance_km)}</span>
+                {sel.vehicle_type && (
+                  <>
+                    <span>·</span>
+                    <span>{sel.vehicle_type}</span>
+                  </>
+                )}
               </div>
             </div>
-            <div style={{ textAlign: 'right' }}>
-              <div className="pg-mono" style={{ fontSize: 14, fontWeight: 700 }}>
-                R$ {sel.price}
-              </div>
-            </div>
+            {/*
+              Diferença que o cliente precisa enxergar: "disponível agora" é
+              ping recente; "na região" é base cadastrada. Prometer o segundo
+              como se fosse o primeiro gera pedido que ninguém atende.
+            */}
+            <span
+              className={`pg-tag${sel.is_available ? ' pg-tag--green' : ''}`}
+              style={{ fontSize: 9, flexShrink: 0 }}
+            >
+              {sel.is_available ? 'DISPONÍVEL' : 'NA REGIÃO'}
+            </span>
           </div>
         )}
       </div>
@@ -655,20 +218,33 @@ const ProvidersMap = ({ go }: ScreenProps) => {
         <div style={{ padding: '16px 20px 20px' }}>
           <div className="pg-row pg-row--between" style={{ marginBottom: 12 }}>
             <div className="pg-h-eyebrow" style={{ margin: 0 }}>
-              {sorted.length} PRESTADORES NA SUA REGIÃO
+              {sorted.length} {sorted.length === 1 ? 'PRESTADOR' : 'PRESTADORES'} NA SUA REGIÃO
             </div>
           </div>
+
+          {sorted.length === 0 && (
+            <div
+              className="pg-card pg-card--padded"
+              style={{ textAlign: 'center', color: 'var(--text-soft)', fontSize: 13 }}
+            >
+              Nenhum prestador disponível agora nessa região. Tente o filtro
+              &ldquo;Mais próximos&rdquo; para ver quem atende por aqui.
+            </div>
+          )}
+
           <div className="pg-stack pg-stack--sm">
             {sorted.map((p) => (
               <button
-                key={p.id}
-                onClick={() => setSelected(p.id)}
+                key={p.provider_id}
+                onClick={() => setSelected(p.provider_id)}
                 className="pg-card pg-card--padded"
                 style={{
                   textAlign: 'left',
                   cursor: 'pointer',
                   width: '100%',
-                  border: `1px solid ${selected === p.id ? 'var(--night-900)' : 'var(--border)'}`,
+                  border: `1px solid ${
+                    selected === p.provider_id ? 'var(--night-900)' : 'var(--border)'
+                  }`,
                   background: 'var(--paper)',
                 }}
               >
@@ -685,40 +261,62 @@ const ProvidersMap = ({ go }: ScreenProps) => {
                       fontWeight: 700,
                       fontFamily: 'var(--font-mono)',
                       fontSize: 13,
+                      position: 'relative',
+                      flexShrink: 0,
                     }}
                   >
-                    {p.initials}
+                    {p.display_name
+                      .split(/\s+/)
+                      .slice(0, 2)
+                      .map((w) => w[0])
+                      .join('')}
+                    {p.is_available && (
+                      <span
+                        style={{
+                          position: 'absolute',
+                          bottom: -2,
+                          right: -2,
+                          width: 13,
+                          height: 13,
+                          borderRadius: '50%',
+                          background: 'var(--green-500)',
+                          border: '2.5px solid var(--paper)',
+                        }}
+                      />
+                    )}
                   </div>
                   <div style={{ flex: 1, minWidth: 0 }}>
-                    <div className="pg-row" style={{ gap: 6 }}>
-                      <span style={{ fontSize: 15, fontWeight: 700 }}>{p.name}</span>
-                      {p.fav && <Icon name="heart" size={14} />}
-                    </div>
+                    <div style={{ fontSize: 15, fontWeight: 700 }}>{p.display_name}</div>
                     <div
                       className="pg-row"
                       style={{ fontSize: 12, color: 'var(--text-soft)', gap: 8, marginTop: 2 }}
                     >
                       <span>
-                        <Icon name="star" size={11} /> {p.rating} ({p.reviews})
+                        <Icon name="star" size={11} /> {p.rating_avg} ({p.rating_count})
                       </span>
                       <span>·</span>
-                      <span>{p.dist}</span>
-                      <span>·</span>
-                      <span
-                        className="pg-tag"
-                        style={{ background: 'var(--ink-100)', padding: '1px 6px', fontSize: 10 }}
+                      <span>{formatDistance(p.distance_km)}</span>
+                    </div>
+                    {p.vehicle_type && (
+                      <div
+                        className="pg-mono"
+                        style={{ fontSize: 10, color: 'var(--text-mute)', marginTop: 4 }}
                       >
-                        {p.service}
-                      </span>
-                    </div>
+                        {p.vehicle_type.toUpperCase()}
+                      </div>
+                    )}
                   </div>
-                  <div style={{ textAlign: 'right' }}>
-                    <div className="pg-mono" style={{ fontSize: 16, fontWeight: 700 }}>
-                      R$ {p.price}
-                    </div>
-                    <div className="pg-h-eyebrow" style={{ margin: 0, fontSize: 9 }}>
-                      MÉDIA
-                    </div>
+                  <div style={{ textAlign: 'right', flexShrink: 0 }}>
+                    <span
+                      className="pg-tag"
+                      style={{
+                        background: 'var(--ink-100)',
+                        padding: '1px 6px',
+                        fontSize: 10,
+                      }}
+                    >
+                      {p.services[0]}
+                    </span>
                   </div>
                 </div>
               </button>
@@ -730,29 +328,6 @@ const ProvidersMap = ({ go }: ScreenProps) => {
   );
 };
 
-const mapBtnStyle = {
-  width: 36,
-  height: 36,
-  background: '#fff',
-  border: 'none',
-  borderRadius: 6,
-  boxShadow: '0 1px 4px rgba(0,0,0,0.18)',
-  display: 'grid',
-  placeItems: 'center',
-  cursor: 'pointer',
-};
-const zoomBtnStyle = {
-  width: 36,
-  height: 36,
-  background: '#fff',
-  border: 'none',
-  fontSize: 20,
-  color: '#444',
-  cursor: 'pointer',
-  fontFamily: 'inherit',
-  display: 'grid',
-  placeItems: 'center',
-};
 
 // =====================================================================
 // NOTIFICATIONS

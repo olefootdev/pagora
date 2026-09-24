@@ -3,6 +3,8 @@ import {
   minimumCNH,
   cnhCovers,
   requirementsFor,
+  previewRequirementsFor,
+  previewRequirementsForMany,
   evaluateCheck,
   licenseCoversMunicipality,
   checkSummary,
@@ -196,6 +198,55 @@ describe('evaluateCheck — decisão', () => {
     const r = evaluateCheck(ctx(), smallFrete, [verified('cnh'), verified('crlv')]);
     expect(r.status).toBe('aprovado');
     expect([...r.missing, ...r.needsLegalReview].map((x) => x.kind)).not.toContain('seguro_rcdc');
+  });
+});
+
+describe('previewRequirementsFor — prévia sem veículo cadastrado', () => {
+  it('lista tudo que o serviço pode exigir, inclusive o condicional', () => {
+    const reqs = previewRequirementsFor('frete');
+    expect(reqs.map((r) => r.kind)).toContain('rntrc');
+  });
+
+  it('marca como dependente de veículo o que não dá para afirmar ainda', () => {
+    const reqs = previewRequirementsFor('frete');
+    const rntrc = reqs.find((r) => r.kind === 'rntrc');
+    const cnh = reqs.find((r) => r.kind === 'cnh');
+    // RNTRC depende do PBT; CNH vale sempre.
+    expect(rntrc?.vehicleDependent).toBe(true);
+    expect(cnh?.vehicleDependent).toBe(false);
+  });
+});
+
+describe('previewRequirementsForMany — união de serviços', () => {
+  it('não repete documento exigido por mais de um serviço', () => {
+    const reqs = previewRequirementsForMany(['frete', 'guincho']);
+    const cnhs = reqs.filter((r) => r.kind === 'cnh');
+    expect(cnhs).toHaveLength(1);
+  });
+
+  it('junta exigências específicas de cada serviço', () => {
+    const kinds = previewRequirementsForMany(['frete', 'cacamba']).map((r) => r.kind);
+    expect(kinds).toContain('rntrc'); // do frete
+    expect(kinds).toContain('licenca_residuos'); // da caçamba
+  });
+
+  it('documento exigido em níveis diferentes fica com o mais forte', () => {
+    // RNTRC é 'obrigatorio' no frete e 'condicional' no guincho.
+    const reqs = previewRequirementsForMany(['guincho', 'frete']);
+    expect(reqs.find((r) => r.kind === 'rntrc')?.level).toBe('obrigatorio');
+  });
+
+  it('ordena obrigatórios antes de recomendados', () => {
+    const reqs = previewRequirementsForMany(['frete']);
+    const primeiroRecomendado = reqs.findIndex((r) => r.level === 'recomendado');
+    const ultimoObrigatorio = reqs.map((r) => r.level).lastIndexOf('obrigatorio');
+    if (primeiroRecomendado !== -1) {
+      expect(ultimoObrigatorio).toBeLessThan(primeiroRecomendado);
+    }
+  });
+
+  it('lista vazia devolve vazio', () => {
+    expect(previewRequirementsForMany([])).toEqual([]);
   });
 });
 
