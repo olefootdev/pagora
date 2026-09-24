@@ -263,3 +263,38 @@ export const MOCK_TRACKING: OrderTracking = {
   distance_km: 2.4,
   eta_minutes: 8,
 };
+
+// ─── Distância rodoviária ────────────────────────────────────────────
+
+/**
+ * Fator de sinuosidade: quanto a rua é mais longa que a linha reta.
+ *
+ * 1.35 é o mesmo valor usado em `order_tracking()` no banco (migration
+ * geolocation), e as duas implementações precisam concordar — senão a
+ * distância do orçamento diverge da distância do rastreio para a mesma
+ * viagem, e o cliente vê dois números.
+ *
+ * É aproximação, não medição. Malha urbana densa fica perto de 1.2; trajeto
+ * que contorna rio ou serra passa de 1.6. Uma API de rotas dá o número real,
+ * mas 1.35 sobre pontos geocodificados já é ordens de magnitude melhor que a
+ * constante de 15 km que existia antes.
+ */
+export const ROAD_FACTOR = 1.35;
+
+/**
+ * Distância rodoviária estimada em km entre dois pontos.
+ *
+ * Arredonda para 1 casa: devolver 14.237 km sugere precisão que a estimativa
+ * não tem, e o preço é calculado sobre este número.
+ */
+export const roadDistanceKm = (a: LatLng, b: LatLng, factor = ROAD_FACTOR): number =>
+  Math.round(haversineKm(a, b) * factor * 10) / 10;
+
+/**
+ * Tempo de viagem estimado em minutos, por velocidade média urbana.
+ *
+ * 25 km/h é o mesmo default de `order_tracking()`. Serve para a tela dizer
+ * "~35 min" sem inventar: é trânsito de cidade, não velocidade de rodovia.
+ */
+export const travelMinutes = (distanceKm: number, avgKmh = 25): number =>
+  Math.max(1, Math.ceil((distanceKm / avgKmh) * 60));

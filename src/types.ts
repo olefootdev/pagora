@@ -19,7 +19,24 @@ export type PagoraState = {
   cargo?: string | null;
   origin?: string;
   dest?: string;
+  /**
+   * Distância rodoviária estimada em km. Calculada a partir das coordenadas
+   * geocodificadas — ver `roadDistanceKm`. Era uma constante de 15 km, o que
+   * fazia todo orçamento sair com a mesma base de quilometragem.
+   */
   distance?: number;
+  /** Coordenadas resolvidas do endereço. Alimentam distância e mapa. */
+  originPoint?: { lat: number; lng: number } | null;
+  destPoint?: { lat: number; lng: number } | null;
+  /**
+   * De onde veio `distance`:
+   *   'calculada'  → os dois endereços foram geocodificados
+   *   'estimada'   → ao menos um ponto é aproximado (rua/bairro, sem número)
+   *   'indisponivel' → não foi possível geocodificar; o preço é provisório
+   *
+   * A tela precisa disso para não exibir um número preciso que não é.
+   */
+  distanceSource?: 'calculada' | 'estimada' | 'indisponivel';
   originAccess?: AccessInfo;
   destAccess?: AccessInfo;
   vehicle?: string | null;

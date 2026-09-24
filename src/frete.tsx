@@ -3,6 +3,8 @@ import { Icon } from './icons';
 import { StatusBar, TopBar } from './core';
 import { abrirWhatsApp, mensagemFrete } from './lib/whatsapp';
 import { track } from './lib/analytics';
+import { geocodePair } from './lib/geocoding';
+import { roadDistanceKm, travelMinutes, formatDistance } from './lib/geo';
 import type {
   PagoraState,
   PricingResult,
@@ -185,6 +187,40 @@ const AccessBlock = ({
 // =====================================================================
 const Frete2 = ({ go, state, set }: FlowScreenProps) => {
   const valid = state.origin && state.dest && state.originAccess?.type && state.destAccess?.type;
+  const [geoStatus, setGeoStatus] = useStateF<'idle' | 'buscando' | 'erro'>('idle');
+
+  // Geocodifica ao avançar, não a cada tecla: endereço incompleto gera
+  // consulta inútil, e no Google isso é request cobrado.
+  //
+  // Falha de geocoding NÃO bloqueia o fluxo. O orçamento sai marcado como
+  // provisório (`distanceSource`), porque perder o pedido por causa de um CEP
+  // que a API não conhece é pior do que cotar com margem.
+  const avancar = async () => {
+    if (geoStatus === 'buscando') return;
+    setGeoStatus('buscando');
+    try {
+      const { origin, dest } = await geocodePair(state.origin ?? '', state.dest ?? '');
+      if (origin && dest) {
+        const km = roadDistanceKm(origin.point, dest.point);
+        const aproximado = origin.precision === 'aproximada' || dest.precision === 'aproximada';
+        set({
+          originPoint: origin.point,
+          destPoint: dest.point,
+          distance: km,
+          distanceSource: aproximado ? 'estimada' : 'calculada',
+        });
+      } else {
+        set({ originPoint: null, destPoint: null, distanceSource: 'indisponivel' });
+      }
+      go('frete-3');
+    } catch {
+      // Erro de infraestrutura (cota, rede). Segue o fluxo marcando provisório.
+      set({ originPoint: null, destPoint: null, distanceSource: 'indisponivel' });
+      setGeoStatus('erro');
+      go('frete-3');
+    }
+  };
+
   return (
     <div className="pg-screen" data-screen-label="04 Frete · Trajeto">
       <StatusBar />
@@ -252,7 +288,16 @@ const Frete2 = ({ go, state, set }: FlowScreenProps) => {
             }}
           >
             <Icon name="ruler" size={14} />
-            <span>~{state.distance || 15} km · 35 min de carro</span>
+            {state.distanceSource === 'calculada' || state.distanceSource === 'estimada' ? (
+              <span>
+                {state.distanceSource === 'estimada' ? '~' : ''}
+                {formatDistance(state.distance ?? 0)} · {travelMinutes(state.distance ?? 0)} min
+              </span>
+            ) : (
+              // Antes esta linha exibia "~15 km · 35 min" SEMPRE, inclusive
+              // antes de haver endereço. Número inventado com cara de medido.
+              <span>Distância calculada ao continuar</span>
+            )}
           </div>
 
           {/* Destination */}
@@ -300,10 +345,11 @@ const Frete2 = ({ go, state, set }: FlowScreenProps) => {
         <div className="pg-page-foot">
           <button
             className="pg-btn pg-btn--primary pg-btn--block"
-            disabled={!valid}
-            onClick={() => go('frete-3')}
+            disabled={!valid || geoStatus === 'buscando'}
+            onClick={avancar}
           >
-            Continuar <Icon name="arrow-right" size={18} />
+            {geoStatus === 'buscando' ? 'Calculando trajeto…' : 'Continuar'}{' '}
+            <Icon name="arrow-right" size={18} />
           </button>
         </div>
       </div>
@@ -595,6 +641,25 @@ const FreteSummary = ({ go, state }: SummaryScreenProps) => {
             <div style={{ color: 'rgba(255,255,255,0.65)', fontSize: 13, marginTop: 8 }}>
               Range estimado · prestador envia valor final na proposta
             </div>
+            {state.distanceSource === 'indisponivel' && (
+              // Honestidade obrigatória: sem geocodificar, o cálculo cai numa
+              // quilometragem padrão. Exibir o valor como se fosse medido é o
+              // bug que este fluxo existe para corrigir.
+              <div
+                style={{
+                  marginTop: 10,
+                  padding: '8px 10px',
+                  borderRadius: 8,
+                  background: 'rgba(255,255,255,0.08)',
+                  color: 'rgba(255,255,255,0.8)',
+                  fontSize: 12,
+                  lineHeight: 1.45,
+                }}
+              >
+                Não conseguimos medir o trajeto pelos endereços informados. Este valor usa uma
+                quilometragem padrão — o prestador ajusta na proposta.
+              </div>
+            )}
 
             <hr
               className="pg-divider--dashed"
@@ -604,7 +669,15 @@ const FreteSummary = ({ go, state }: SummaryScreenProps) => {
             <div className="pg-stack pg-stack--sm" style={{ fontSize: 14 }}>
               {((): ReadonlyArray<readonly [string, string, string]> => {
                 const rows: Array<readonly [string, string, string]> = [
-                  ['Distância', `${state.distance || 15} km`, `R$ ${price.breakdown.baseKm}`],
+                  [
+                    state.distanceSource === 'indisponivel'
+                      ? 'Distância (a confirmar)'
+                      : state.distanceSource === 'estimada'
+                        ? 'Distância (aproximada)'
+                        : 'Distância',
+                    formatDistance(state.distance || 15),
+                    `R$ ${price.breakdown.baseKm}`,
+                  ],
                   ['Veículo', veh, `R$ ${price.breakdown.vehicle ?? 0}`],
                   [
                     'Ajudantes',
