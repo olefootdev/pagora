@@ -1,57 +1,93 @@
 # Deploy — Cloudflare Pages
 
-Setup mínimo pra colocar pagora.com.br no ar via `git push origin main`.
+O PAGORA sobe pela **integração nativa do Cloudflare Pages com o GitHub**: você
+dá `git push` na `main` e o Cloudflare builda e publica sozinho.
 
-## 1. Criar o projeto no Cloudflare
+> **Mudou em 30/09/2026.** Antes este arquivo mandava o oposto — publicar por
+> GitHub Actions e _não_ conectar o Cloudflare ao repositório. Aquele caminho
+> roda o deploy fora do Cloudflare e por isso exige `CLOUDFLARE_API_TOKEN` e
+> `CLOUDFLARE_ACCOUNT_ID` como secrets, além de todas as `VITE_*`. Oito deploys
+> falharam nessa configuração. A integração nativa faz o mesmo sem credencial
+> nenhuma no GitHub.
 
-1. Dashboard Cloudflare → **Workers & Pages → Create application → Pages → Direct Upload**
-2. Nome do projeto: `pagora` (precisa bater com `--project-name=pagora` no workflow)
-3. Production branch: `main`
-4. _Não conecte ao GitHub pelo Cloudflare_ — quem dispara o deploy é o GH Action
+## 1. Conectar o repositório
 
-## 2. Secrets do GitHub
+Cloudflare → **Workers & Pages** → **Create application** → **Pages** →
+**Connect to Git** → autorize e escolha `olefootdev/pagora`.
 
-Settings → Secrets and variables → Actions → **New repository secret**. Necessários:
+| Campo                  | Valor                                            |
+| ---------------------- | ------------------------------------------------ |
+| Production branch      | `main`                                           |
+| Framework preset       | None (ou Vite)                                   |
+| Build command          | `npm run typecheck && npm test && npm run build` |
+| Build output directory | `dist`                                           |
+| Node version           | 22                                               |
 
-| Secret                   | Onde achar                                                                                     |
-| ------------------------ | ---------------------------------------------------------------------------------------------- |
-| `CLOUDFLARE_API_TOKEN`   | Cloudflare → My Profile → API Tokens → "Edit Cloudflare Workers" template (escopo Pages: Edit) |
-| `CLOUDFLARE_ACCOUNT_ID`  | Dashboard CF → home da conta, sidebar direita                                                  |
-| `VITE_SUPABASE_URL`      | Supabase → Project → API → URL                                                                 |
-| `VITE_SUPABASE_ANON_KEY` | Supabase → Project → API → `anon` `public`                                                     |
-| `VITE_PAGORA_WPP_NUMBER` | Número da central, E.164 sem `+` (ex.: `5511999999999`)                                        |
-| `VITE_GA4_ID`            | GA4 → Admin → Data streams → Measurement ID (`G-XXXXXXXXXX`)                                   |
-| `VITE_META_PIXEL_ID`     | Meta Events Manager → Pixel ID (15-16 dígitos)                                                 |
+O build command inclui typecheck e testes de propósito: se algo quebrar, o
+Cloudflare aborta antes de publicar. É o mesmo portão que o CI do GitHub faz
+nos PRs, aplicado também no deploy.
 
-Vars `VITE_*` são **inlined no bundle no momento do build**. Não dá pra trocar via dashboard do Cloudflare depois — precisa ser secret do GH Actions.
+Para deploy mais rápido, `npm run build` sozinho também funciona — o portão
+passa a existir só no PR.
 
-## 3. Domínio custom
+## 2. Variáveis de ambiente
 
-Cloudflare Pages → projeto `pagora` → **Custom domains → Set up a custom domain** → `pagora.com.br` e `www.pagora.com.br`. Registrar DNS no painel do registrador (Registro.br ou onde for) apontando pros nameservers do Cloudflare, OU adicionando os 2 CNAMEs que o Pages mostrar.
+No projeto → **Settings → Environment variables** → **Production** (e
+**Preview**, se quiser os previews funcionando):
 
-## 4. Primeiro deploy
+| Nome                       | Valor                                       |
+| -------------------------- | ------------------------------------------- |
+| `VITE_SUPABASE_URL`        | `https://mibdmoralhjmwfuxmxiu.supabase.co`  |
+| `VITE_SUPABASE_ANON_KEY`   | a chave `anon` em Supabase → Settings → API |
+| `VITE_PAGORA_WPP_NUMBER`   | número da central, E.164 sem `+`            |
+| `VITE_GOOGLE_MAPS_API_KEY` | opcional — Places e distância real de rota  |
+| `VITE_GA4_ID`              | opcional — `G-XXXXXXXXXX`                   |
+| `VITE_META_PIXEL_ID`       | opcional — ID numérico                      |
+
+As duas primeiras são **obrigatórias**. Sem elas o build falha de propósito —
+ver a guarda em `vite.config.js`. Isso é intencional: `VITE_*` é substituída por
+literal em tempo de build, então variável ausente não daria erro, daria um app
+que compila, publica, abre e não fala com o banco. Deploy verde escondendo
+formulário que engole cadastro.
+
+> A `anon key` **não é secreta**: ela é compilada dentro do JavaScript e
+> qualquer visitante lê no navegador. Quem protege o banco é a RLS. Nunca
+> coloque a `service_role` aqui — essa vive só em Edge Function.
+
+## 3. Domínio
+
+Projeto `pagora` → **Custom domains** → **Set up a custom domain** →
+`pagorapro.com`, e repita para `www.pagorapro.com`.
+
+Como o domínio já está no Cloudflare, o DNS é resolvido automaticamente.
+
+## 4. Depois do primeiro deploy
 
 ```bash
-git push origin main
+# as variáveis entraram no bundle?
+curl -s https://pagorapro.com/assets/index-*.js | grep -c mibdmoralhjmwfuxmxiu   # > 0
+
+# o preview social responde?
+curl -sI https://pagorapro.com/og-image.png | head -1                            # 200
 ```
 
-O workflow `.github/workflows/deploy.yml` roda typecheck → test → build → `wrangler pages deploy ./dist`. URL temporária: `pagora.pages.dev`.
+E revalide a prévia em <https://developers.facebook.com/tools/debug/> — o
+Facebook e o WhatsApp cacheiam `og:image` de forma agressiva, e uma primeira
+leitura com 404 fica gravada.
 
-## 5. Aplicar migrations Supabase antes do primeiro tráfego real
+O teste que prova tudo de uma vez: preencha a waitlist no site e confira se a
+linha chegou em `pagora.waitlist`. Isso valida a chave, o schema exposto no
+PostgREST e a RLS numa tacada.
 
-```bash
-# Com a Supabase CLI linkada no projeto mibdmoralhjmwfuxmxiu:
-supabase db push
+## 5. Pré-requisitos no Supabase
 
-# Ou cole cada arquivo no SQL Editor manualmente, em ordem:
-#   supabase/migrations/0001_initial_schema.sql
-#   supabase/migrations/0002_rls_policies.sql
-#   supabase/migrations/0003_waitlist.sql
-#   supabase/migrations/0004_provider_applications.sql
-```
+- Migrations aplicadas em `mibdmoralhjmwfuxmxiu` — ver `supabase/migrations/README.md`
+- **Settings → API → Exposed schemas** com `pagora` na lista
 
-## 6. Pós-deploy
+Sem o schema exposto, o PostgREST não enxerga as tabelas e nenhuma tela fala com
+o banco, mesmo com a chave correta.
 
-- Converter `public/og-image.svg` → `public/og-image.png` (rode `npx svgexport public/og-image.svg public/og-image.png 1200:630` e comite o PNG). Sem isso, prévias do WhatsApp/Facebook mostram broken image.
-- Testar a URL no Facebook Debugger: <https://developers.facebook.com/tools/debug/>
-- Testar no WhatsApp: mandar a URL pra si mesmo e checar a prévia.
+## O que o GitHub Actions faz agora
+
+`.github/workflows/ci.yml` roda **só verificação**: typecheck, lint e testes, em
+push na `main` e em todo PR. Não publica nada e não usa secret nenhum.

@@ -1,0 +1,59 @@
+# =============================================================================
+# CI — verificação, NÃO deploy
+# =============================================================================
+# O deploy do PAGORA é feito pela integração nativa do Cloudflare Pages com o
+# GitHub: push na `main` e o Cloudflare builda e publica sozinho.
+#
+# Este workflow existia antes como pipeline de deploy via wrangler, e exigia
+# CLOUDFLARE_API_TOKEN e CLOUDFLARE_ACCOUNT_ID como secrets. Foi removido:
+# aquele caminho roda o deploy FORA do Cloudflare, e por isso precisava de
+# credencial para falar com ele de fora. A integração nativa não precisa de
+# nenhuma — as variáveis de ambiente ficam no painel do próprio Cloudflare.
+#
+# O que sobrou aqui é só o portão de qualidade, que roda em segundos e não
+# depende de secret nenhum: se typecheck ou teste quebrar, o PR fica vermelho
+# antes de alguém mergear.
+#
+# O build NÃO roda aqui de propósito: ele exige VITE_SUPABASE_*, que agora
+# vivem no Cloudflare. Quem builda é o Cloudflare, e a guarda em
+# vite.config.js derruba lá se as variáveis faltarem.
+# =============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  verificar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Lint
+        run: npm run lint
+
+      - name: Test
+        run: npm test
