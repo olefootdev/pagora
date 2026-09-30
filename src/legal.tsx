@@ -92,8 +92,8 @@ export const PrivacyPolicy = ({ go }: ScreenProps) => (
     </ul>
     <p>
       Para exercer qualquer um desses direitos, escreva pra{' '}
-      <a href="mailto:contato@pagora.com.br" style={linkStyle}>
-        contato@pagora.com.br
+      <a href="mailto:contato@pagorapro.com" style={linkStyle}>
+        contato@pagorapro.com
       </a>{' '}
       com o assunto "LGPD". Respondemos em até 15 dias.
     </p>
@@ -120,8 +120,8 @@ export const PrivacyPolicy = ({ go }: ScreenProps) => (
     <h2 style={h2Style}>9. Contato</h2>
     <p>
       Encarregado de dados (DPO):{' '}
-      <a href="mailto:contato@pagora.com.br" style={linkStyle}>
-        contato@pagora.com.br
+      <a href="mailto:contato@pagorapro.com" style={linkStyle}>
+        contato@pagorapro.com
       </a>
     </p>
   </LegalPage>
@@ -200,8 +200,8 @@ export const Terms = ({ go }: ScreenProps) => (
 
     <h2 style={h2Style}>9. Contato</h2>
     <p>
-      <a href="mailto:contato@pagora.com.br" style={linkStyle}>
-        contato@pagora.com.br
+      <a href="mailto:contato@pagorapro.com" style={linkStyle}>
+        contato@pagorapro.com
       </a>
     </p>
   </LegalPage>

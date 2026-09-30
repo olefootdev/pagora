@@ -127,7 +127,7 @@ describe('chave Pix', () => {
   it.each([
     ['529.982.247-25', 'CPF'],
     ['11.222.333/0001-81', 'CNPJ'],
-    ['prestador@pagora.com.br', 'EMAIL'],
+    ['prestador@pagorapro.com', 'EMAIL'],
     ['(11) 99999-8888', 'PHONE'],
     ['123e4567-e89b-12d3-a456-426614174000', 'EVP'],
   ])('detecta %s como %s', (key, type) => {

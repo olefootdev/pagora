@@ -22,7 +22,7 @@
 ## Aplicar
 
 ```bash
-supabase link --project-ref kigmdcjpgmvsyiuqadct
+supabase link --project-ref mibdmoralhjmwfuxmxiu
 supabase db push
 ```
 
@@ -35,7 +35,7 @@ O `src/lib/database.types.ts` é mantido à mão desde a 0001 e **deve deixar de
 ser**. Com o projeto linkado:
 
 ```bash
-export PAGORA_SUPABASE_PROJECT_ID=kigmdcjpgmvsyiuqadct
+export PAGORA_SUPABASE_PROJECT_ID=mibdmoralhjmwfuxmxiu
 npm run db:types
 ```
 
@@ -53,7 +53,7 @@ variável no bundle do browser.
 supabase secrets set ASAAS_API_KEY='...'          # chave da conta principal
 supabase secrets set ASAAS_ENV='sandbox'          # ou 'production'
 supabase secrets set ASAAS_WEBHOOK_TOKEN='...'    # token que você define
-supabase secrets set PAGORA_ALLOWED_ORIGINS='http://localhost:5173,https://pagora.com.br'
+supabase secrets set PAGORA_ALLOWED_ORIGINS='http://localhost:5173,https://pagorapro.com'
 ```
 
 `SUPABASE_URL`, `SUPABASE_ANON_KEY` e `SUPABASE_SERVICE_ROLE_KEY` são injetadas
@@ -76,7 +76,7 @@ supabase functions deploy asaas-webhook --no-verify-jwt
 
 Painel do Asaas → Integrações → Webhooks:
 
-- **URL**: `https://kigmdcjpgmvsyiuqadct.supabase.co/functions/v1/asaas-webhook`
+- **URL**: `https://mibdmoralhjmwfuxmxiu.supabase.co/functions/v1/asaas-webhook`
 - **Token de autenticação**: o mesmo valor de `ASAAS_WEBHOOK_TOKEN`
 - **Eventos**: `PAYMENT_RECEIVED`, `PAYMENT_CONFIRMED`, `PAYMENT_OVERDUE`,
   `PAYMENT_REFUNDED`, `TRANSFER_DONE`, `TRANSFER_FAILED`

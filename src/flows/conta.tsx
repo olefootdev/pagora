@@ -113,7 +113,7 @@ export const Conta = ({ go }: { go: GoFn }) => {
       label: 'Ajuda e suporte',
       sub: 'Falar com a gente',
       icon: 'headset',
-      onClick: () => window.open('mailto:suporte@pagora.com.br', '_blank', 'noopener'),
+      onClick: () => window.open('mailto:suporte@pagorapro.com', '_blank', 'noopener'),
     },
     {
       id: 'termos',

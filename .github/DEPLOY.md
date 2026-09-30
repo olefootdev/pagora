@@ -40,7 +40,7 @@ O workflow `.github/workflows/deploy.yml` roda typecheck → test → build → 
 ## 5. Aplicar migrations Supabase antes do primeiro tráfego real
 
 ```bash
-# Com a Supabase CLI linkada no projeto kigmdcjpgmvsyiuqadct:
+# Com a Supabase CLI linkada no projeto mibdmoralhjmwfuxmxiu:
 supabase db push
 
 # Ou cole cada arquivo no SQL Editor manualmente, em ordem:

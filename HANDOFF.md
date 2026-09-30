@@ -19,7 +19,7 @@ projeto remoto na sessão em que foram criadas. Trate-as como código não
 testado até rodar:
 
 ```bash
-supabase link --project-ref kigmdcjpgmvsyiuqadct
+supabase link --project-ref mibdmoralhjmwfuxmxiu
 supabase db push          # aplica 0005 → 0008
 npm run db:types          # gera os tipos de verdade e compara com o manual
 ```
@@ -55,7 +55,7 @@ explícito, nunca num `grant all`.
 
 ### FASE 2 — Backend Supabase
 
-- Schema `pagora.*` aplicado no projeto `kigmdcjpgmvsyiuqadct`
+- Schema `pagora.*` aplicado no projeto `mibdmoralhjmwfuxmxiu`
 - 9 tabelas + 7 enums + 3 RPCs (`ensure_profile`, `become_provider`, `accept_quote`)
 - RLS deny-by-default em todas as tabelas
 - Phone OTP funcionando com test numbers (zero custo Twilio)
@@ -403,7 +403,7 @@ Pra próxima sessão atacar FASE 3 (Maps).
 4. **Restrict key:**
    - Application restrictions → HTTP referrers:
      - `http://localhost:5173/*`
-     - Seu domínio futuro (ex: `https://pagora.com.br/*`)
+     - Seu domínio futuro (ex: `https://pagorapro.com/*`)
    - API restrictions → habilitar SÓ:
      - Maps JavaScript API
      - Directions API
@@ -455,8 +455,8 @@ pagora-web/
 ├── HANDOFF.md                    ← você está aqui
 ├── supabase/
 │   └── migrations/
-│       ├── 0001_initial_schema.sql   ← aplicado em kigmdcjpgmvsyiuqadct
-│       └── 0002_rls_policies.sql     ← aplicado em kigmdcjpgmvsyiuqadct
+│       ├── 0001_initial_schema.sql   ← aplicado em mibdmoralhjmwfuxmxiu
+│       └── 0002_rls_policies.sql     ← aplicado em mibdmoralhjmwfuxmxiu
 ├── src/
 │   ├── App.tsx              # router + Zustand
 │   ├── main.tsx

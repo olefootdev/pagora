@@ -540,7 +540,7 @@ const SegurancaSheet = ({
         variant="outline"
         block
         iconStart="headset"
-        onClick={() => window.open('mailto:suporte@pagora.com.br', '_blank', 'noopener')}
+        onClick={() => window.open('mailto:suporte@pagorapro.com', '_blank', 'noopener')}
       >
         Falar com o suporte
       </Button>

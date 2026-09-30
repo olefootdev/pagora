@@ -1,11 +1,11 @@
 import { describe, it, expect, vi, afterEach } from 'vitest';
 import { buildShareUrl, shareOrCopy, copyText, shareFeedback } from './share';
 
-const ORIGIN = 'https://pagora.com.br';
+const ORIGIN = 'https://pagorapro.com';
 
 describe('buildShareUrl — o app usa HashRouter', () => {
   it('põe a rota depois do #', () => {
-    expect(buildShareUrl('landing', {}, ORIGIN)).toBe('https://pagora.com.br/#/landing');
+    expect(buildShareUrl('landing', {}, ORIGIN)).toBe('https://pagorapro.com/#/landing');
   });
 
   it('põe a query DEPOIS do hash, não antes', () => {
@@ -13,25 +13,25 @@ describe('buildShareUrl — o app usa HashRouter', () => {
     // certa e o parâmetro nunca chega ao router — falha silenciosa, do tipo
     // que só aparece quando alguém reclama que a indicação não contou.
     const url = buildShareUrl('landing', { ref: 'MARINA30' }, ORIGIN);
-    expect(url).toBe('https://pagora.com.br/#/landing?ref=MARINA30');
+    expect(url).toBe('https://pagorapro.com/#/landing?ref=MARINA30');
     expect(url.indexOf('?')).toBeGreaterThan(url.indexOf('#'));
   });
 
   it('aceita a rota com ou sem barra e sem duplicar', () => {
     for (const r of ['tracking', '/tracking', '#/tracking']) {
-      expect(buildShareUrl(r, {}, ORIGIN)).toBe('https://pagora.com.br/#/tracking');
+      expect(buildShareUrl(r, {}, ORIGIN)).toBe('https://pagorapro.com/#/tracking');
     }
   });
 
   it('escapa valor de parâmetro', () => {
     expect(buildShareUrl('landing', { ref: 'a b&c=d' }, ORIGIN)).toBe(
-      'https://pagora.com.br/#/landing?ref=a+b%26c%3Dd',
+      'https://pagorapro.com/#/landing?ref=a+b%26c%3Dd',
     );
   });
 
   it('encadeia múltiplos parâmetros', () => {
     expect(buildShareUrl('tracking', { id: 'PG-1247', t: 'abc' }, ORIGIN)).toBe(
-      'https://pagora.com.br/#/tracking?id=PG-1247&t=abc',
+      'https://pagorapro.com/#/tracking?id=PG-1247&t=abc',
     );
   });
 });
